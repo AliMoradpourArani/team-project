@@ -25,7 +25,9 @@ make db-reset    # delete the local dev database (fixed safe path only)
 
 `init_db --seed` and `sync_data` are **idempotent**: running them repeatedly
 with unchanged repository data produces the same database state and never
-duplicates records.
+duplicates records. `sync_data` performs full **reconciliation**: rows whose
+source files were deleted are removed from the database, so SQLite always
+exactly mirrors `data/`.
 
 ## Migration rules
 
@@ -33,8 +35,11 @@ duplicates records.
   `backend/database/migrations/`.
 - Use a zero-padded numeric prefix and descriptive name, for example
   `005_add_activity_project_id.sql`.
-- Migrations are applied in sorted filename order and recorded in
-  `schema_migrations`.
+- Migrations are applied in sorted filename order. The **full file stem** (for
+  example `005_add_calendar`) is recorded as the version in `schema_migrations`.
+- Duplicate numeric prefixes (e.g. two files both starting `005_`) are rejected
+  with an error instead of silently skipping the second migration. If two
+  branches collide, renumber one on the feature branch before merging.
 - Never rewrite or delete a migration after it has merged into `main`. Add a
   new migration for a correction or schema change.
 - Migration conflicts require review of both schema changes. Normalize numbering

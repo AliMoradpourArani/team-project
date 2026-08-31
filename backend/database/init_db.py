@@ -27,8 +27,25 @@ def apply_migrations(connection) -> list[str]:
     }
     applied_now = []
 
-    for migration_file in sorted(MIGRATIONS_ROOT.glob("*.sql")):
-        version, _, name = migration_file.stem.partition("_")
+    migration_files = sorted(MIGRATIONS_ROOT.glob("*.sql"))
+
+    # Two branches that independently introduce the same numeric prefix must
+    # never merge silently: the second migration would be recorded under the
+    # same version and never executed. Fail loudly instead (see
+    # docs/database-rules.md).
+    prefixes: dict[str, str] = {}
+    for migration_file in migration_files:
+        prefix = migration_file.stem.partition("_")[0]
+        if prefix in prefixes:
+            raise RuntimeError(
+                f"Duplicate migration prefix '{prefix}' in "
+                f"{prefixes[prefix]}.sql and {migration_file.name}. "
+                "Renumber one of them on your feature branch before merging."
+            )
+        prefixes[prefix] = migration_file.stem
+
+    for migration_file in migration_files:
+        version = migration_file.stem  # full stem: unique, collision-safe
         if version in applied:
             continue
 
@@ -38,9 +55,9 @@ def apply_migrations(connection) -> list[str]:
             connection.executescript(sql)
             connection.execute(
                 "INSERT INTO schema_migrations (version, name) VALUES (?, ?)",
-                (version, name or migration_file.stem),
+                (version, version),
             )
-        applied_now.append(migration_file.stem)
+        applied_now.append(version)
 
     return applied_now
 

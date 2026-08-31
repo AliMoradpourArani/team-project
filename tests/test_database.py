@@ -98,3 +98,58 @@ def test_path_traversal_user_id_is_rejected():
 
     with pytest.raises(ValueError):
         validate_slug("../../etc/passwd", "user id")
+
+
+def test_duplicate_migration_prefix_is_rejected(tmp_path):
+    """Two branches adding 005_*.sql must never merge into silent data loss."""
+    from backend.database.init_db import MIGRATIONS_ROOT
+    from backend.database.source_files import REPOSITORY_ROOT
+
+    first = MIGRATIONS_ROOT / "005_first.sql"
+    second = MIGRATIONS_ROOT / "005_second.sql"
+    first.write_text("CREATE TABLE first_probe (id TEXT);", encoding="utf-8")
+    second.write_text("CREATE TABLE second_probe (id TEXT);", encoding="utf-8")
+    try:
+        with pytest.raises(RuntimeError, match="Duplicate migration prefix '005'"):
+            initialize_database(tmp_path / "fresh.db")
+        with connect(tmp_path / "fresh.db") as connection:
+            assert row_count(connection, "schema_migrations") == 0
+    finally:
+        first.unlink()
+        second.unlink()
+    assert not list(REPOSITORY_ROOT.glob("backend/database/migrations/005_*.sql"))
+
+
+def test_sync_deletes_rows_removed_from_source_files(tmp_path, monkeypatch):
+    """SQLite must exactly mirror data/: deleted JSON files drop their rows."""
+    import backend.database.source_files as source_files
+
+    data_root = tmp_path / "data"
+    user_dir = data_root / "activities" / "solo"
+    user_dir.mkdir(parents=True)
+    (data_root / "users").mkdir()
+    (data_root / "projects").mkdir()
+    (data_root / "users" / "solo.json").write_text(
+        '{"id": "solo", "display_name": "Solo", "role": "Dev"}', encoding="utf-8"
+    )
+    (user_dir / "2026-01-01.json").write_text(
+        '{"user_id": "solo", "date": "2026-01-01", "activities": '
+        '[{"id": "solo-2026-01-01-task", "title": "Task", "status": "planned", '
+        '"project_id": null}]}',
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(source_files, "DATA_ROOT", data_root)
+
+    database_path = tmp_path / "fresh.db"
+    initialize_database(database_path)
+    with connect(database_path) as connection:
+        sync_source_data(connection)
+        assert row_count(connection, "users") == 1
+        assert row_count(connection, "activities") == 1
+
+    # The user deletes the tracked activity file, then syncs again.
+    (user_dir / "2026-01-01.json").unlink()
+    with connect(database_path) as connection:
+        sync_source_data(connection)
+        assert row_count(connection, "activities") == 0
+        assert row_count(connection, "users") == 1

@@ -62,9 +62,7 @@ function LandingPage() {
         <span className="member-count">{users.length.toString().padStart(2, "0")} members</span>
       </div>
       {error ? <StatusMessage error>{error}</StatusMessage> : null}
-      {!error && users.length === 0 ? (
-        <StatusMessage>Loading team members…</StatusMessage>
-      ) : null}
+      {!error && users.length === 0 ? <StatusMessage>Loading team members…</StatusMessage> : null}
       {users.length > 0 ? <MemberList users={users} /> : null}
     </section>
   );
@@ -82,9 +80,7 @@ function UserPage({ userId }: { userId: string }) {
 
   useEffect(() => {
     Promise.all([getUsers(), getActivities(), getProjects()])
-      .then(([users, activities, projects]) =>
-        setState({ users, activities, projects }),
-      )
+      .then(([users, activities, projects]) => setState({ users, activities, projects }))
       .catch((requestError: Error) => setError(requestError.message));
   }, []);
 

@@ -55,6 +55,23 @@ def sync_source_data(connection) -> dict[str, int]:
     )
     counts["projects"] = len(projects)
 
+    # Reconciliation: the tracked files are the source of truth, so rows whose
+    # source file was deleted must be removed from the derived database too.
+    tracked_user_ids = [user.id for user in users]
+    if tracked_user_ids:
+        placeholders = ",".join("?" for _ in tracked_user_ids)
+        connection.execute(f"DELETE FROM users WHERE id NOT IN ({placeholders})", tracked_user_ids)
+    else:
+        connection.execute("DELETE FROM users")
+    tracked_project_ids = [project.id for project in projects]
+    if tracked_project_ids:
+        placeholders = ",".join("?" for _ in tracked_project_ids)
+        connection.execute(
+            f"DELETE FROM projects WHERE id NOT IN ({placeholders})", tracked_project_ids
+        )
+    else:
+        connection.execute("DELETE FROM projects")
+
     activity_rows = [
         (activity.id, file.user_id, file.date, activity.title, activity.status, activity.project_id)
         for file in load_activities()
@@ -74,6 +91,19 @@ def sync_source_data(connection) -> dict[str, int]:
         activity_rows,
     )
     counts["activities"] = len(activity_rows)
+
+    # Composite identity of an activity row is (id); compare on (user_id, date)
+    # so per-date files that were deleted drop all of their activities.
+    tracked_keys = [(row[1], row[2]) for row in activity_rows]
+    if not tracked_keys:
+        connection.execute("DELETE FROM activities")
+    else:
+        placeholders = ",".join("(?, ?)" for _ in tracked_keys)
+        flat = [value for key in tracked_keys for value in key]
+        connection.execute(
+            f"DELETE FROM activities WHERE (user_id, date) NOT IN ({placeholders})",
+            flat,
+        )
 
     connection.commit()
     return counts

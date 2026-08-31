@@ -19,7 +19,7 @@ if [[ ! -x .venv/bin/python ]]; then
   "$PYTHON_BIN" -m venv .venv
 fi
 
-.venv/bin/python -m pip install -r backend/requirements.txt
+.venv/bin/python -m pip install -r backend/requirements-dev.txt
 npm ci --prefix frontend
 .venv/bin/python -m backend.database.init_db --seed
 

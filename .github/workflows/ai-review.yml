@@ -1,0 +1,35 @@
+name: AI Review
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: ai-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  ai-review:
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout trusted base revision only
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - name: Review pull request diff
+        run: python .github/scripts/ai_review.py
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_REVIEW_MODEL: ${{ vars.OPENAI_REVIEW_MODEL || 'gpt-5.6-luna' }}

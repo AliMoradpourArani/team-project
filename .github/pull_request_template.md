@@ -1,24 +1,28 @@
-## What changed?
-<!-- Describe the change. Link related issues if any. -->
+## Summary
 
-## Why did it change?
-<!-- Problem solved or feature added. -->
+<!-- What changed and why? Keep this focused on one logical change. -->
 
-## How was it tested?
-<!-- Commands run and their results, e.g. ./scripts/test.sh, pytest, npm test. -->
+## Scope
 
-## Checklist
-- [ ] Code builds and runs locally
-- [ ] Tests added/updated and passing (`./scripts/test.sh`)
-- [ ] Lint and formatting pass (backend `ruff`, frontend `npm run lint && npm run format:check`)
-- [ ] Database schema changed? If yes: migration added under `backend/database/migrations/` and fresh DB init verified
-- [ ] Dependencies changed? If yes: manifests and lock files updated (`npm install` / `pip install -r ...`)
-- [ ] No secrets, credentials, or generated database files committed
-- [ ] Documentation updated (README / docs/ where relevant)
+<!-- List the main files/features touched. Call out database, schema, CI, dependency, or security-sensitive changes explicitly. -->
+
+## Verification
+
+- [ ] Backend tests/lint pass when applicable
+- [ ] Frontend lint/type/unit/build pass when applicable
+- [ ] E2E behavior is covered or not applicable
+- [ ] Fresh database init/sync still works when data/database code changed
+- [ ] No secrets, generated databases, or unrelated files are included
+- [ ] Documentation/contracts were updated if behavior changed
+- [ ] New architecture decisions have an ADR when needed
 - [ ] Feature branch is up to date with `main` (`git merge main`)
 
-## Screenshots (if UI changed)
-<!-- Before/after screenshots. -->
+## Risk and rollback
 
-## Known limitations / follow-up work
-<!-- Anything intentionally left out. -->
+**Risk:** Low / Medium / High
+
+<!-- What could break? How would we revert or recover? -->
+
+## Screenshots / notes
+
+<!-- Optional for visible UI changes or reviewer context. -->

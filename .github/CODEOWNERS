@@ -1,0 +1,12 @@
+# Shared platform and high-risk integration areas require Tech Lead review.
+/.github/                         @HoosseinRahimi
+/backend/database/                @HoosseinRahimi
+/backend/schemas/                 @HoosseinRahimi
+/backend/requirements*.txt        @HoosseinRahimi
+/frontend/package.json            @HoosseinRahimi
+/frontend/package-lock.json       @HoosseinRahimi
+/docker-compose.yml               @HoosseinRahimi
+/Makefile                         @HoosseinRahimi
+/docs/architecture.md             @HoosseinRahimi
+/docs/database-rules.md           @HoosseinRahimi
+/docs/project-contract.md         @HoosseinRahimi

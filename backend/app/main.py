@@ -10,6 +10,7 @@ from fastapi.responses import JSONResponse
 from ..schemas.api import ErrorResponse
 from ..services.queries import NotFoundError
 from .api import activities, health, projects, users
+from .observability import request_observability
 
 
 def configured_origins() -> list[str]:
@@ -30,6 +31,8 @@ app.add_middleware(
     allow_methods=["GET", "POST", "PUT", "DELETE"],
     allow_headers=["*"],
 )
+
+app.middleware("http")(request_observability)
 
 app.include_router(health.router)
 app.include_router(users.router)

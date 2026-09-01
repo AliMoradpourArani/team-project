@@ -1,0 +1,44 @@
+name: Feature request
+description: Propose a scoped improvement to the shared platform.
+title: "feat: "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem to solve
+      description: Explain the user or team problem before describing the solution.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior
+      description: Describe the smallest useful version of the feature.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      placeholder: |
+        - [ ] ...
+        - [ ] ...
+        - [ ] Tests cover ...
+    validations:
+      required: true
+  - type: dropdown
+    id: risk
+    attributes:
+      label: Expected risk area
+      options:
+        - Low - isolated UI/docs
+        - Medium - API/business logic
+        - High - database/schema/CI/security
+    validations:
+      required: true
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Dependencies or blockers
+      description: Mention related issues, contracts, migrations, or other features.

@@ -1,0 +1,51 @@
+name: Bug report
+description: Report a reproducible defect in the shared platform.
+title: "bug: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: "Please describe one reproducible problem. Do not include secrets or private data."
+  - type: textarea
+    id: summary
+    attributes:
+      label: What happened?
+      description: Describe the observed behavior and what you expected instead.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Start the app with ...
+        2. Open ...
+        3. Click ...
+        4. Observe ...
+    validations:
+      required: true
+  - type: input
+    id: branch
+    attributes:
+      label: Branch or commit
+      placeholder: main / commit SHA
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Frontend
+        - Backend/API
+        - Database/data sync
+        - Docker/setup
+        - CI/GitHub
+        - Documentation
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs or screenshots
+      description: Remove tokens, credentials, private paths, and personal data before posting.
+      render: shell

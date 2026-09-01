@@ -6,13 +6,15 @@ calendar history, timeline, and projects.
 
 The shared platform currently includes the stable repository/database
 foundation plus the Phase 2 activity experience: activity create/edit/delete,
-calendar, timeline, and per-user dashboard statistics. Authentication,
-professor-wide administration, advanced Git integration, and project execution
-remain future features.
+calendar, timeline, and per-user dashboard statistics. Phase 2.5 adds engineering
+quality gates around that platform: browser E2E testing, coverage, security
+scanning, CODEOWNERS, Dependabot, request observability, and an optional AI PR
+reviewer. Authentication, professor-wide administration, advanced Git integration,
+and project execution remain future features.
 
 ## Architecture
 
-Modular monolith — no microservices:
+Modular monolith, no microservices:
 
 - **Frontend:** React + Vite + **TypeScript** (`frontend/`)
 - **Backend:** FastAPI with small route modules, services, and Pydantic schemas (`backend/`)
@@ -32,7 +34,7 @@ team-project/
 ├── frontend/                 # React/Vite/TypeScript application
 │   └── src/{components,types.ts,api.ts,App.tsx,main.tsx}
 ├── backend/
-│   ├── app/                  # FastAPI app; routes in app/api/*.py
+│   ├── app/                  # FastAPI app, routes and request observability
 │   ├── schemas/              # Pydantic request/response + data validation
 │   ├── services/             # Queries + tracked activity write logic
 │   └── database/
@@ -45,11 +47,14 @@ team-project/
 │   ├── users/<id>.json
 │   ├── activities/<user_id>/<date>.json
 │   └── projects/<id>.json
+├── e2e/                      # Playwright browser-flow tests
 ├── projects/<owner>/<name>/  # Student projects with project.json manifests
 ├── scripts/                  # setup, test, reset, conflict-marker check
-├── docs/                     # architecture, git workflow, database rules, contracts
+├── docs/                     # architecture, workflow, ADRs, quality rules
 ├── tests/                    # Backend/API/database tests
-├── .github/                  # CI workflow + PR template
+├── .github/                  # CI, security, AI review, templates, CODEOWNERS
+├── CHANGELOG.md
+├── SECURITY.md
 ├── docker-compose.yml
 └── Makefile
 ```
@@ -96,6 +101,8 @@ file first and then reconcile SQLite. See [docs/database-rules.md](docs/database
 ```
 
 API at <http://localhost:8000>. Interactive docs: <http://localhost:8000/docs>.
+Every API response receives an `X-Request-ID` correlation header and HTTP request
+metadata is logged as structured JSON.
 
 Core endpoints:
 
@@ -119,7 +126,8 @@ npm run dev --prefix frontend
 Open <http://localhost:5173>. Member routes such as `/users/hossein` expose the
 shared user dashboard with activity statistics, activity management, calendar,
 timeline, and connected projects. Override the backend URL with
-`VITE_API_BASE_URL` (see `.env.example`).
+`VITE_API_BASE_URL` (see `.env.example`). An application-level error boundary
+provides a recoverable fallback for unexpected render failures.
 
 ## Run tests
 
@@ -139,6 +147,10 @@ npm test --prefix frontend
 npm run build --prefix frontend
 ```
 
+CI additionally enforces backend coverage and runs a real Chromium E2E activity
+flow. See [docs/engineering-quality.md](docs/engineering-quality.md) for the full
+quality/security gate design and AI reviewer setup.
+
 ## Docker
 
 ```bash
@@ -153,20 +165,24 @@ Stop with `Ctrl+C` or `docker compose down`.
 
 ## Git workflow
 
-`main` is the stable integration branch — never commit features directly.
+`main` is the stable integration branch. Never commit features directly.
 Branches: `feature/<name>`, `fix/<name>`, `docs/<name>`, `refactor/<name>`,
-`test/<name>`. Update feature branches with `git merge main`; open Pull
-Requests into `main` (squash merge by default).
+`test/<name>`, `chore/<name>`. Update feature branches with `git merge main`;
+open Pull Requests into `main` and use squash merge by default.
 
-- [CONTRIBUTING.md](CONTRIBUTING.md) — branch, commit, test, migration, and PR workflow
-- [docs/git-workflow.md](docs/git-workflow.md) — branch model and conflict rules
-- [docs/database-rules.md](docs/database-rules.md) — migrations and data authority
-- [docs/project-contract.md](docs/project-contract.md) — `data/` file and project manifest contracts
-- [docs/branch-protection.md](docs/branch-protection.md) — recommended GitHub settings for `main`
+- [CONTRIBUTING.md](CONTRIBUTING.md) - branch, commit, test, migration, and PR workflow
+- [docs/git-workflow.md](docs/git-workflow.md) - branch model and conflict rules
+- [docs/database-rules.md](docs/database-rules.md) - migrations and data authority
+- [docs/project-contract.md](docs/project-contract.md) - data file and project manifest contracts
+- [docs/branch-protection.md](docs/branch-protection.md) - required protection settings for `main`
+- [docs/engineering-quality.md](docs/engineering-quality.md) - CI, E2E, security, AI review
+- [docs/adr/](docs/adr/) - architecture decision records
+- [SECURITY.md](SECURITY.md) - security policy
+- [CHANGELOG.md](CHANGELOG.md) - notable project changes
 
 ## API conventions
 
 - Prefix all routes with `/api/`, use plural nouns (`/api/users`)
 - Typed Pydantic request/response models; structured errors; no stack traces
-- Unknown user/project/activity → 404; malformed input → 422
+- Unknown user/project/activity -> 404; malformed input -> 422
 - Git-tracked JSON remains authoritative for shared activity state

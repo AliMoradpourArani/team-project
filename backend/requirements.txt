@@ -4,3 +4,4 @@ starlette==1.6.0
 pydantic==2.13.5
 anyio==4.14.2
 uvicorn[standard]==0.52.4
+pwdlib[argon2]==0.3.1

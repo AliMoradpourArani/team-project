@@ -1,31 +1,28 @@
 # Team Project
 
-Team Project is a local web application for a university team and their
-professor. Team members get a personal dashboard for daily activities,
-calendar history, timeline, and projects.
+Team Project is a local web application for a university team and their professor. Students get a protected personal dashboard for daily activities, calendar history, timeline, and projects. Professors get a read-only overview across the team with per-member progress and recent activity.
 
-The shared platform currently includes the stable repository/database
-foundation plus the Phase 2 activity experience: activity create/edit/delete,
-calendar, timeline, and per-user dashboard statistics. Phase 2.5 adds engineering
-quality gates around that platform: browser E2E testing, coverage, security
-scanning, CODEOWNERS, Dependabot, request observability, and an optional AI PR
-reviewer. Authentication, professor-wide administration, advanced Git integration,
-and project execution remain future features.
+The shared platform now includes:
+
+- **Phase 1:** reproducible FastAPI/React/SQLite foundation and Git workflow
+- **Phase 2:** activity CRUD, calendar, timeline, user dashboard, Git-tracked activity writes
+- **Phase 2.5:** E2E, coverage, security scanning, CODEOWNERS, Dependabot, observability, optional AI PR reviewer
+- **Phase 3:** local authentication, student/professor authorization, CSRF protection, and professor dashboard
+
+Advanced Git contribution analytics and project execution remain future features.
 
 ## Architecture
 
 Modular monolith, no microservices:
 
-- **Frontend:** React + Vite + **TypeScript** (`frontend/`)
-- **Backend:** FastAPI with small route modules, services, and Pydantic schemas (`backend/`)
-- **Database:** SQLite generated from ordered SQL migrations; the generated
-  file is **never committed** (`backend/database/`)
-- **Source data:** Git-tracked JSON files under `data/` are the **authoritative
-  shared source** for users, activities, and projects
-- **Docker:** Compose runs one backend and one frontend container locally; the
-  backend bind-mounts `./data` so activity edits remain Git-visible on the host
+- **Frontend:** React + Vite + TypeScript (`frontend/`)
+- **Backend:** FastAPI with route modules, auth dependencies, services, and Pydantic schemas (`backend/`)
+- **Database:** SQLite generated from ordered SQL migrations; the generated file is never committed
+- **Source data:** Git-tracked JSON under `data/` remains authoritative shared state for users, activities, and projects
+- **Authentication state:** accounts and sessions live only in runtime SQLite and are never Git-tracked
+- **Docker:** Compose bind-mounts `./data` and persists runtime auth/database state in a named volume
 
-See [docs/architecture.md](docs/architecture.md) for details.
+See [docs/architecture.md](docs/architecture.md), [docs/authentication.md](docs/authentication.md), and [docs/adr/](docs/adr/).
 
 ## Repository structure
 
@@ -34,25 +31,26 @@ team-project/
 ├── frontend/                 # React/Vite/TypeScript application
 │   └── src/{components,types.ts,api.ts,App.tsx,main.tsx}
 ├── backend/
-│   ├── app/                  # FastAPI app, routes and request observability
-│   ├── schemas/              # Pydantic request/response + data validation
-│   ├── services/             # Queries + tracked activity write logic
+│   ├── auth/                 # Local account bootstrap CLI
+│   ├── app/                  # FastAPI app, routes, auth dependencies, observability
+│   ├── schemas/              # API/auth/source-data contracts
+│   ├── services/             # Auth, professor aggregation, queries, activity writes
 │   └── database/
 │       ├── migrations/       # Ordered SQL migrations (committed)
-│       ├── connection.py     # SQLite connection helpers
-│       ├── init_db.py        # Create DB + apply migrations (+ --seed)
-│       ├── sync_data.py      # Reconcile data/ into the DB
-│       └── source_files.py   # Validated loader for data/ files
+│       ├── connection.py
+│       ├── init_db.py
+│       ├── sync_data.py
+│       └── source_files.py
 ├── data/                     # AUTHORITATIVE shared team data (Git-tracked)
 │   ├── users/<id>.json
 │   ├── activities/<user_id>/<date>.json
 │   └── projects/<id>.json
-├── e2e/                      # Playwright browser-flow tests
+├── e2e/                      # Playwright student + professor browser flows
 ├── projects/<owner>/<name>/  # Student projects with project.json manifests
-├── scripts/                  # setup, test, reset, conflict-marker check
-├── docs/                     # architecture, workflow, ADRs, quality rules
-├── tests/                    # Backend/API/database tests
-├── .github/                  # CI, security, AI review, templates, CODEOWNERS
+├── scripts/
+├── docs/
+├── tests/
+├── .github/
 ├── CHANGELOG.md
 ├── SECURITY.md
 ├── docker-compose.yml
@@ -64,7 +62,7 @@ team-project/
 - Git
 - Python 3.11+ (3.12+ recommended)
 - Node.js 20+ and npm
-- Docker (optional, for the container workflow)
+- Docker (optional)
 
 ## Quick setup (native)
 
@@ -74,25 +72,59 @@ cd team-project
 make setup
 ```
 
-This creates `.venv`, installs backend and frontend dependencies, and builds
-the database from migrations with the tracked data.
+Then create login accounts locally:
+
+```bash
+make auth-bootstrap
+```
+
+Run it once for each student who needs access and once for the professor account. Student accounts must link to an existing tracked user id such as `hossein`, `ali`, or `reza`.
+
+Passwords and password hashes must never be committed to Git. See [docs/authentication.md](docs/authentication.md).
 
 ## Database initialization and synchronization
 
 ```bash
-make db-init        # create DB from scratch, apply migrations (schema only)
-make db-sync        # reconcile Git-tracked data/ into the DB
-make db-reset       # delete the local dev database
+make db-init        # create DB and apply migrations
+make db-sync        # reconcile Git-tracked data/ into SQLite
+make db-reset       # delete the local native development database
+```
 
-# equivalent direct commands:
+Equivalent commands:
+
+```bash
 .venv/bin/python -m backend.database.init_db --seed
 .venv/bin/python -m backend.database.sync_data
 ```
 
-Running sync repeatedly never duplicates records. The Git-tracked files under
-`data/` are authoritative; SQLite is derived local state and is ignored by Git.
-Activity writes made through the web/API update the corresponding tracked JSON
-file first and then reconcile SQLite. See [docs/database-rules.md](docs/database-rules.md).
+Git-tracked files under `data/` are authoritative for shared project data. SQLite is derived for users/activities/projects but also holds private local authentication accounts and sessions. Activity writes through the web/API update tracked JSON and then reconcile SQLite.
+
+## Authentication and roles
+
+### Student
+
+- signs in with a local account linked to one tracked user
+- sees only their own user/profile, activities, and projects
+- can create, edit, and delete only their own activities
+- cannot access the professor dashboard or another student's API data
+
+### Professor
+
+- signs in with a local professor account
+- sees all students, activities, projects, completion totals, and recent work
+- can drill into each student's dashboard
+- is intentionally read-only
+
+Session cookies are HttpOnly and SameSite=Lax. Unsafe requests also require an in-memory CSRF token through `X-CSRF-Token`.
+
+Auth endpoints:
+
+```text
+POST /api/auth/login
+GET  /api/auth/me
+POST /api/auth/logout
+GET  /api/professor/dashboard
+```
 
 ## Run the backend
 
@@ -100,14 +132,12 @@ file first and then reconcile SQLite. See [docs/database-rules.md](docs/database
 .venv/bin/python -m uvicorn backend.app.main:app --reload
 ```
 
-API at <http://localhost:8000>. Interactive docs: <http://localhost:8000/docs>.
-Every API response receives an `X-Request-ID` correlation header and HTTP request
-metadata is logged as structured JSON.
+API: <http://localhost:8000>  
+Interactive docs: <http://localhost:8000/docs>
 
-Core endpoints:
+Core protected endpoints:
 
 ```text
-GET    /api/health
 GET    /api/users
 GET    /api/users/{id}
 GET    /api/activities
@@ -117,17 +147,17 @@ DELETE /api/activities/{activity_id}
 GET    /api/projects
 ```
 
+`GET /api/health` and legacy `GET /health` remain public health checks.
+
+Every API response receives an `X-Request-ID` correlation header and request metadata is logged as structured JSON.
+
 ## Run the frontend
 
 ```bash
 npm run dev --prefix frontend
 ```
 
-Open <http://localhost:5173>. Member routes such as `/users/hossein` expose the
-shared user dashboard with activity statistics, activity management, calendar,
-timeline, and connected projects. Override the backend URL with
-`VITE_API_BASE_URL` (see `.env.example`). An application-level error boundary
-provides a recoverable fallback for unexpected render failures.
+Open <http://localhost:5173>. Unauthenticated visitors see the login page. Students are routed to their own dashboard. Professors are routed to `/professor` and can open read-only member details.
 
 ## Run tests
 
@@ -147,42 +177,62 @@ npm test --prefix frontend
 npm run build --prefix frontend
 ```
 
-CI additionally enforces backend coverage and runs a real Chromium E2E activity
-flow. See [docs/engineering-quality.md](docs/engineering-quality.md) for the full
-quality/security gate design and AI reviewer setup.
+CI enforces backend coverage and runs real Chromium E2E flows for both student authentication/activity management and professor read-only access. Security workflows also run dependency audits and CodeQL.
 
 ## Docker
 
 ```bash
-docker compose up --build
+docker compose up -d --build
+docker compose exec backend python -m backend.auth.bootstrap
 ```
 
-Then open <http://localhost:5173>. The Compose configuration bind-mounts
-`./data:/app/data`, so activities created or edited through the site update the
-host repository's tracked JSON files and appear in `git status`.
+Repeat the bootstrap command for each account, then open <http://localhost:5173>.
 
-Stop with `Ctrl+C` or `docker compose down`.
+Compose bind-mounts `./data:/app/data`, so student activity changes remain visible to Git. Runtime SQLite/auth state is stored in the `team-runtime` named volume so credentials and sessions survive container recreation without entering the repository.
+
+Stop with:
+
+```bash
+docker compose down
+```
+
+Use `docker compose down -v` only when you intentionally want to delete local runtime auth/database state.
+
+## Configuration
+
+See `.env.example`.
+
+Important auth settings:
+
+```text
+AUTH_COOKIE_NAME=team_session
+AUTH_COOKIE_SECURE=false
+AUTH_SESSION_HOURS=8
+```
+
+Set `AUTH_COOKIE_SECURE=true` when the application is served over HTTPS.
 
 ## Git workflow
 
 `main` is the stable integration branch. Never commit features directly.
-Branches: `feature/<name>`, `fix/<name>`, `docs/<name>`, `refactor/<name>`,
-`test/<name>`, `chore/<name>`. Update feature branches with `git merge main`;
-open Pull Requests into `main` and use squash merge by default.
+Branches: `feature/<name>`, `fix/<name>`, `docs/<name>`, `refactor/<name>`, `test/<name>`, `chore/<name>`. Open Pull Requests into `main` and use squash merge by default.
 
-- [CONTRIBUTING.md](CONTRIBUTING.md) - branch, commit, test, migration, and PR workflow
-- [docs/git-workflow.md](docs/git-workflow.md) - branch model and conflict rules
-- [docs/database-rules.md](docs/database-rules.md) - migrations and data authority
-- [docs/project-contract.md](docs/project-contract.md) - data file and project manifest contracts
-- [docs/branch-protection.md](docs/branch-protection.md) - required protection settings for `main`
-- [docs/engineering-quality.md](docs/engineering-quality.md) - CI, E2E, security, AI review
-- [docs/adr/](docs/adr/) - architecture decision records
-- [SECURITY.md](SECURITY.md) - security policy
-- [CHANGELOG.md](CHANGELOG.md) - notable project changes
+- [CONTRIBUTING.md](CONTRIBUTING.md)
+- [docs/git-workflow.md](docs/git-workflow.md)
+- [docs/database-rules.md](docs/database-rules.md)
+- [docs/authentication.md](docs/authentication.md)
+- [docs/project-contract.md](docs/project-contract.md)
+- [docs/branch-protection.md](docs/branch-protection.md)
+- [docs/engineering-quality.md](docs/engineering-quality.md)
+- [docs/adr/](docs/adr/)
+- [SECURITY.md](SECURITY.md)
+- [CHANGELOG.md](CHANGELOG.md)
 
 ## API conventions
 
-- Prefix all routes with `/api/`, use plural nouns (`/api/users`)
-- Typed Pydantic request/response models; structured errors; no stack traces
-- Unknown user/project/activity -> 404; malformed input -> 422
-- Git-tracked JSON remains authoritative for shared activity state
+- Prefix routes with `/api/` and use plural resource nouns
+- Typed Pydantic request/response models and structured errors
+- Unknown resources -> 404; malformed input -> 422; unauthenticated -> 401; forbidden -> 403
+- Never use a frontend-supplied user id as authorization proof
+- Git-tracked JSON remains authoritative for shared user/activity/project state
+- Authentication credentials and sessions remain private runtime state

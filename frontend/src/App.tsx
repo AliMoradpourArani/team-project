@@ -1,16 +1,18 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import type { ReactNode } from "react";
 
-import { deleteActivity, getActivities, getProjects, getUsers } from "./api";
+import { deleteActivity, getActivities, getMe, getProjects, getUsers, logout } from "./api";
 import ActivityForm from "./components/ActivityForm";
 import CalendarView from "./components/CalendarView";
 import DashboardStats from "./components/DashboardStats";
 import Layout from "./components/Layout";
-import MemberList from "./components/MemberList";
+import LoginPage from "./components/LoginPage";
+import ProfessorDashboard from "./components/ProfessorDashboard";
 import StatusMessage from "./components/StatusMessage";
 import TimelineView from "./components/TimelineView";
-import type { Activity, Project, User } from "./types";
+import type { Activity, AuthSession, Project, User } from "./types";
 
-function usePathname(): string {
+function useNavigation(): [string, (path: string, replace?: boolean) => void] {
   const [pathname, setPathname] = useState(window.location.pathname);
 
   useEffect(() => {
@@ -32,44 +34,13 @@ function usePathname(): string {
     };
   }, []);
 
-  return pathname;
-}
-
-function LandingPage() {
-  const [users, setUsers] = useState<User[]>([]);
-  const [error, setError] = useState("");
-
-  useEffect(() => {
-    getUsers()
-      .then(setUsers)
-      .catch((requestError: Error) => setError(requestError.message));
+  const navigate = useCallback((path: string, replace = false) => {
+    if (replace) window.history.replaceState({}, "", path);
+    else window.history.pushState({}, "", path);
+    setPathname(path);
   }, []);
 
-  return (
-    <section className="landing-page">
-      <div className="hero">
-        <p className="eyebrow">University team workspace</p>
-        <h1>
-          Build together.
-          <br />
-          <em>Track progress.</em>
-        </h1>
-        <p className="hero-copy">
-          A shared home for the team&apos;s daily work, personal projects, and next steps.
-        </p>
-      </div>
-      <div className="section-heading">
-        <div>
-          <p className="eyebrow">The team</p>
-          <h2>Meet the members</h2>
-        </div>
-        <span className="member-count">{users.length.toString().padStart(2, "0")} members</span>
-      </div>
-      {error ? <StatusMessage error>{error}</StatusMessage> : null}
-      {!error && users.length === 0 ? <StatusMessage>Loading team members…</StatusMessage> : null}
-      {users.length > 0 ? <MemberList users={users} /> : null}
-    </section>
-  );
+  return [pathname, navigate];
 }
 
 interface TeamState {
@@ -78,7 +49,7 @@ interface TeamState {
   projects: Project[];
 }
 
-function UserPage({ userId }: { userId: string }) {
+function UserPage({ userId, readOnly }: { userId: string; readOnly: boolean }) {
   const [state, setState] = useState<TeamState>({ users: [], activities: [], projects: [] });
   const [error, setError] = useState("");
   const [editing, setEditing] = useState<Activity | null>(null);
@@ -93,15 +64,17 @@ function UserPage({ userId }: { userId: string }) {
   }
 
   useEffect(() => {
+    setError("");
+    setEditing(null);
     loadData().catch((requestError: Error) => setError(requestError.message));
-  }, []);
+  }, [userId]);
 
   const user = state.users.find((candidate) => candidate.id === userId);
   const activities = state.activities.filter((activity) => activity.userId === userId);
   const projects = state.projects.filter((project) => project.userId === userId);
 
   async function removeActivity(activity: Activity) {
-    if (!window.confirm(`Delete "${activity.title}"?`)) return;
+    if (readOnly || !window.confirm(`Delete "${activity.title}"?`)) return;
     try {
       await deleteActivity(activity.id);
       if (editing?.id === activity.id) setEditing(null);
@@ -118,22 +91,23 @@ function UserPage({ userId }: { userId: string }) {
       <div className="empty-state">
         <p className="eyebrow">404</p>
         <h1>User not found</h1>
-        <a className="text-link" href="/" data-link>
-          Back to the team
-        </a>
       </div>
     );
   }
 
   return (
     <section className="user-page">
-      <a className="back-link" href="/" data-link>
-        ← All members
-      </a>
+      {readOnly ? (
+        <a className="back-link" href="/professor" data-link>
+          ← Professor dashboard
+        </a>
+      ) : null}
       <div className="profile-header dashboard-profile">
         <span className="profile-avatar">{user.name.charAt(0)}</span>
         <div>
-          <p className="eyebrow">Member dashboard</p>
+          <p className="eyebrow">
+            {readOnly ? "Professor · read-only member view" : "Member dashboard"}
+          </p>
           <h1>{user.name}</h1>
           <p className="role-label">{user.role}</p>
         </div>
@@ -141,18 +115,24 @@ function UserPage({ userId }: { userId: string }) {
 
       <DashboardStats activities={activities} projects={projects} />
 
-      <div className="dashboard-grid">
-        <ActivityForm
-          userId={userId}
-          projects={projects}
-          editing={editing}
-          onSaved={loadData}
-          onCancelEdit={() => setEditing(null)}
-        />
+      <div className={`dashboard-grid ${readOnly ? "read-only-dashboard-grid" : ""}`}>
+        {!readOnly ? (
+          <ActivityForm
+            userId={userId}
+            projects={projects}
+            editing={editing}
+            onSaved={loadData}
+            onCancelEdit={() => setEditing(null)}
+          />
+        ) : null}
         <CalendarView activities={activities} />
       </div>
 
-      <TimelineView activities={activities} onEdit={setEditing} onDelete={removeActivity} />
+      <TimelineView
+        activities={activities}
+        onEdit={readOnly ? undefined : setEditing}
+        onDelete={readOnly ? undefined : removeActivity}
+      />
 
       <section className="dashboard-card projects-card">
         <div className="section-heading compact">
@@ -184,24 +164,75 @@ function UserPage({ userId }: { userId: string }) {
 }
 
 export default function App() {
-  const pathname = usePathname();
+  const [pathname, navigate] = useNavigation();
+  const [session, setSession] = useState<AuthSession | null | undefined>(undefined);
+
+  useEffect(() => {
+    getMe()
+      .then((current) => {
+        setSession(current);
+        if (current.role === "student" && current.userId) {
+          navigate(`/users/${current.userId}`, true);
+        } else if (current.role === "professor" && window.location.pathname === "/") {
+          navigate("/professor", true);
+        }
+      })
+      .catch(() => setSession(null));
+  }, [navigate]);
+
+  async function signOut() {
+    try {
+      await logout();
+    } finally {
+      setSession(null);
+      navigate("/", true);
+    }
+  }
+
+  if (session === undefined) {
+    return (
+      <Layout>
+        <StatusMessage>Checking session…</StatusMessage>
+      </Layout>
+    );
+  }
+
+  if (session === null) {
+    return (
+      <Layout>
+        <LoginPage
+          onLogin={(current) => {
+            setSession(current);
+            navigate(
+              current.role === "professor" ? "/professor" : `/users/${current.userId}`,
+              true,
+            );
+          }}
+        />
+      </Layout>
+    );
+  }
+
   const userMatch = pathname.match(/^\/users\/([^/]+)\/?$/);
+  let content: ReactNode;
+
+  if (session.role === "student") {
+    if (!session.userId) {
+      content = (
+        <StatusMessage error>Student account is not linked to a tracked user.</StatusMessage>
+      );
+    } else {
+      content = <UserPage userId={session.userId} readOnly={false} />;
+    }
+  } else if (userMatch) {
+    content = <UserPage userId={userMatch[1]} readOnly />;
+  } else {
+    content = <ProfessorDashboard />;
+  }
 
   return (
-    <Layout>
-      {pathname === "/" ? (
-        <LandingPage />
-      ) : userMatch ? (
-        <UserPage userId={userMatch[1]} />
-      ) : (
-        <div className="empty-state">
-          <p className="eyebrow">404</p>
-          <h1>Page not found</h1>
-          <a className="text-link" href="/" data-link>
-            Back home
-          </a>
-        </div>
-      )}
+    <Layout session={session} onLogout={signOut}>
+      {content}
     </Layout>
   );
 }

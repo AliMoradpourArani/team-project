@@ -24,9 +24,12 @@ def test_initialize_database_creates_schema_from_scratch(tmp_path):
         "002_create_activities",
         "003_create_projects",
         "004_add_activity_status",
+        "005_create_auth",
     ]
     with connect(database_path) as connection:
-        assert row_count(connection, "schema_migrations") == 4
+        assert row_count(connection, "schema_migrations") == 5
+        assert row_count(connection, "auth_accounts") == 0
+        assert row_count(connection, "auth_sessions") == 0
 
 
 def test_migrations_are_idempotent(tmp_path):
@@ -101,23 +104,23 @@ def test_path_traversal_user_id_is_rejected():
 
 
 def test_duplicate_migration_prefix_is_rejected(tmp_path):
-    """Two branches adding 005_*.sql must never merge into silent data loss."""
+    """Two branches adding the same migration number must fail loudly."""
     from backend.database.init_db import MIGRATIONS_ROOT
     from backend.database.source_files import REPOSITORY_ROOT
 
-    first = MIGRATIONS_ROOT / "005_first.sql"
-    second = MIGRATIONS_ROOT / "005_second.sql"
+    first = MIGRATIONS_ROOT / "006_first.sql"
+    second = MIGRATIONS_ROOT / "006_second.sql"
     first.write_text("CREATE TABLE first_probe (id TEXT);", encoding="utf-8")
     second.write_text("CREATE TABLE second_probe (id TEXT);", encoding="utf-8")
     try:
-        with pytest.raises(RuntimeError, match="Duplicate migration prefix '005'"):
+        with pytest.raises(RuntimeError, match="Duplicate migration prefix '006'"):
             initialize_database(tmp_path / "fresh.db")
         with connect(tmp_path / "fresh.db") as connection:
             assert row_count(connection, "schema_migrations") == 0
     finally:
         first.unlink()
         second.unlink()
-    assert not list(REPOSITORY_ROOT.glob("backend/database/migrations/005_*.sql"))
+    assert not list(REPOSITORY_ROOT.glob("backend/database/migrations/006_*.sql"))
 
 
 def test_sync_deletes_rows_removed_from_source_files(tmp_path, monkeypatch):
@@ -147,7 +150,6 @@ def test_sync_deletes_rows_removed_from_source_files(tmp_path, monkeypatch):
         assert row_count(connection, "users") == 1
         assert row_count(connection, "activities") == 1
 
-    # The user deletes the tracked activity file, then syncs again.
     (user_dir / "2026-01-01.json").unlink()
     with connect(database_path) as connection:
         sync_source_data(connection)

@@ -191,7 +191,7 @@ export default function App() {
 
   if (session === undefined) {
     return (
-      <Layout>
+      <Layout currentPath={pathname}>
         <StatusMessage>Checking session…</StatusMessage>
       </Layout>
     );
@@ -214,6 +214,7 @@ export default function App() {
   }
 
   const userMatch = pathname.match(/^\/users\/([^/]+)\/?$/);
+  const aliWorkspaceMatch = pathname.match(/^\/ali-workspace\/?$/);
   let content: ReactNode;
 
   if (session.role === "student") {
@@ -221,17 +222,29 @@ export default function App() {
       content = (
         <StatusMessage error>Student account is not linked to a tracked user.</StatusMessage>
       );
+    } else if (aliWorkspaceMatch && session.userId !== "ali") {
+      content = (
+        <div className="empty-state">
+          <p className="eyebrow">403</p>
+          <h1>Not your workspace</h1>
+          <a className="text-link" href={`/users/${session.userId}`} data-link>
+            Back to your dashboard
+          </a>
+        </div>
+      );
     } else {
       content = <UserPage userId={session.userId} readOnly={false} />;
     }
   } else if (userMatch) {
     content = <UserPage userId={userMatch[1]} readOnly />;
+  } else if (aliWorkspaceMatch) {
+    content = <UserPage userId="ali" readOnly />;
   } else {
     content = <ProfessorDashboard />;
   }
 
   return (
-    <Layout session={session} onLogout={signOut}>
+    <Layout session={session} onLogout={signOut} currentPath={pathname}>
       {content}
     </Layout>
   );

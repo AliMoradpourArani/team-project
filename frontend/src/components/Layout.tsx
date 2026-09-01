@@ -6,15 +6,38 @@ interface Props {
   children: ReactNode;
   session?: AuthSession | null;
   onLogout?: () => void;
+  currentPath?: string;
 }
 
-export default function Layout({ children, session, onLogout }: Props) {
+export default function Layout({ children, session, onLogout, currentPath = "/" }: Props) {
+  const tabs = [
+    { href: "/", label: "Home" },
+    { href: "/ali-workspace", label: "Ali-Workspace" },
+  ];
+  const normalizedPath = currentPath.replace(/\/+$/, "") || "/";
+
   return (
     <div className="app-shell">
       <header className="site-header">
         <a className="brand" href="/" data-link>
           Team Project
         </a>
+        <nav className="site-nav" aria-label="Main navigation">
+          {tabs.map((tab) => {
+            const isActive = normalizedPath === tab.href;
+            return (
+              <a
+                className={`nav-tab${isActive ? " nav-tab-active" : ""}`}
+                href={tab.href}
+                data-link
+                key={tab.href}
+                aria-current={isActive ? "page" : undefined}
+              >
+                {tab.label}
+              </a>
+            );
+          })}
+        </nav>
         {session ? (
           <div className="header-session">
             <span className="header-label">

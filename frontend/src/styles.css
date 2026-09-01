@@ -45,6 +45,26 @@ a {
   font-weight: 700;
   letter-spacing: -0.03em;
 }
+.site-nav {
+  display: flex;
+  gap: 18px;
+}
+.nav-tab {
+  color: #66736c;
+  font-family: "DM Mono", monospace;
+  font-size: 0.76rem;
+  text-transform: uppercase;
+  text-decoration: none;
+  padding: 4px 2px;
+  border-bottom: 2px solid transparent;
+}
+.nav-tab:hover {
+  color: #4f806b;
+}
+.nav-tab-active {
+  color: #2c3a33;
+  border-bottom-color: #4f806b;
+}
 .header-label,
 .member-count,
 time {

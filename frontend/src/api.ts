@@ -5,6 +5,8 @@ import type {
   ProfessorDashboardData,
   ProfessorGitHubDashboardData,
   Project,
+  ProjectIntegration,
+  ProjectRunResult,
   User,
 } from "./types";
 
@@ -71,10 +73,16 @@ export async function logout(): Promise<void> {
 export const getUsers = (): Promise<User[]> => getCollection<User>("users");
 export const getActivities = (): Promise<Activity[]> => getCollection<Activity>("activities");
 export const getProjects = (): Promise<Project[]> => getCollection<Project>("projects");
+export const getProjectIntegrations = (): Promise<ProjectIntegration[]> =>
+  request<ProjectIntegration[]>("/api/projects/integrations");
 export const getProfessorDashboard = (): Promise<ProfessorDashboardData> =>
   request<ProfessorDashboardData>("/api/professor/dashboard");
 export const getProfessorGitHubDashboard = (): Promise<ProfessorGitHubDashboardData> =>
   request<ProfessorGitHubDashboardData>("/api/professor/github");
+
+export async function runProject(projectId: string): Promise<ProjectRunResult> {
+  return request<ProjectRunResult>(`/api/projects/${projectId}/run`, { method: "POST" });
+}
 
 export async function createActivity(payload: ActivityInput): Promise<Activity> {
   return request<Activity>("/api/activities", {

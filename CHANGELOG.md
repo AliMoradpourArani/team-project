@@ -6,6 +6,13 @@ All notable project changes are recorded here. The project follows a lightweight
 
 ### Added
 
+- Phase 5 controlled Project Integration / Runner for reviewed member projects
+- validated `project.json` execution contract with authoritative project/owner matching
+- allowlisted `python-script-v1` runner that derives argv server-side and never executes manifest shell strings
+- professor/student project integration status in the dashboard (`ready`, `not-integrated`, `invalid`)
+- structured project run results with exit status, duration, timeout state, stdout/stderr, and response truncation metadata
+- opt-in runner configuration with timeout/output limits and Docker read-only project source mount
+- project runner backend/frontend tests, security documentation, and ADR 0004
 - read-only professor GitHub integration for the configured repository
 - explicit optional `github_username` mapping in tracked user data
 - per-member recent commit, pull-request, merged-PR, and open-PR metrics
@@ -26,14 +33,17 @@ All notable project changes are recorded here. The project follows a lightweight
 
 ### Changed
 
+- executable member-project paths are now CODEOWNERS-protected because reviewed repository code may be run locally
+- the example project manifest now links to authoritative project id `team-foundation` and uses `runner: python-script-v1`
+- Docker mounts `./projects` read-only into the backend container
 - user runtime schema now carries optional GitHub identity mapping via append-only migration 006
 - `httpx` is a runtime dependency because the backend owns external GitHub reads
 - Docker forwards GitHub configuration and an optional runtime-only token to the backend
 - browser E2E disables GitHub network access so CI remains deterministic
 - protected API collections require authentication and filter by role
-- professor access is explicitly read-only
+- professor access is explicitly read-only for shared application data
 - CORS allows credentials only for configured explicit origins
-- CODEOWNERS covers authentication, professor dashboard, and GitHub integration paths
+- CODEOWNERS covers authentication, professor dashboard, GitHub integration, and project runner paths
 
 ## 0.2.5 - 2026-09-01
 

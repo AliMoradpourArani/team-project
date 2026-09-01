@@ -34,6 +34,31 @@ export interface Project {
   status: string;
 }
 
+export interface ProjectIntegration {
+  projectId: string;
+  userId: string;
+  name: string;
+  integrationStatus: "ready" | "not-integrated" | "invalid";
+  runnerEnabled: boolean;
+  runnable: boolean;
+  projectType: string | null;
+  runner: string | null;
+  entryPoint: string | null;
+  repositoryPath: string | null;
+  reason: string | null;
+}
+
+export interface ProjectRunResult {
+  projectId: string;
+  runner: string;
+  exitCode: number | null;
+  timedOut: boolean;
+  durationMs: number;
+  stdout: string;
+  stderr: string;
+  outputTruncated: boolean;
+}
+
 export interface AuthSession {
   username: string;
   displayName: string;

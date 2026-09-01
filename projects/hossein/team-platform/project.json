@@ -1,12 +1,11 @@
 {
-  "id": "team-platform",
-  "name": "Team Platform",
+  "id": "team-foundation",
+  "name": "Team Project Foundation",
   "owner_id": "hossein",
-  "description": "Example manifest demonstrating the student project contract.",
+  "description": "Runnable demonstration for the shared team platform project.",
   "technology": ["python"],
   "project_type": "cli",
+  "runner": "python-script-v1",
   "entry_point": "main.py",
-  "run": "python main.py",
-  "build": null,
   "repository_path": "projects/hossein/team-platform"
 }

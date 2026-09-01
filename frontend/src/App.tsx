@@ -8,6 +8,7 @@ import DashboardStats from "./components/DashboardStats";
 import Layout from "./components/Layout";
 import LoginPage from "./components/LoginPage";
 import ProfessorDashboard from "./components/ProfessorDashboard";
+import ProjectPanel from "./components/ProjectPanel";
 import StatusMessage from "./components/StatusMessage";
 import TimelineView from "./components/TimelineView";
 import type { Activity, AuthSession, Project, User } from "./types";
@@ -134,31 +135,7 @@ function UserPage({ userId, readOnly }: { userId: string; readOnly: boolean }) {
         onDelete={readOnly ? undefined : removeActivity}
       />
 
-      <section className="dashboard-card projects-card">
-        <div className="section-heading compact">
-          <div>
-            <p className="eyebrow">Projects</p>
-            <h2>Connected work</h2>
-          </div>
-          <span className="member-count">{projects.length}</span>
-        </div>
-        {projects.length > 0 ? (
-          <div className="project-list">
-            {projects.map((project) => (
-              <article className="project-item" key={project.id}>
-                <span className="project-mark">↗</span>
-                <div>
-                  <h3>{project.name}</h3>
-                  <p>{project.description}</p>
-                  <small>{project.technology.join(" · ") || "No technology listed"}</small>
-                </div>
-              </article>
-            ))}
-          </div>
-        ) : (
-          <StatusMessage>No projects recorded yet.</StatusMessage>
-        )}
-      </section>
+      <ProjectPanel projects={projects} />
     </section>
   );
 }

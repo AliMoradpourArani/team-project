@@ -1,8 +1,8 @@
 # Team Project
 
-A local-first university team platform for recording daily work, presenting individual progress, integrating student projects, and giving the professor a clear read-only view of the team.
+A local-first university team platform for recording daily work, presenting individual progress, integrating reviewed member projects, and giving the professor a clear team view.
 
-The application is designed as one shared platform, not one duplicated website per student. Shared features such as authentication, activities, calendar, timeline, dashboards, and GitHub integration are implemented once and become user-specific through data and authorization.
+The application is one shared platform, not one duplicated website per student. Authentication, activities, calendar, timeline, dashboards, GitHub integration, and project execution are implemented once and become user-specific through data and authorization.
 
 ## Current status
 
@@ -10,10 +10,10 @@ The application is designed as one shared platform, not one duplicated website p
 | --- | --- | --- |
 | Phase 1 | ✅ Complete | FastAPI/React/SQLite foundation, migrations, reproducible setup, Git workflow |
 | Phase 2 | ✅ Complete | Activity CRUD, calendar, timeline, personal dashboard, Git-tracked activity writes |
-| Phase 2.5 | ✅ Complete | E2E testing, coverage gates, security scanning, CODEOWNERS, Dependabot, observability, optional AI PR review |
+| Phase 2.5 | ✅ Complete | E2E, coverage gates, security scanning, CODEOWNERS, Dependabot, observability, optional AI PR review |
 | Phase 3 | ✅ Complete | Local authentication, student/professor authorization, CSRF protection, professor dashboard |
 | Phase 4 | ✅ Complete | Read-only GitHub integration, repository status, commit/PR metrics, contribution timeline |
-| Project Runner | ⏳ Planned | Controlled execution/integration of each member's specialized project |
+| Phase 5 | ✅ Complete | Validated Project Integration / Runner for reviewed member projects |
 
 ## What the platform does
 
@@ -26,27 +26,32 @@ Each student signs in to a protected personal workspace and can:
 - browse work through a calendar
 - review activity history in a timeline
 - see their assigned/integrated projects
-- keep shared activity data Git-visible for review and version history
+- inspect project integration state (`ready`, `not-integrated`, `invalid`)
+- run their own reviewed project demo when the local runner is explicitly enabled
+- keep shared activity/project metadata Git-visible for review and version history
 
-A student cannot access another student's protected data by changing a URL or API parameter.
+A student cannot access another student's protected data or runner endpoint by changing a URL or API parameter.
 
 ### Professor experience
 
-The professor gets a read-only team view with:
+The professor gets a team view with:
 
 - team-wide progress and completion totals
 - recent activities across members
 - member drill-down dashboards
-- project summaries
+- project summaries and integration state
 - GitHub repository status
 - per-member recent commit and pull-request metrics
 - a combined GitHub contribution timeline
+- controlled execution of reviewed project demos when the local runner is enabled
 
-GitHub metrics are treated as repository signals, not as a productivity score.
+The professor remains read-only for shared student data. Invoking a reviewed demo returns runtime output but does not intentionally write project metadata or activities.
+
+GitHub metrics are repository signals, not productivity scores.
 
 ## Architecture
 
-The project uses a **modular monolith**. There are no microservices.
+The project uses a **modular monolith**.
 
 ```text
                          Team Project
@@ -58,10 +63,14 @@ The project uses a **modular monolith**. There are no microservices.
               │                               │
               └────────────── API ────────────┘
                                               │
-                         ┌────────────────────┼────────────────────┐
-                         │                    │                    │
-                   Git-tracked JSON        SQLite              GitHub API
-                   shared source data     runtime DB          read-only data
+                 ┌────────────────────────────┼──────────────────────────┐
+                 │                            │                          │
+          Git-tracked JSON                  SQLite                   GitHub API
+          shared source data              runtime DB               read-only data
+                 │
+                 └── projects/<owner>/<project>/
+                             │
+                             └── validated allowlisted runner (opt-in)
 ```
 
 Core technology:
@@ -70,17 +79,25 @@ Core technology:
 - **Backend:** FastAPI + Pydantic
 - **Database:** SQLite with ordered SQL migrations
 - **Shared source data:** Git-tracked JSON under `data/`
-- **Authentication:** local accounts, Argon2 password hashing, server-side sessions
-- **External integration:** read-only GitHub API client with short-lived cache
+- **Authentication:** Argon2 passwords + server-side sessions + CSRF
+- **GitHub integration:** read-only API client with short-lived cache
+- **Project integration:** validated manifest + allowlisted runner contract
 - **Testing:** pytest, Vitest, Playwright
-- **Quality/security:** Ruff, ESLint, Prettier, TypeScript checks, dependency audits, CodeQL
+- **Quality/security:** Ruff, ESLint, Prettier, TypeScript, dependency audits, CodeQL
 - **Runtime:** native development or Docker Compose
 
-Detailed architecture lives in [docs/architecture.md](docs/architecture.md), [docs/authentication.md](docs/authentication.md), [docs/github-integration.md](docs/github-integration.md), and [docs/adr/](docs/adr/).
+Detailed docs:
 
-## Data model and source of truth
+- [Architecture](docs/architecture.md)
+- [Authentication](docs/authentication.md)
+- [GitHub integration](docs/github-integration.md)
+- [Project contract](docs/project-contract.md)
+- [Project runner](docs/project-runner.md)
+- [Architecture decisions](docs/adr/)
 
-Shared project data is intentionally Git-visible:
+## Source of truth
+
+Shared project data is Git-visible:
 
 ```text
 data/
@@ -89,55 +106,42 @@ data/
 └── projects/<project_id>.json
 ```
 
-These JSON files are the authoritative shared source for:
-
-- users
-- activities
-- projects
-- optional GitHub username mappings
-
-SQLite is a derived runtime representation for shared data and also stores private local authentication state.
+These files are authoritative for users, activities, project metadata, and optional GitHub identity mappings. SQLite is the runtime representation and also stores private local authentication state.
 
 ```text
-JSON source files
+Git-tracked JSON
       │
       ▼
-  db-sync
+   db-sync
       │
       ▼
-   SQLite
+    SQLite
       │
       ▼
- FastAPI API
+  FastAPI API
       │
       ▼
- React UI
+   React UI
 ```
 
-Passwords, password hashes, sessions, and secrets are **never** stored in Git-tracked user JSON.
+Passwords, password hashes, sessions, API tokens, and other secrets are never stored in Git-tracked user JSON.
 
 ## Repository structure
 
 ```text
 team-project/
-├── frontend/                 # React/Vite/TypeScript application
-│   └── src/
+├── frontend/                  # React/Vite/TypeScript UI
 ├── backend/
-│   ├── auth/                 # Local account bootstrap
-│   ├── app/                  # FastAPI app, routes, auth dependencies, observability
-│   ├── schemas/              # API/auth/source-data/GitHub contracts
-│   ├── services/             # Business logic and integrations
-│   └── database/
-│       ├── migrations/       # Ordered SQL migrations
-│       ├── init_db.py
-│       ├── sync_data.py
-│       └── source_files.py
-├── data/                     # Authoritative Git-tracked shared data
-├── e2e/                      # Playwright browser flows
-├── projects/<owner>/<name>/  # Member projects and manifests
-├── scripts/
+│   ├── auth/                  # Local account bootstrap
+│   ├── app/                   # FastAPI routes/dependencies/observability
+│   ├── schemas/               # API/source/auth/GitHub/runner contracts
+│   ├── services/              # Business logic and integrations
+│   └── database/              # SQLite migrations/init/sync
+├── data/                      # Authoritative shared data
+├── projects/<owner>/<name>/   # Reviewed member project source + project.json
+├── e2e/                       # Playwright flows
+├── tests/                     # Backend tests
 ├── docs/
-├── tests/
 ├── .github/
 ├── CHANGELOG.md
 ├── SECURITY.md
@@ -147,7 +151,7 @@ team-project/
 
 ## Prerequisites
 
-For native development:
+Native development:
 
 - Git
 - Python 3.11+ (3.12+ recommended)
@@ -158,28 +162,16 @@ Docker is optional.
 
 ## Quick start: native
 
-Clone and bootstrap the project:
-
 ```bash
 git clone https://github.com/HoosseinRahimi/team-project.git
 cd team-project
 make setup
-```
-
-Initialize/reconcile the database:
-
-```bash
 make db-init
 make db-sync
-```
-
-Create local login accounts:
-
-```bash
 make auth-bootstrap
 ```
 
-Run the bootstrap once for each student account and once for the professor account. A student account must link to an existing tracked `user_id` such as `hossein`, `ali`, or `reza`.
+Run `make auth-bootstrap` once for each student account and once for the professor account. A student account must link to an existing tracked `user_id`.
 
 Start the backend:
 
@@ -203,19 +195,20 @@ Open:
 
 ```bash
 docker compose up -d --build
-```
-
-Create accounts inside the backend container:
-
-```bash
 docker compose exec backend python -m backend.auth.bootstrap
 ```
 
 Then open <http://localhost:5173>.
 
-Docker bind-mounts `./data:/app/data`, so shared activity changes remain visible to Git. Runtime SQLite/authentication state is stored separately in the `team-runtime` named volume.
+Docker mounts:
 
-Stop the stack with:
+```text
+./data     -> /app/data       (read/write, Git-visible shared data)
+./projects -> /app/projects   (read-only project source)
+team-runtime -> /app/runtime  (private SQLite/auth runtime state)
+```
+
+Stop with:
 
 ```bash
 docker compose down
@@ -227,23 +220,20 @@ Use `docker compose down -v` only when you intentionally want to delete local ru
 
 ### Student
 
-A student account:
-
-- is linked to exactly one tracked user
-- can read its own protected user/activity/project data
-- can modify only its own activities
-- cannot open professor endpoints
-- cannot impersonate another member with a URL/API parameter
+- linked to exactly one tracked user
+- reads only their own protected user/activity/project data
+- modifies only their own activities
+- can inspect only their visible project integrations
+- can invoke the runner only for their own project
+- cannot access professor endpoints
 
 ### Professor
 
-The professor account:
-
-- can view all team members
-- can inspect team activity/project summaries
-- can drill into member dashboards
-- can view read-only GitHub contribution analytics
-- is intentionally read-only for student work
+- views all team members and project/activity summaries
+- drills into member dashboards
+- views GitHub contribution analytics
+- can invoke reviewed project demos when execution is enabled
+- does not receive normal write access to student activities/project metadata
 
 Authentication endpoints:
 
@@ -260,15 +250,9 @@ GET /api/professor/dashboard
 GET /api/professor/github
 ```
 
-Session cookies are HttpOnly and SameSite=Lax. Unsafe authenticated requests also require the CSRF token in `X-CSRF-Token`.
-
-See [docs/authentication.md](docs/authentication.md).
+Session cookies are HttpOnly and SameSite=Lax. Unsafe authenticated requests require `X-CSRF-Token`.
 
 ## Activities, calendar, and timeline
-
-Activities are shared source data with stable IDs and per-user ownership.
-
-Protected activity endpoints include:
 
 ```text
 GET    /api/activities
@@ -277,32 +261,11 @@ PUT    /api/activities/{activity_id}
 DELETE /api/activities/{activity_id}
 ```
 
-Web/API writes update the authoritative activity JSON and reconcile the runtime database, keeping the normal academic workflow Git-visible:
-
-```text
-Student updates work
-       │
-       ▼
-Git-tracked JSON
-       │
-       ▼
-commit → PR → merge main
-       │
-       ▼
-Professor git pull
-       │
-       ▼
-make db-sync / application startup
-       │
-       ▼
-Updated website data
-```
+Activity writes update authoritative Git-tracked JSON and then reconcile SQLite.
 
 ## GitHub integration
 
-Phase 4 adds a professor-only, read-only GitHub view.
-
-A tracked user can optionally declare an explicit GitHub identity:
+A user can declare an explicit mapping:
 
 ```json
 {
@@ -313,25 +276,9 @@ A tracked user can optionally declare an explicit GitHub identity:
 }
 ```
 
-Then reconcile the data:
+The application never guesses GitHub accounts from names/emails. Unlinked members stay explicit.
 
-```bash
-make db-sync
-```
-
-The application never guesses GitHub accounts from display names or email addresses. Members without a mapping remain visible as **not linked**.
-
-The professor GitHub panel shows:
-
-- repository/default-branch status
-- open pull requests
-- recent default-branch commits
-- commit counts for linked members
-- authored/merged/open pull-request counts
-- latest contribution timestamp
-- recent combined commit/PR timeline
-
-Default configuration:
+Default runtime configuration:
 
 ```text
 GITHUB_INTEGRATION_ENABLED=true
@@ -340,46 +287,99 @@ GITHUB_CACHE_TTL_SECONDS=60
 GITHUB_API_TIMEOUT_SECONDS=5
 ```
 
-Public repositories can work without a token. To increase rate limits or access a private repository, provide a read-only token at runtime:
+Public repositories work without a token at lower rate limits. For private access/higher limits, export a read-only `GITHUB_TOKEN` at runtime. Never commit it.
 
-```bash
-export GITHUB_TOKEN='...'
+## Project Integration / Runner
+
+Each executable member project has two linked pieces:
+
+1. authoritative metadata under `data/projects/<project_id>.json`
+2. source + validated manifest under `projects/<owner>/<project-directory>/project.json`
+
+Example manifest:
+
+```json
+{
+  "id": "team-foundation",
+  "name": "Team Project Foundation",
+  "owner_id": "hossein",
+  "description": "Runnable demonstration for the shared team platform project.",
+  "technology": ["python"],
+  "project_type": "cli",
+  "runner": "python-script-v1",
+  "entry_point": "main.py",
+  "repository_path": "projects/hossein/team-platform"
+}
 ```
 
-Never commit `GITHUB_TOKEN`.
+Phase 5 intentionally supports only:
 
-If GitHub is unavailable or rate-limited, the core professor dashboard remains available and the GitHub panel degrades to an offline-safe state.
+```text
+project_type = cli
+runner       = python-script-v1
+```
 
-See [docs/github-integration.md](docs/github-integration.md).
+The backend derives argv itself and runs:
+
+```text
+<backend-python> -B <validated-entry-point>
+```
+
+It does **not** execute manifest fields such as `run`, `build`, `command`, or arbitrary shell text. Such extra fields are rejected.
+
+Project endpoints:
+
+```text
+GET  /api/projects
+GET  /api/projects/integrations
+POST /api/projects/{project_id}/run
+```
+
+Execution is disabled by default:
+
+```text
+PROJECT_RUNNER_ENABLED=false
+PROJECT_RUNNER_TIMEOUT_SECONDS=5
+PROJECT_RUNNER_OUTPUT_LIMIT=16000
+```
+
+After the executable code has passed PR/CI/review, a local demo can opt in:
+
+```bash
+export PROJECT_RUNNER_ENABLED=true
+```
+
+or with Docker:
+
+```bash
+PROJECT_RUNNER_ENABLED=true docker compose up -d --build
+```
+
+### Important security boundary
+
+The runner prevents manifest-driven shell execution, validates ownership/paths, rejects symlinked executable paths, uses `shell=False`, limits runtime/output returned to the UI, and mounts project source read-only in Docker.
+
+It is **not a sandbox for hostile code**. Reviewed Python code can still use operating-system/network permissions available to the backend process. Do not enable the runner for untrusted submissions. A future untrusted-code feature would require a dedicated isolated execution service/container boundary.
+
+See [docs/project-runner.md](docs/project-runner.md) and [ADR 0004](docs/adr/0004-controlled-project-runner.md).
 
 ## Database commands
 
 ```bash
-make db-init        # Apply migrations and initialize the database
-make db-sync        # Reconcile Git-tracked shared data into SQLite
-make db-reset       # Delete the native local development database
+make db-init
+make db-sync
+make db-reset
 ```
 
-Equivalent Python commands:
-
-```bash
-.venv/bin/python -m backend.database.init_db --seed
-.venv/bin/python -m backend.database.sync_data
-```
-
-Merged migrations are append-only. Do not rewrite an already merged migration.
-
-See [docs/database-rules.md](docs/database-rules.md).
+Merged SQL migrations are append-only. Do not rewrite a migration that has already landed on `main`.
 
 ## Testing and quality gates
-
-Run the normal test suite:
 
 ```bash
 make test
 ```
 
-Useful individual checks:
+Individual checks:
 
 ```bash
 .venv/bin/python -m pytest -q
@@ -391,35 +391,29 @@ npm test --prefix frontend
 npm run build --prefix frontend
 ```
 
-CI currently covers:
+CI covers:
 
-- unresolved conflict-marker detection
-- backend lint/tests/coverage
-- fresh database initialization and synchronization
-- frontend lint/Prettier/TypeScript/unit tests/build
-- Playwright Chromium E2E flows
-- Python dependency audit
-- npm dependency audit
+- conflict-marker detection
+- backend lint/tests/coverage + fresh DB sync
+- frontend lint/Prettier/TypeScript/unit/build
+- Playwright Chromium E2E
+- Python/npm dependency audits
 - CodeQL for Python and JavaScript/TypeScript
 
-E2E tests disable external GitHub access so CI does not depend on GitHub API availability. GitHub aggregation is tested deterministically with fixtures/mocks.
+Executable project paths are CODEOWNERS-protected because any project code may become locally runnable after explicit enablement.
 
 ## Observability
-
-Public health checks:
 
 ```text
 GET /api/health
 GET /health
 ```
 
-API responses include an `X-Request-ID` correlation header. Request metadata is logged as structured JSON to make local debugging and integration failures easier to trace.
+API responses include `X-Request-ID`, and request metadata is logged as structured JSON.
 
 ## Configuration
 
-Copy/use `.env.example` as the reference configuration.
-
-Important values include:
+Use `.env.example` as the reference. Important values include:
 
 ```text
 AUTH_COOKIE_NAME=team_session
@@ -427,37 +421,33 @@ AUTH_COOKIE_SECURE=false
 AUTH_SESSION_HOURS=8
 GITHUB_INTEGRATION_ENABLED=true
 GITHUB_REPOSITORY=HoosseinRahimi/team-project
+PROJECT_RUNNER_ENABLED=false
+PROJECT_RUNNER_TIMEOUT_SECONDS=5
+PROJECT_RUNNER_OUTPUT_LIMIT=16000
 ```
 
-Set `AUTH_COOKIE_SECURE=true` when serving the application over HTTPS.
+Set `AUTH_COOKIE_SECURE=true` when serving over HTTPS.
 
 ## Git workflow
 
-`main` is the stable integration branch and should remain runnable for the professor at all times.
-
-Normal work flow:
+`main` is the stable integration branch and should remain runnable for the professor.
 
 ```text
 main
-  │
   └── feature/fix/docs branch
-          │
-          ▼
-       commits
-          │
-          ▼
-          PR
-          │
-       CI/review
-          │
-          ▼
+          ↓
+        commits
+          ↓
+           PR
+          ↓
+      CI + review
+          ↓
       squash merge
-          │
-          ▼
+          ↓
          main
 ```
 
-Branch naming:
+Branch names:
 
 ```text
 feature/<name>
@@ -470,12 +460,11 @@ chore/<name>
 
 Rules:
 
-- do not use direct `main` commits for normal development
-- update your feature branch from `main` before final merge when needed
-- resolve conflicts on the feature branch, not on `main`
-- do not force-push `main`
-- prefer focused PRs and squash merge
-- keep unrelated work out of the same PR
+- no normal development directly on `main`
+- resolve conflicts on feature branches
+- no force-push to `main`
+- prefer focused PRs + squash merge
+- executable project code must pass normal review/CI before local runner enablement
 
 Conventional Commit prefixes:
 
@@ -484,10 +473,6 @@ feat: fix: docs: refactor: test: chore: ci: build:
 ```
 
 ## Project direction
-
-The shared platform is intentionally implemented once. Team members do **not** build separate copies of Calendar, Timeline, Activity, Login, or Professor Dashboard.
-
-Instead:
 
 ```text
 Shared Platform
@@ -498,24 +483,23 @@ Shared Platform
 ├── Student Dashboard
 ├── Professor Dashboard
 ├── GitHub Integration
-└── Project Integration
+└── Project Integration / Runner
       ├── Member A specialized project
       ├── Member B specialized project
       └── Member C specialized project
 ```
 
-The next major platform feature is the controlled **Project Runner / Project Integration** layer, where member projects can be surfaced and eventually executed through an allowlisted, safe contract rather than arbitrary shell commands.
-
-See [docs/project-contract.md](docs/project-contract.md).
+Future runner expansion should add explicit, reviewed runner types rather than accepting arbitrary commands. If execution ever needs to accept untrusted code, it must move behind a stronger sandbox/isolation boundary.
 
 ## Documentation
 
 - [Architecture](docs/architecture.md)
 - [Authentication](docs/authentication.md)
 - [GitHub integration](docs/github-integration.md)
+- [Project contract](docs/project-contract.md)
+- [Project runner](docs/project-runner.md)
 - [Git workflow](docs/git-workflow.md)
 - [Database rules](docs/database-rules.md)
-- [Project contract](docs/project-contract.md)
 - [Branch protection](docs/branch-protection.md)
 - [Engineering quality](docs/engineering-quality.md)
 - [Architecture decision records](docs/adr/)
@@ -525,15 +509,15 @@ See [docs/project-contract.md](docs/project-contract.md).
 
 ## API conventions
 
-- Prefix application routes with `/api/`
-- Use plural resource names
-- Use typed Pydantic request/response contracts
-- Return structured errors
-- Unknown resources → `404`
-- Malformed input → `422`
-- Unauthenticated → `401`
-- Forbidden → `403`
-- Never trust a frontend-provided user ID as proof of authorization
-- Keep Git-tracked JSON authoritative for shared user/activity/project data
-- Keep credentials, sessions, and secrets in runtime-only state
-- Keep external integrations isolated, read-only where possible, and offline-safe
+- prefix application routes with `/api/`
+- use typed Pydantic request/response contracts
+- return structured errors
+- unknown resources -> `404`
+- malformed input -> `422`
+- unauthenticated -> `401`
+- forbidden -> `403`
+- never trust a frontend-provided user id as authorization proof
+- keep Git-tracked JSON authoritative for shared team data
+- keep credentials/sessions/secrets in runtime-only state
+- keep external integrations isolated/read-only where possible
+- never introduce arbitrary shell execution through project manifests

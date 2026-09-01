@@ -15,7 +15,7 @@ it or manually copy another developer's database.
 
 ```bash
 make db-init     # create DB from scratch, apply migrations (schema only)
-make db-sync     # idempotently upsert Git-tracked data/ into the DB
+make db-sync     # reconcile Git-tracked data/ into the DB
 make db-reset    # delete the local dev database (fixed safe path only)
 
 # equivalent direct commands:
@@ -26,8 +26,8 @@ make db-reset    # delete the local dev database (fixed safe path only)
 `init_db --seed` and `sync_data` are **idempotent**: running them repeatedly
 with unchanged repository data produces the same database state and never
 duplicates records. `sync_data` performs full **reconciliation**: rows whose
-source files were deleted are removed from the database, so SQLite always
-exactly mirrors `data/`.
+source records were deleted are removed from the database, so SQLite exactly
+mirrors the tracked source IDs under `data/`.
 
 ## Migration rules
 
@@ -49,6 +49,27 @@ exactly mirrors `data/`.
 ## Data authority
 
 For Git-shared team activities and project metadata, **the Git-tracked files
-under `data/` are authoritative**. The SQLite database is a local derived
-runtime representation. Never store shared activities only in SQLite: write the
-per-user/per-date JSON file (see `docs/project-contract.md`), then sync.
+under `data/` are authoritative**. SQLite is only a local derived runtime
+representation.
+
+Activity create/update/delete operations must follow this flow:
+
+```text
+validated API request
+        ↓
+data/activities/<user_id>/<date>.json
+        ↓
+database reconciliation
+        ↓
+SQLite runtime state
+```
+
+The activity write service updates the tracked JSON source atomically and then
+reconciles SQLite. If reconciliation fails, the source-file change is restored
+instead of leaving the repository and runtime database knowingly inconsistent.
+Stable activity IDs are authoritative: after a successful sync, the set of
+activity IDs in SQLite must equal the set currently present in tracked activity
+files.
+
+When running with Docker Compose, `./data` is bind-mounted into the backend
+container so web/API edits remain visible to Git on the host.

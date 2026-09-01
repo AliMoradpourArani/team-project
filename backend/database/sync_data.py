@@ -14,7 +14,6 @@ def sync_source_data(connection) -> dict[str, int]:
     """Make the derived database exactly match tracked source data."""
     users = load_users()
     projects = load_projects()
-    activities = [activity for file in load_activities() for activity in file.activities]
 
     with connection:
         connection.executemany(

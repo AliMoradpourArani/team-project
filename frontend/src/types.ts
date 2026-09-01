@@ -15,6 +15,14 @@ export interface Activity {
   projectId: string | null;
 }
 
+export interface ActivityInput {
+  userId: string;
+  date: string;
+  title: string;
+  status: ActivityStatus;
+  projectId: string | null;
+}
+
 export interface Project {
   id: string;
   userId: string;

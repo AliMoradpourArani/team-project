@@ -1,16 +1,4 @@
-"""Load and validate Git-tracked source data under ``data/``.
-
-The Git-tracked JSON files are the authoritative shared source for team
-information; the SQLite database is a local derived runtime representation.
-Every file is validated with the Pydantic contracts in
-:mod:`backend.schemas.source_data`. Malformed data fails with a useful error
-instead of silently corrupting state.
-
-Filesystem safety: all paths are resolved from the fixed repository ``data/``
-directory. User- or project-controlled identifiers are validated as strict
-slugs/ISO dates *before* being joined into paths, so values such as
-``../../etc/passwd`` can never escape the data directory.
-"""
+"""Load and validate Git-tracked source data under ``data/``."""
 
 from __future__ import annotations
 
@@ -37,12 +25,12 @@ class SourceDataError(ValueError):
 
 
 def _validated(path: Path, model, data: Any):
-    """Validate parsed JSON, wrapping all failures in SourceDataError."""
     try:
         return model.model_validate(data)
     except ValidationError as error:
         raise SourceDataError(
-            f"Invalid source data in {path}: {error.error_count()} validation error(s): {error.errors()[:3]}"
+            f"Invalid source data in {path}: {error.error_count()} validation error(s): "
+            f"{error.errors()[:3]}"
         ) from error
 
 
@@ -59,7 +47,6 @@ def _read_json(path: Path) -> Any:
 
 
 def _user_directory(user_id: str) -> Path:
-    """Resolve a per-user directory safely inside ``data/``."""
     validate_slug(user_id, "user id")
     directory = (DATA_ROOT / "activities" / user_id).resolve()
     expected_root = (DATA_ROOT / "activities").resolve()
@@ -74,7 +61,6 @@ def _activity_file_path(user_id: str, date: str) -> Path:
 
 
 def load_users() -> list[UserRecord]:
-    """Load every data/users/<id>.json file, sorted by id."""
     records: list[UserRecord] = []
     users_dir = DATA_ROOT / "users"
     for path in sorted(users_dir.glob("*.json")):
@@ -89,13 +75,11 @@ def load_users() -> list[UserRecord]:
 
 
 def load_activity_dates(user_id: str) -> list[str]:
-    """List ISO dates for which a user has an activity file."""
     directory = _user_directory(user_id)
     return sorted(path.stem for path in directory.glob("*.json"))
 
 
 def load_activities(user_id: str | None = None) -> list[ActivityFile]:
-    """Load per-user/per-date activity files, sorted by user then date."""
     if user_id is not None:
         user_ids = [user_id]
     else:
@@ -107,6 +91,7 @@ def load_activities(user_id: str | None = None) -> list[ActivityFile]:
         )
 
     files: list[ActivityFile] = []
+    seen_activity_ids: dict[str, Path] = {}
     for uid in user_ids:
         for date in load_activity_dates(uid):
             path = _activity_file_path(uid, date)
@@ -119,12 +104,18 @@ def load_activities(user_id: str | None = None) -> list[ActivityFile]:
                 raise SourceDataError(
                     f"{path}: date {data.date!r} does not match file name {date!r}."
                 )
+            for activity in data.activities:
+                previous = seen_activity_ids.get(activity.id)
+                if previous is not None:
+                    raise SourceDataError(
+                        f"Duplicate activity id {activity.id!r} in {previous} and {path}."
+                    )
+                seen_activity_ids[activity.id] = path
             files.append(data)
     return files
 
 
 def load_projects() -> list[ProjectRecord]:
-    """Load every data/projects/<id>.json file, sorted by id."""
     records: list[ProjectRecord] = []
     projects_dir = DATA_ROOT / "projects"
     for path in sorted(projects_dir.glob("*.json")):

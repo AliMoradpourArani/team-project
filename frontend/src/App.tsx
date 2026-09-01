@@ -188,11 +188,13 @@ export default function App() {
   const userMatch = pathname.match(/^\/users\/([^/]+)\/?$/);
 
   return (
-    <Layout>
+    <Layout currentPath={pathname}>
       {pathname === "/" ? (
         <LandingPage />
       ) : userMatch ? (
         <UserPage userId={userMatch[1]} />
+      ) : pathname === "/ali-workspace" ? (
+        <UserPage userId="ali" />
       ) : (
         <div className="empty-state">
           <p className="eyebrow">404</p>

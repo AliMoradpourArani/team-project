@@ -70,12 +70,11 @@ export default function ProjectPanel({ projects }: { projects: Project[] }) {
                     <span className={`runner-badge runner-${statusClass}`}>{statusLabel}</span>
                   </div>
 
-                  {integration ? (
-                    <div className="runner-controls">
-                      <span className="runner-contract">
-                        {integration.runner ?? "No runner"}
-                        {integration.entryPoint ? ` · ${integration.entryPoint}` : ""}
-                      </span>
+                  <div className="runner-controls">
+                    <a className="text-link" href={`/projects/${project.id}`} data-link>
+                      View project details
+                    </a>
+                    {integration ? (
                       <button
                         className="secondary-button runner-button"
                         type="button"
@@ -88,7 +87,14 @@ export default function ProjectPanel({ projects }: { projects: Project[] }) {
                             ? "Run demo"
                             : "Runner disabled"}
                       </button>
-                    </div>
+                    ) : null}
+                  </div>
+
+                  {integration ? (
+                    <span className="runner-contract">
+                      {integration.runner ?? "No runner"}
+                      {integration.entryPoint ? ` · ${integration.entryPoint}` : ""}
+                    </span>
                   ) : null}
 
                   {integration?.reason ? (

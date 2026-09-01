@@ -1,4 +1,4 @@
-"""Validated project manifest and runner API contracts."""
+"""Validated project manifest and project-integration API contracts."""
 
 from __future__ import annotations
 
@@ -7,6 +7,7 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from .api import ProjectResponse
 from .source_data import validate_slug
 
 
@@ -70,6 +71,36 @@ class ProjectIntegrationResponse(BaseModel):
     entryPoint: str | None = None
     repositoryPath: str | None = None
     reason: str | None = None
+
+
+class ProjectHealthCheck(BaseModel):
+    key: str
+    label: str
+    passed: bool
+    detail: str
+
+
+class ProjectRunHistoryItem(BaseModel):
+    id: int
+    projectId: str
+    runner: str
+    exitCode: int | None
+    timedOut: bool
+    durationMs: int
+    stdoutPreview: str
+    stderrPreview: str
+    outputTruncated: bool
+    createdAt: str
+
+
+class ProjectDetailResponse(BaseModel):
+    project: ProjectResponse
+    integration: ProjectIntegrationResponse
+    health: list[ProjectHealthCheck]
+    healthPassed: int
+    healthTotal: int
+    readme: str | None
+    recentRuns: list[ProjectRunHistoryItem]
 
 
 class ProjectRunResponse(BaseModel):

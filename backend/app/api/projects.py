@@ -3,7 +3,11 @@
 from fastapi import APIRouter, HTTPException, status
 
 from ...schemas.api import ProjectResponse
-from ...schemas.project_runner import ProjectIntegrationResponse, ProjectRunResponse
+from ...schemas.project_runner import (
+    ProjectDetailResponse,
+    ProjectIntegrationResponse,
+    ProjectRunResponse,
+)
 from ...services import project_runner, queries
 from ..auth_dependencies import CsrfPrincipal, CurrentPrincipal
 
@@ -35,11 +39,22 @@ def list_project_integrations(principal: CurrentPrincipal) -> list[ProjectIntegr
     return project_runner.list_integrations(_visible_projects(principal))
 
 
+@router.get("/{project_id}/detail", response_model=ProjectDetailResponse)
+def get_project_detail(project_id: str, principal: CurrentPrincipal) -> ProjectDetailResponse:
+    project = _project_for_principal(project_id, principal)
+    try:
+        return project_runner.project_detail(project)
+    except project_runner.ProjectRunnerError as error:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(error)) from error
+
+
 @router.post("/{project_id}/run", response_model=ProjectRunResponse)
 def run_project(project_id: str, principal: CsrfPrincipal) -> ProjectRunResponse:
     project = _project_for_principal(project_id, principal)
     try:
-        return project_runner.run_project(project)
+        result = project_runner.run_project(project)
+        project_runner.record_run(result)
+        return result
     except project_runner.ProjectRunnerDisabled as error:
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(error)) from error
     except project_runner.ProjectManifestError as error:

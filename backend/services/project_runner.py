@@ -1,4 +1,4 @@
-"""Controlled local execution for reviewed, allowlisted student projects."""
+"""Controlled local execution and integration details for reviewed student projects."""
 
 from __future__ import annotations
 
@@ -11,14 +11,24 @@ from pathlib import Path
 
 from pydantic import ValidationError
 
-from ..database.connection import REPOSITORY_ROOT
+from ..database.connection import REPOSITORY_ROOT, connect
 from ..schemas.api import ProjectResponse
-from ..schemas.project_runner import ProjectIntegrationResponse, ProjectManifest, ProjectRunResponse
+from ..schemas.project_runner import (
+    ProjectDetailResponse,
+    ProjectHealthCheck,
+    ProjectIntegrationResponse,
+    ProjectManifest,
+    ProjectRunHistoryItem,
+    ProjectRunResponse,
+)
 from ..schemas.source_data import validate_slug
 
 DEFAULT_TIMEOUT_SECONDS = 5
 MAX_TIMEOUT_SECONDS = 30
 DEFAULT_OUTPUT_LIMIT = 16_000
+README_DISPLAY_LIMIT = 64_000
+RUN_HISTORY_LIMIT = 10
+RUN_PREVIEW_LIMIT = 4_000
 
 
 class ProjectRunnerError(RuntimeError):
@@ -219,6 +229,145 @@ def list_integrations(projects: list[ProjectResponse]) -> list[ProjectIntegratio
     return [_integration_for(project, manifests, errors) for project in projects]
 
 
+def _health_check(key: str, label: str, passed: bool, detail: str) -> ProjectHealthCheck:
+    return ProjectHealthCheck(key=key, label=label, passed=passed, detail=detail)
+
+
+def _read_project_readme(project_dir: Path) -> tuple[str | None, ProjectHealthCheck]:
+    readme_path = project_dir / "README.md"
+    if not readme_path.exists():
+        return None, _health_check(
+            "readme",
+            "README",
+            False,
+            "README.md is required so reviewers can understand and run the member project.",
+        )
+    if readme_path.is_symlink() or not readme_path.is_file():
+        return None, _health_check(
+            "readme", "README", False, "README.md must be a regular non-symlink file."
+        )
+    try:
+        text = readme_path.read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError) as error:
+        return None, _health_check("readme", "README", False, f"README.md cannot be read: {error}")
+
+    if len(text) > README_DISPLAY_LIMIT:
+        text = text[:README_DISPLAY_LIMIT] + "\n\n[README truncated for display]"
+        detail = f"README.md is present; display is limited to {README_DISPLAY_LIMIT} characters."
+    else:
+        detail = "README.md is present and readable."
+    return text, _health_check("readme", "README", True, detail)
+
+
+def project_detail(project: ProjectResponse) -> ProjectDetailResponse:
+    manifests, errors = _manifest_index()
+    integration = _integration_for(project, manifests, errors)
+    checks = [
+        _health_check(
+            "project-record",
+            "Tracked project metadata",
+            True,
+            "Project exists in authoritative data/projects metadata.",
+        )
+    ]
+    readme: str | None = None
+
+    invalid_reason = errors.get(project.id)
+    item = manifests.get(project.id)
+    if invalid_reason:
+        checks.extend(
+            [
+                _health_check("manifest", "Manifest", False, invalid_reason),
+                _health_check("owner", "Owner mapping", False, "Cannot verify owner until manifest is valid."),
+                _health_check("paths", "Repository paths", False, "Cannot verify paths until manifest is valid."),
+                _health_check("runner", "Runner contract", False, "Cannot verify runner until manifest is valid."),
+                _health_check("readme", "README", False, "Cannot locate README until manifest is valid."),
+            ]
+        )
+    elif item is None:
+        checks.extend(
+            [
+                _health_check(
+                    "manifest",
+                    "Manifest",
+                    False,
+                    "Add projects/<owner>/<project>/project.json using the shared integration contract.",
+                ),
+                _health_check("owner", "Owner mapping", False, "No manifest is available to verify ownership."),
+                _health_check("paths", "Repository paths", False, "No manifest is available to verify paths."),
+                _health_check("runner", "Runner contract", False, "No manifest is available to verify the runner."),
+                _health_check("readme", "README", False, "No integrated project directory is available."),
+            ]
+        )
+    else:
+        manifest, manifest_path = item
+        owner_ok = manifest.owner_id == project.userId
+        checks.append(
+            _health_check(
+                "manifest",
+                "Manifest",
+                True,
+                "project.json matches the supported schema and contains no free-form shell command.",
+            )
+        )
+        checks.append(
+            _health_check(
+                "owner",
+                "Owner mapping",
+                owner_ok,
+                "Manifest owner matches authoritative project owner."
+                if owner_ok
+                else "Manifest owner_id does not match authoritative project owner.",
+            )
+        )
+        try:
+            project_dir, _entry_point = _resolve_project_paths(manifest, manifest_path)
+        except ProjectManifestError as error:
+            checks.append(_health_check("paths", "Repository paths", False, str(error)))
+            checks.append(
+                _health_check(
+                    "runner",
+                    "Runner contract",
+                    False,
+                    "Runner cannot be considered ready until repository paths are valid.",
+                )
+            )
+            checks.append(
+                _health_check("readme", "README", False, "README cannot be loaded from an invalid project path.")
+            )
+        else:
+            checks.append(
+                _health_check(
+                    "paths",
+                    "Repository paths",
+                    True,
+                    "Repository directory and Python entry point are confined to the member project.",
+                )
+            )
+            checks.append(
+                _health_check(
+                    "runner",
+                    "Runner contract",
+                    True,
+                    f"Supported contract: {manifest.project_type} / {manifest.runner}.",
+                )
+            )
+            readme, readme_check = _read_project_readme(project_dir)
+            checks.append(readme_check)
+
+    history = list_run_history(project.id)
+    passed = sum(check.passed for check in checks)
+    return ProjectDetailResponse(
+        project=project,
+        integration=integration,
+        health=checks,
+        healthPassed=passed,
+        healthTotal=len(checks),
+        readme=readme,
+        recentRuns=history,
+    )
+
+
 def _truncate(value: str, limit: int) -> tuple[str, bool]:
     if len(value) <= limit:
         return value, False
@@ -229,6 +378,62 @@ def _timeout_text(value: str | bytes | None) -> str:
     if value is None:
         return ""
     return value.decode("utf-8", errors="replace") if isinstance(value, bytes) else value
+
+
+def list_run_history(project_id: str, limit: int = RUN_HISTORY_LIMIT) -> list[ProjectRunHistoryItem]:
+    safe_limit = max(1, min(limit, 50))
+    with connect() as connection:
+        rows = connection.execute(
+            """
+            SELECT id, project_id, runner, exit_code, timed_out, duration_ms,
+                   stdout_preview, stderr_preview, output_truncated, created_at
+            FROM project_run_history
+            WHERE project_id = ?
+            ORDER BY id DESC
+            LIMIT ?
+            """,
+            (project_id, safe_limit),
+        ).fetchall()
+    return [
+        ProjectRunHistoryItem(
+            id=row["id"],
+            projectId=row["project_id"],
+            runner=row["runner"],
+            exitCode=row["exit_code"],
+            timedOut=bool(row["timed_out"]),
+            durationMs=row["duration_ms"],
+            stdoutPreview=row["stdout_preview"],
+            stderrPreview=row["stderr_preview"],
+            outputTruncated=bool(row["output_truncated"]),
+            createdAt=row["created_at"],
+        )
+        for row in rows
+    ]
+
+
+def record_run(result: ProjectRunResponse) -> None:
+    stdout_preview, stdout_cut = _truncate(result.stdout, RUN_PREVIEW_LIMIT)
+    stderr_preview, stderr_cut = _truncate(result.stderr, RUN_PREVIEW_LIMIT)
+    with connect() as connection:
+        connection.execute(
+            """
+            INSERT INTO project_run_history (
+                project_id, runner, exit_code, timed_out, duration_ms,
+                stdout_preview, stderr_preview, output_truncated
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                result.projectId,
+                result.runner,
+                result.exitCode,
+                int(result.timedOut),
+                result.durationMs,
+                stdout_preview,
+                stderr_preview,
+                int(result.outputTruncated or stdout_cut or stderr_cut),
+            ),
+        )
+        connection.commit()
 
 
 def run_project(project: ProjectResponse) -> ProjectRunResponse:

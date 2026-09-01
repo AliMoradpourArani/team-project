@@ -8,6 +8,7 @@ import DashboardStats from "./components/DashboardStats";
 import Layout from "./components/Layout";
 import LoginPage from "./components/LoginPage";
 import ProfessorDashboard from "./components/ProfessorDashboard";
+import ProjectDetailPage from "./components/ProjectDetailPage";
 import ProjectPanel from "./components/ProjectPanel";
 import StatusMessage from "./components/StatusMessage";
 import TimelineView from "./components/TimelineView";
@@ -148,7 +149,7 @@ export default function App() {
     getMe()
       .then((current) => {
         setSession(current);
-        if (current.role === "student" && current.userId) {
+        if (current.role === "student" && current.userId && window.location.pathname === "/") {
           navigate(`/users/${current.userId}`, true);
         } else if (current.role === "professor" && window.location.pathname === "/") {
           navigate("/professor", true);
@@ -191,9 +192,19 @@ export default function App() {
   }
 
   const userMatch = pathname.match(/^\/users\/([^/]+)\/?$/);
+  const projectMatch = pathname.match(/^\/projects\/([^/]+)\/?$/);
   let content: ReactNode;
 
-  if (session.role === "student") {
+  if (projectMatch) {
+    content = (
+      <ProjectDetailPage
+        projectId={projectMatch[1]}
+        backHref={
+          session.role === "student" && session.userId ? `/users/${session.userId}` : "/professor"
+        }
+      />
+    );
+  } else if (session.role === "student") {
     if (!session.userId) {
       content = (
         <StatusMessage error>Student account is not linked to a tracked user.</StatusMessage>

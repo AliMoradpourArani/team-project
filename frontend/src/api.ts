@@ -5,6 +5,7 @@ import type {
   ProfessorDashboardData,
   ProfessorGitHubDashboardData,
   Project,
+  ProjectDetail,
   ProjectIntegration,
   ProjectRunResult,
   User,
@@ -75,6 +76,8 @@ export const getActivities = (): Promise<Activity[]> => getCollection<Activity>(
 export const getProjects = (): Promise<Project[]> => getCollection<Project>("projects");
 export const getProjectIntegrations = (): Promise<ProjectIntegration[]> =>
   request<ProjectIntegration[]>("/api/projects/integrations");
+export const getProjectDetail = (projectId: string): Promise<ProjectDetail> =>
+  request<ProjectDetail>(`/api/projects/${projectId}/detail`);
 export const getProfessorDashboard = (): Promise<ProfessorDashboardData> =>
   request<ProfessorDashboardData>("/api/professor/dashboard");
 export const getProfessorGitHubDashboard = (): Promise<ProfessorGitHubDashboardData> =>

@@ -48,6 +48,36 @@ export interface ProjectIntegration {
   reason: string | null;
 }
 
+export interface ProjectHealthCheck {
+  key: string;
+  label: string;
+  passed: boolean;
+  detail: string;
+}
+
+export interface ProjectRunHistoryItem {
+  id: number;
+  projectId: string;
+  runner: string;
+  exitCode: number | null;
+  timedOut: boolean;
+  durationMs: number;
+  stdoutPreview: string;
+  stderrPreview: string;
+  outputTruncated: boolean;
+  createdAt: string;
+}
+
+export interface ProjectDetail {
+  project: Project;
+  integration: ProjectIntegration;
+  health: ProjectHealthCheck[];
+  healthPassed: number;
+  healthTotal: number;
+  readme: string | null;
+  recentRuns: ProjectRunHistoryItem[];
+}
+
 export interface ProjectRunResult {
   projectId: string;
   runner: string;

@@ -6,6 +6,12 @@ All notable project changes are recorded here. The project follows a lightweight
 
 ### Added
 
+- Phase 6 generic member-project detail pages at `/projects/<project_id>`
+- project integration health checklist for tracked metadata, manifest, owner mapping, paths, runner contract, and README
+- safe plain-text project README preview in the shared UI
+- runtime-only SQLite project demo history with bounded stdout/stderr previews
+- integration onboarding checklist in `projects/README.md`
+- `docs/member-project-integration.md` for teammate project handoff and review workflow
 - Phase 5 controlled Project Integration / Runner for reviewed member projects
 - validated `project.json` execution contract with authoritative project/owner matching
 - allowlisted `python-script-v1` runner that derives argv server-side and never executes manifest shell strings
@@ -33,6 +39,9 @@ All notable project changes are recorded here. The project follows a lightweight
 
 ### Changed
 
+- project cards now link to generic data-driven detail pages instead of requiring Core changes per member project
+- demo executions invoked through the API are recorded in runtime history without modifying Git-tracked project data
+- the reference `team-foundation` project now includes the README required by the Phase 6 health checklist
 - executable member-project paths are now CODEOWNERS-protected because reviewed repository code may be run locally
 - the example project manifest now links to authoritative project id `team-foundation` and uses `runner: python-script-v1`
 - Docker mounts `./projects` read-only into the backend container

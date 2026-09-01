@@ -83,9 +83,18 @@ Do not add access tokens, emails, API responses, contribution counts, commit SHA
 
 ## Student projects (`projects/<owner>/<project>/`)
 
-Each executable student project directory contains a validated `project.json` manifest. The manifest id must match a project id from `data/projects/`, and `owner_id` must match that authoritative project's owner.
+Each integrated student project directory contains:
 
-Phase 5 supports one intentionally narrow runner contract:
+```text
+projects/<owner>/<project>/
+├── project.json
+├── README.md
+└── <entry-point>.py
+```
+
+The manifest id must match a project id from `data/projects/`, and `owner_id` must match that authoritative project's owner. A normal new member project should not require a new student-specific route or shared Core component.
+
+The current runner contract is intentionally narrow:
 
 ```json
 {
@@ -112,6 +121,49 @@ Phase 5 supports one intentionally narrow runner contract:
 - duplicate manifest ids are invalid.
 - unknown fields are rejected. In particular, `run`, `build`, `command`, and arbitrary shell strings are **not** accepted runner instructions.
 
+### README rules
+
+`README.md` is part of the Phase 6 integration health checklist. It should explain at least:
+
+- project purpose,
+- setup/dependencies,
+- expected input,
+- expected output,
+- demo usage and limitations.
+
+The backend accepts only a regular non-symlink UTF-8 `README.md` inside the validated project directory. The UI renders it as plain text, not injected HTML. Oversized README content is bounded for display.
+
+### Project detail read model
+
+The canonical member-project page is:
+
+```text
+/projects/<project_id>
+```
+
+The backend returns project metadata, integration status, independent health checks, safe README text, and recent runtime history. Authorization remains data-driven: students can inspect only their own project, while professors can inspect all visible projects.
+
+Current project endpoints:
+
+```text
+GET  /api/projects
+GET  /api/projects/integrations
+GET  /api/projects/{project_id}/detail
+POST /api/projects/{project_id}/run
+```
+
+### Runtime history
+
+Project demo history is local runtime state stored in SQLite table `project_run_history`. It is **not** authoritative shared data and is never written under `data/` or `projects/`.
+
+The history stores bounded operational metadata and output previews only:
+
+- runner,
+- exit code / timeout state,
+- duration,
+- truncated stdout/stderr preview,
+- timestamp.
+
 ### Execution rules
 
 The backend never executes a manifest-provided shell string. For `python-script-v1` it derives one fixed argv template:
@@ -128,4 +180,4 @@ The runner is disabled by default and must be explicitly enabled at runtime afte
 PROJECT_RUNNER_ENABLED=true
 ```
 
-This control is **not a security sandbox**. Reviewed Python code can still use the operating system and network permissions available to the backend process. Do not enable the runner for untrusted code. See [project-runner.md](project-runner.md) and [ADR 0004](adr/0004-controlled-project-runner.md).
+This control is **not a security sandbox**. Reviewed Python code can still use the operating system and network permissions available to the backend process. Do not enable the runner for untrusted code. See [project-runner.md](project-runner.md), [member-project-integration.md](member-project-integration.md), and [ADR 0004](adr/0004-controlled-project-runner.md).

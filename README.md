@@ -1,54 +1,140 @@
 # Team Project
 
-Team Project is a local web application for a university team and their professor. Students get a protected personal dashboard for daily activities, calendar history, timeline, and projects. Professors get a read-only overview across the team with progress, recent activity, and GitHub repository signals.
+A local-first university team platform for recording daily work, presenting individual progress, integrating student projects, and giving the professor a clear read-only view of the team.
 
-The shared platform now includes:
+The application is designed as one shared platform, not one duplicated website per student. Shared features such as authentication, activities, calendar, timeline, dashboards, and GitHub integration are implemented once and become user-specific through data and authorization.
 
-- **Phase 1:** reproducible FastAPI/React/SQLite foundation and Git workflow
-- **Phase 2:** activity CRUD, calendar, timeline, user dashboard, Git-tracked activity writes
-- **Phase 2.5:** E2E, coverage, security scanning, CODEOWNERS, Dependabot, observability, optional AI PR reviewer
-- **Phase 3:** local authentication, student/professor authorization, CSRF protection, and professor dashboard
-- **Phase 4:** read-only GitHub integration with explicit member mapping, commit/PR metrics, repository status, and contribution timeline
+## Current status
 
-Project execution remains a future feature.
+| Phase | Status | What it adds |
+| --- | --- | --- |
+| Phase 1 | ✅ Complete | FastAPI/React/SQLite foundation, migrations, reproducible setup, Git workflow |
+| Phase 2 | ✅ Complete | Activity CRUD, calendar, timeline, personal dashboard, Git-tracked activity writes |
+| Phase 2.5 | ✅ Complete | E2E testing, coverage gates, security scanning, CODEOWNERS, Dependabot, observability, optional AI PR review |
+| Phase 3 | ✅ Complete | Local authentication, student/professor authorization, CSRF protection, professor dashboard |
+| Phase 4 | ✅ Complete | Read-only GitHub integration, repository status, commit/PR metrics, contribution timeline |
+| Project Runner | ⏳ Planned | Controlled execution/integration of each member's specialized project |
+
+## What the platform does
+
+### Student experience
+
+Each student signs in to a protected personal workspace and can:
+
+- view their own profile and dashboard
+- create, edit, complete, and delete daily activities
+- browse work through a calendar
+- review activity history in a timeline
+- see their assigned/integrated projects
+- keep shared activity data Git-visible for review and version history
+
+A student cannot access another student's protected data by changing a URL or API parameter.
+
+### Professor experience
+
+The professor gets a read-only team view with:
+
+- team-wide progress and completion totals
+- recent activities across members
+- member drill-down dashboards
+- project summaries
+- GitHub repository status
+- per-member recent commit and pull-request metrics
+- a combined GitHub contribution timeline
+
+GitHub metrics are treated as repository signals, not as a productivity score.
 
 ## Architecture
 
-Modular monolith, no microservices:
+The project uses a **modular monolith**. There are no microservices.
 
-- **Frontend:** React + Vite + TypeScript (`frontend/`)
-- **Backend:** FastAPI with route modules, auth dependencies, services, and Pydantic schemas (`backend/`)
-- **Database:** SQLite generated from ordered SQL migrations; the generated file is never committed
-- **Source data:** Git-tracked JSON under `data/` remains authoritative shared state for users, activities, projects, and optional GitHub identity mappings
-- **Authentication state:** accounts and sessions live only in runtime SQLite and are never Git-tracked
-- **GitHub:** external read-only contribution data fetched by the backend and cached briefly
-- **Docker:** Compose bind-mounts `./data` and persists runtime auth/database state in a named volume
+```text
+                         Team Project
+                              │
+              ┌───────────────┴───────────────┐
+              │                               │
+          React/Vite                       FastAPI
+          TypeScript                       Backend
+              │                               │
+              └────────────── API ────────────┘
+                                              │
+                         ┌────────────────────┼────────────────────┐
+                         │                    │                    │
+                   Git-tracked JSON        SQLite              GitHub API
+                   shared source data     runtime DB          read-only data
+```
 
-See [docs/architecture.md](docs/architecture.md), [docs/authentication.md](docs/authentication.md), [docs/github-integration.md](docs/github-integration.md), and [docs/adr/](docs/adr/).
+Core technology:
+
+- **Frontend:** React + Vite + TypeScript
+- **Backend:** FastAPI + Pydantic
+- **Database:** SQLite with ordered SQL migrations
+- **Shared source data:** Git-tracked JSON under `data/`
+- **Authentication:** local accounts, Argon2 password hashing, server-side sessions
+- **External integration:** read-only GitHub API client with short-lived cache
+- **Testing:** pytest, Vitest, Playwright
+- **Quality/security:** Ruff, ESLint, Prettier, TypeScript checks, dependency audits, CodeQL
+- **Runtime:** native development or Docker Compose
+
+Detailed architecture lives in [docs/architecture.md](docs/architecture.md), [docs/authentication.md](docs/authentication.md), [docs/github-integration.md](docs/github-integration.md), and [docs/adr/](docs/adr/).
+
+## Data model and source of truth
+
+Shared project data is intentionally Git-visible:
+
+```text
+data/
+├── users/<user_id>.json
+├── activities/<user_id>/<date>.json
+└── projects/<project_id>.json
+```
+
+These JSON files are the authoritative shared source for:
+
+- users
+- activities
+- projects
+- optional GitHub username mappings
+
+SQLite is a derived runtime representation for shared data and also stores private local authentication state.
+
+```text
+JSON source files
+      │
+      ▼
+  db-sync
+      │
+      ▼
+   SQLite
+      │
+      ▼
+ FastAPI API
+      │
+      ▼
+ React UI
+```
+
+Passwords, password hashes, sessions, and secrets are **never** stored in Git-tracked user JSON.
 
 ## Repository structure
 
 ```text
 team-project/
 ├── frontend/                 # React/Vite/TypeScript application
-│   └── src/{components,types.ts,api.ts,App.tsx,main.tsx}
+│   └── src/
 ├── backend/
-│   ├── auth/                 # Local account bootstrap CLI
+│   ├── auth/                 # Local account bootstrap
 │   ├── app/                  # FastAPI app, routes, auth dependencies, observability
 │   ├── schemas/              # API/auth/source-data/GitHub contracts
-│   ├── services/             # Auth, GitHub/professor aggregation, queries, activity writes
+│   ├── services/             # Business logic and integrations
 │   └── database/
-│       ├── migrations/       # Ordered SQL migrations (committed)
-│       ├── connection.py
+│       ├── migrations/       # Ordered SQL migrations
 │       ├── init_db.py
 │       ├── sync_data.py
 │       └── source_files.py
-├── data/                     # AUTHORITATIVE shared team data (Git-tracked)
-│   ├── users/<id>.json
-│   ├── activities/<user_id>/<date>.json
-│   └── projects/<id>.json
-├── e2e/                      # Playwright student + professor browser flows
-├── projects/<owner>/<name>/  # Student projects with project.json manifests
+├── data/                     # Authoritative Git-tracked shared data
+├── e2e/                      # Playwright browser flows
+├── projects/<owner>/<name>/  # Member projects and manifests
 ├── scripts/
 ├── docs/
 ├── tests/
@@ -61,78 +147,162 @@ team-project/
 
 ## Prerequisites
 
+For native development:
+
 - Git
 - Python 3.11+ (3.12+ recommended)
-- Node.js 20+ and npm
-- Docker (optional)
+- Node.js 20+
+- npm
 
-## Quick setup (native)
+Docker is optional.
+
+## Quick start: native
+
+Clone and bootstrap the project:
 
 ```bash
-git clone <repository-url> team-project
+git clone https://github.com/HoosseinRahimi/team-project.git
 cd team-project
 make setup
 ```
 
-Then create login accounts locally:
+Initialize/reconcile the database:
+
+```bash
+make db-init
+make db-sync
+```
+
+Create local login accounts:
 
 ```bash
 make auth-bootstrap
 ```
 
-Run it once for each student who needs access and once for the professor account. Student accounts must link to an existing tracked user id such as `hossein`, `ali`, or `reza`.
+Run the bootstrap once for each student account and once for the professor account. A student account must link to an existing tracked `user_id` such as `hossein`, `ali`, or `reza`.
 
-Passwords and password hashes must never be committed to Git. See [docs/authentication.md](docs/authentication.md).
-
-## Database initialization and synchronization
+Start the backend:
 
 ```bash
-make db-init        # create DB and apply migrations
-make db-sync        # reconcile Git-tracked data/ into SQLite
-make db-reset       # delete the local native development database
+.venv/bin/python -m uvicorn backend.app.main:app --reload
 ```
 
-Equivalent commands:
+Start the frontend in another terminal:
 
 ```bash
-.venv/bin/python -m backend.database.init_db --seed
-.venv/bin/python -m backend.database.sync_data
+npm run dev --prefix frontend
 ```
 
-Git-tracked files under `data/` are authoritative for shared project data. SQLite is derived for users/activities/projects but also holds private local authentication accounts and sessions. Activity writes through the web/API update tracked JSON and then reconcile SQLite.
+Open:
 
-## Authentication and roles
+- Application: <http://localhost:5173>
+- API: <http://localhost:8000>
+- FastAPI docs: <http://localhost:8000/docs>
+
+## Quick start: Docker
+
+```bash
+docker compose up -d --build
+```
+
+Create accounts inside the backend container:
+
+```bash
+docker compose exec backend python -m backend.auth.bootstrap
+```
+
+Then open <http://localhost:5173>.
+
+Docker bind-mounts `./data:/app/data`, so shared activity changes remain visible to Git. Runtime SQLite/authentication state is stored separately in the `team-runtime` named volume.
+
+Stop the stack with:
+
+```bash
+docker compose down
+```
+
+Use `docker compose down -v` only when you intentionally want to delete local runtime database/authentication state.
+
+## Authentication and authorization
 
 ### Student
 
-- signs in with a local account linked to one tracked user
-- sees only their own user/profile, activities, and projects
-- can create, edit, and delete only their own activities
-- cannot access professor dashboards or another student's API data
+A student account:
+
+- is linked to exactly one tracked user
+- can read its own protected user/activity/project data
+- can modify only its own activities
+- cannot open professor endpoints
+- cannot impersonate another member with a URL/API parameter
 
 ### Professor
 
-- signs in with a local professor account
-- sees all students, activities, projects, completion totals, and recent work
-- can drill into each student's dashboard
-- sees read-only GitHub repository/contribution analytics
-- is intentionally read-only
+The professor account:
 
-Session cookies are HttpOnly and SameSite=Lax. Unsafe requests also require an in-memory CSRF token through `X-CSRF-Token`.
+- can view all team members
+- can inspect team activity/project summaries
+- can drill into member dashboards
+- can view read-only GitHub contribution analytics
+- is intentionally read-only for student work
 
-Professor/auth endpoints:
+Authentication endpoints:
 
 ```text
 POST /api/auth/login
 GET  /api/auth/me
 POST /api/auth/logout
-GET  /api/professor/dashboard
-GET  /api/professor/github
+```
+
+Professor endpoints:
+
+```text
+GET /api/professor/dashboard
+GET /api/professor/github
+```
+
+Session cookies are HttpOnly and SameSite=Lax. Unsafe authenticated requests also require the CSRF token in `X-CSRF-Token`.
+
+See [docs/authentication.md](docs/authentication.md).
+
+## Activities, calendar, and timeline
+
+Activities are shared source data with stable IDs and per-user ownership.
+
+Protected activity endpoints include:
+
+```text
+GET    /api/activities
+POST   /api/activities
+PUT    /api/activities/{activity_id}
+DELETE /api/activities/{activity_id}
+```
+
+Web/API writes update the authoritative activity JSON and reconcile the runtime database, keeping the normal academic workflow Git-visible:
+
+```text
+Student updates work
+       │
+       ▼
+Git-tracked JSON
+       │
+       ▼
+commit → PR → merge main
+       │
+       ▼
+Professor git pull
+       │
+       ▼
+make db-sync / application startup
+       │
+       ▼
+Updated website data
 ```
 
 ## GitHub integration
 
-Member-to-GitHub attribution is explicit. Add the optional field to the tracked user file:
+Phase 4 adds a professor-only, read-only GitHub view.
+
+A tracked user can optionally declare an explicit GitHub identity:
 
 ```json
 {
@@ -143,13 +313,23 @@ Member-to-GitHub attribution is explicit. Add the optional field to the tracked 
 }
 ```
 
-Then run:
+Then reconcile the data:
 
 ```bash
 make db-sync
 ```
 
-Unlinked members remain visible as `not linked`; accounts are never guessed from display names or emails.
+The application never guesses GitHub accounts from display names or email addresses. Members without a mapping remain visible as **not linked**.
+
+The professor GitHub panel shows:
+
+- repository/default-branch status
+- open pull requests
+- recent default-branch commits
+- commit counts for linked members
+- authored/merged/open pull-request counts
+- latest contribution timestamp
+- recent combined commit/PR timeline
 
 Default configuration:
 
@@ -160,54 +340,46 @@ GITHUB_CACHE_TTL_SECONDS=60
 GITHUB_API_TIMEOUT_SECONDS=5
 ```
 
-For a public repository, no token is required, but GitHub's unauthenticated rate limit is lower. For a private repository or higher limits, export a read-only fine-grained token at runtime:
+Public repositories can work without a token. To increase rate limits or access a private repository, provide a read-only token at runtime:
 
 ```bash
 export GITHUB_TOKEN='...'
 ```
 
-Never commit `GITHUB_TOKEN`. See [docs/github-integration.md](docs/github-integration.md).
+Never commit `GITHUB_TOKEN`.
 
-## Run the backend
+If GitHub is unavailable or rate-limited, the core professor dashboard remains available and the GitHub panel degrades to an offline-safe state.
 
-```bash
-.venv/bin/python -m uvicorn backend.app.main:app --reload
-```
+See [docs/github-integration.md](docs/github-integration.md).
 
-API: <http://localhost:8000>  
-Interactive docs: <http://localhost:8000/docs>
-
-Core protected endpoints:
-
-```text
-GET    /api/users
-GET    /api/users/{id}
-GET    /api/activities
-POST   /api/activities
-PUT    /api/activities/{activity_id}
-DELETE /api/activities/{activity_id}
-GET    /api/projects
-```
-
-`GET /api/health` and legacy `GET /health` remain public health checks.
-
-Every API response receives an `X-Request-ID` correlation header and request metadata is logged as structured JSON.
-
-## Run the frontend
+## Database commands
 
 ```bash
-npm run dev --prefix frontend
+make db-init        # Apply migrations and initialize the database
+make db-sync        # Reconcile Git-tracked shared data into SQLite
+make db-reset       # Delete the native local development database
 ```
 
-Open <http://localhost:5173>. Unauthenticated visitors see the login page. Students are routed to their own dashboard. Professors are routed to `/professor`, can open read-only member details, and see the GitHub integration panel.
+Equivalent Python commands:
 
-## Run tests
+```bash
+.venv/bin/python -m backend.database.init_db --seed
+.venv/bin/python -m backend.database.sync_data
+```
+
+Merged migrations are append-only. Do not rewrite an already merged migration.
+
+See [docs/database-rules.md](docs/database-rules.md).
+
+## Testing and quality gates
+
+Run the normal test suite:
 
 ```bash
 make test
 ```
 
-Individual checks:
+Useful individual checks:
 
 ```bash
 .venv/bin/python -m pytest -q
@@ -219,32 +391,35 @@ npm test --prefix frontend
 npm run build --prefix frontend
 ```
 
-CI enforces backend coverage and runs real Chromium E2E flows for student authentication/activity management and professor read-only access. GitHub network access is disabled in E2E; the integration logic uses deterministic fixture tests. Security workflows also run dependency audits and CodeQL.
+CI currently covers:
 
-## Docker
+- unresolved conflict-marker detection
+- backend lint/tests/coverage
+- fresh database initialization and synchronization
+- frontend lint/Prettier/TypeScript/unit tests/build
+- Playwright Chromium E2E flows
+- Python dependency audit
+- npm dependency audit
+- CodeQL for Python and JavaScript/TypeScript
 
-```bash
-docker compose up -d --build
-docker compose exec backend python -m backend.auth.bootstrap
+E2E tests disable external GitHub access so CI does not depend on GitHub API availability. GitHub aggregation is tested deterministically with fixtures/mocks.
+
+## Observability
+
+Public health checks:
+
+```text
+GET /api/health
+GET /health
 ```
 
-Repeat the bootstrap command for each account, then open <http://localhost:5173>.
-
-Compose bind-mounts `./data:/app/data`, so student activity changes remain visible to Git. Runtime SQLite/auth state is stored in the `team-runtime` named volume so credentials and sessions survive container recreation without entering the repository. GitHub configuration and an optional runtime `GITHUB_TOKEN` are forwarded to the backend container.
-
-Stop with:
-
-```bash
-docker compose down
-```
-
-Use `docker compose down -v` only when you intentionally want to delete local runtime auth/database state.
+API responses include an `X-Request-ID` correlation header. Request metadata is logged as structured JSON to make local debugging and integration failures easier to trace.
 
 ## Configuration
 
-See `.env.example`.
+Copy/use `.env.example` as the reference configuration.
 
-Important settings:
+Important values include:
 
 ```text
 AUTH_COOKIE_NAME=team_session
@@ -254,31 +429,111 @@ GITHUB_INTEGRATION_ENABLED=true
 GITHUB_REPOSITORY=HoosseinRahimi/team-project
 ```
 
-Set `AUTH_COOKIE_SECURE=true` when the application is served over HTTPS.
+Set `AUTH_COOKIE_SECURE=true` when serving the application over HTTPS.
 
 ## Git workflow
 
-`main` is the stable integration branch. Never commit features directly.
-Branches: `feature/<name>`, `fix/<name>`, `docs/<name>`, `refactor/<name>`, `test/<name>`, `chore/<name>`. Open Pull Requests into `main` and use squash merge by default.
+`main` is the stable integration branch and should remain runnable for the professor at all times.
 
-- [CONTRIBUTING.md](CONTRIBUTING.md)
-- [docs/git-workflow.md](docs/git-workflow.md)
-- [docs/database-rules.md](docs/database-rules.md)
-- [docs/authentication.md](docs/authentication.md)
-- [docs/github-integration.md](docs/github-integration.md)
-- [docs/project-contract.md](docs/project-contract.md)
-- [docs/branch-protection.md](docs/branch-protection.md)
-- [docs/engineering-quality.md](docs/engineering-quality.md)
-- [docs/adr/](docs/adr/)
-- [SECURITY.md](SECURITY.md)
-- [CHANGELOG.md](CHANGELOG.md)
+Normal work flow:
+
+```text
+main
+  │
+  └── feature/fix/docs branch
+          │
+          ▼
+       commits
+          │
+          ▼
+          PR
+          │
+       CI/review
+          │
+          ▼
+      squash merge
+          │
+          ▼
+         main
+```
+
+Branch naming:
+
+```text
+feature/<name>
+fix/<name>
+docs/<name>
+refactor/<name>
+test/<name>
+chore/<name>
+```
+
+Rules:
+
+- do not use direct `main` commits for normal development
+- update your feature branch from `main` before final merge when needed
+- resolve conflicts on the feature branch, not on `main`
+- do not force-push `main`
+- prefer focused PRs and squash merge
+- keep unrelated work out of the same PR
+
+Conventional Commit prefixes:
+
+```text
+feat: fix: docs: refactor: test: chore: ci: build:
+```
+
+## Project direction
+
+The shared platform is intentionally implemented once. Team members do **not** build separate copies of Calendar, Timeline, Activity, Login, or Professor Dashboard.
+
+Instead:
+
+```text
+Shared Platform
+├── Authentication
+├── Activity System
+├── Calendar
+├── Timeline
+├── Student Dashboard
+├── Professor Dashboard
+├── GitHub Integration
+└── Project Integration
+      ├── Member A specialized project
+      ├── Member B specialized project
+      └── Member C specialized project
+```
+
+The next major platform feature is the controlled **Project Runner / Project Integration** layer, where member projects can be surfaced and eventually executed through an allowlisted, safe contract rather than arbitrary shell commands.
+
+See [docs/project-contract.md](docs/project-contract.md).
+
+## Documentation
+
+- [Architecture](docs/architecture.md)
+- [Authentication](docs/authentication.md)
+- [GitHub integration](docs/github-integration.md)
+- [Git workflow](docs/git-workflow.md)
+- [Database rules](docs/database-rules.md)
+- [Project contract](docs/project-contract.md)
+- [Branch protection](docs/branch-protection.md)
+- [Engineering quality](docs/engineering-quality.md)
+- [Architecture decision records](docs/adr/)
+- [Contributing](CONTRIBUTING.md)
+- [Security](SECURITY.md)
+- [Changelog](CHANGELOG.md)
 
 ## API conventions
 
-- Prefix routes with `/api/` and use plural resource nouns
-- Typed Pydantic request/response models and structured errors
-- Unknown resources -> 404; malformed input -> 422; unauthenticated -> 401; forbidden -> 403
-- Never use a frontend-supplied user id as authorization proof
-- Git-tracked JSON remains authoritative for shared user/activity/project state
-- Authentication credentials and sessions remain private runtime state
-- External integrations remain read-only, isolated, and offline-safe
+- Prefix application routes with `/api/`
+- Use plural resource names
+- Use typed Pydantic request/response contracts
+- Return structured errors
+- Unknown resources → `404`
+- Malformed input → `422`
+- Unauthenticated → `401`
+- Forbidden → `403`
+- Never trust a frontend-provided user ID as proof of authorization
+- Keep Git-tracked JSON authoritative for shared user/activity/project data
+- Keep credentials, sessions, and secrets in runtime-only state
+- Keep external integrations isolated, read-only where possible, and offline-safe

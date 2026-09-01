@@ -3,6 +3,7 @@ import type {
   ActivityInput,
   AuthSession,
   ProfessorDashboardData,
+  ProfessorGitHubDashboardData,
   Project,
   User,
 } from "./types";
@@ -72,6 +73,8 @@ export const getActivities = (): Promise<Activity[]> => getCollection<Activity>(
 export const getProjects = (): Promise<Project[]> => getCollection<Project>("projects");
 export const getProfessorDashboard = (): Promise<ProfessorDashboardData> =>
   request<ProfessorDashboardData>("/api/professor/dashboard");
+export const getProfessorGitHubDashboard = (): Promise<ProfessorGitHubDashboardData> =>
+  request<ProfessorGitHubDashboardData>("/api/professor/github");
 
 export async function createActivity(payload: ActivityInput): Promise<Activity> {
   return request<Activity>("/api/activities", {

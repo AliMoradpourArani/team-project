@@ -6,6 +6,14 @@ All notable project changes are recorded here. The project follows a lightweight
 
 ### Added
 
+- read-only professor GitHub integration for the configured repository
+- explicit optional `github_username` mapping in tracked user data
+- per-member recent commit, pull-request, merged-PR, and open-PR metrics
+- recent GitHub commit/pull-request contribution timeline
+- repository status summary with default branch, last push, and open PR count
+- short-lived in-process GitHub response cache and offline-safe unavailable state
+- deterministic GitHub aggregation tests that do not require network access
+- `docs/github-integration.md` and ADR 0003 for the external read-model boundary
 - local student/professor authentication with Argon2 password hashing
 - revocable server-side sessions stored in runtime SQLite
 - HttpOnly SameSite session cookie and per-session CSRF protection
@@ -18,10 +26,14 @@ All notable project changes are recorded here. The project follows a lightweight
 
 ### Changed
 
-- protected API collections now require authentication and filter by role
+- user runtime schema now carries optional GitHub identity mapping via append-only migration 006
+- `httpx` is a runtime dependency because the backend owns external GitHub reads
+- Docker forwards GitHub configuration and an optional runtime-only token to the backend
+- browser E2E disables GitHub network access so CI remains deterministic
+- protected API collections require authentication and filter by role
 - professor access is explicitly read-only
-- CORS now allows credentials only for configured explicit origins
-- CODEOWNERS covers authentication and professor-dashboard paths
+- CORS allows credentials only for configured explicit origins
+- CODEOWNERS covers authentication, professor dashboard, and GitHub integration paths
 
 ## 0.2.5 - 2026-09-01
 

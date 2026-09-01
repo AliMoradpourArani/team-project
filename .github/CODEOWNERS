@@ -6,6 +6,7 @@
 /backend/app/api/professor.py    @HoosseinRahimi
 /backend/services/auth.py        @HoosseinRahimi
 /backend/services/professor.py   @HoosseinRahimi
+/backend/services/github_integration.py @HoosseinRahimi
 /backend/database/               @HoosseinRahimi
 /backend/schemas/                @HoosseinRahimi
 /backend/requirements*.txt       @HoosseinRahimi
@@ -15,5 +16,6 @@
 /Makefile                        @HoosseinRahimi
 /docs/architecture.md            @HoosseinRahimi
 /docs/authentication.md          @HoosseinRahimi
+/docs/github-integration.md      @HoosseinRahimi
 /docs/database-rules.md          @HoosseinRahimi
 /docs/project-contract.md        @HoosseinRahimi

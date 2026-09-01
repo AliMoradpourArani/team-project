@@ -11,6 +11,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 # file names, so the allowed character set is intentionally strict.
 SLUG_PATTERN = re.compile(r"^[a-z0-9][a-z0-9-]*$")
 DATE_PATTERN = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+GITHUB_USERNAME_PATTERN = re.compile(r"^[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?$")
 
 ACTIVITY_STATUSES = {"planned", "in-progress", "completed"}
 PROJECT_STATUSES = {"planned", "active", "completed", "archived"}
@@ -37,6 +38,16 @@ def validate_date_string(value: str, field: str) -> str:
     return value
 
 
+def validate_github_username(value: str, field: str = "GitHub username") -> str:
+    """Validate the conservative GitHub login form used for contribution mapping."""
+    if not GITHUB_USERNAME_PATTERN.match(value):
+        raise ValueError(
+            f"Invalid {field} {value!r}: expected 1-39 letters, digits, or hyphens "
+            "without a leading or trailing hyphen."
+        )
+    return value
+
+
 class UserRecord(BaseModel):
     """A team member, one file per user: data/users/<id>.json."""
 
@@ -45,11 +56,17 @@ class UserRecord(BaseModel):
     id: str
     display_name: str = Field(min_length=1)
     role: str = Field(min_length=1)
+    github_username: str | None = None
 
     @field_validator("id")
     @classmethod
     def _valid_id(cls, value: str) -> str:
         return validate_slug(value, "user id")
+
+    @field_validator("github_username")
+    @classmethod
+    def _valid_github_username(cls, value: str | None) -> str | None:
+        return validate_github_username(value) if value is not None else None
 
 
 class ActivityRecord(BaseModel):

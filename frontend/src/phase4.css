@@ -1,0 +1,248 @@
+.github-panel {
+  margin-bottom: 20px;
+}
+
+.github-repository-strip {
+  background: #18221e;
+  color: #f3f0e8;
+  display: grid;
+  gap: 1px;
+  grid-template-columns: 1.4fr repeat(3, 1fr);
+  margin-bottom: 18px;
+}
+
+.github-repository-strip > div {
+  border-right: 1px solid #3e4a44;
+  padding: 18px;
+}
+
+.github-repository-strip > div:last-child {
+  border-right: 0;
+}
+
+.github-repository-strip span,
+.github-member-metrics dt,
+.github-link-state,
+.github-event-kind,
+.github-last-contribution,
+.github-footnote {
+  font-family: "DM Mono", monospace;
+}
+
+.github-repository-strip span {
+  color: #aeb8b2;
+  display: block;
+  font-size: 0.62rem;
+  text-transform: uppercase;
+}
+
+.github-repository-strip strong {
+  display: block;
+  font-size: 0.92rem;
+  margin-top: 7px;
+  overflow-wrap: anywhere;
+}
+
+.github-member-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-bottom: 30px;
+}
+
+.github-member-card {
+  background: #f3f0e8;
+  border: 1px solid #d4d4c8;
+  padding: 18px;
+}
+
+.github-member-heading {
+  align-items: flex-start;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.github-member-heading strong,
+.github-member-heading a,
+.github-member-heading small {
+  display: block;
+}
+
+.github-member-heading a {
+  color: #4f806b;
+  font-family: "DM Mono", monospace;
+  font-size: 0.7rem;
+  margin-top: 3px;
+}
+
+.github-member-heading small {
+  color: #8b918d;
+  margin-top: 3px;
+}
+
+.github-link-state {
+  border: 1px solid #d4d4c8;
+  border-radius: 999px;
+  font-size: 0.58rem;
+  padding: 4px 7px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.github-link-state.linked {
+  background: #d8e3d5;
+  border-color: #c4d2c5;
+  color: #35654e;
+}
+
+.github-link-state.unlinked {
+  color: #7d817e;
+}
+
+.github-member-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  margin: 20px 0 14px;
+}
+
+.github-member-metrics div {
+  border-right: 1px solid #dedbd0;
+  padding-right: 8px;
+}
+
+.github-member-metrics div + div {
+  padding-left: 8px;
+}
+
+.github-member-metrics div:last-child {
+  border-right: 0;
+}
+
+.github-member-metrics dt {
+  color: #66736c;
+  font-size: 0.58rem;
+  text-transform: uppercase;
+}
+
+.github-member-metrics dd {
+  font-size: 1.35rem;
+  letter-spacing: -0.05em;
+  margin: 3px 0 0;
+}
+
+.github-last-contribution {
+  color: #66736c;
+  font-size: 0.62rem;
+}
+
+.github-timeline-heading {
+  align-items: end;
+  border-top: 1px solid #d4d4c8;
+  display: flex;
+  justify-content: space-between;
+  padding-top: 22px;
+}
+
+.github-timeline-heading .eyebrow {
+  margin-bottom: 6px;
+}
+
+.github-timeline-heading h3 {
+  font-size: 1.25rem;
+  margin-bottom: 0;
+}
+
+.github-event {
+  align-items: center;
+  border-bottom: 1px solid #d4d4c8;
+  display: grid;
+  gap: 14px;
+  grid-template-columns: 92px minmax(0, 1fr) 150px;
+  padding: 14px 0;
+}
+
+.github-event:hover strong {
+  color: #4f806b;
+}
+
+.github-event-kind {
+  border: 1px solid #c8c8bc;
+  font-size: 0.6rem;
+  padding: 5px 7px;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.github-event-kind.pull-request {
+  background: #f2d8bf;
+  border-color: #dfc3a7;
+  color: #8f4b2d;
+}
+
+.github-event-kind.commit {
+  background: #d8e3d5;
+  border-color: #c4d2c5;
+  color: #35654e;
+}
+
+.github-event strong,
+.github-event small {
+  display: block;
+}
+
+.github-event small {
+  color: #66736c;
+  font-size: 0.72rem;
+  margin-top: 3px;
+}
+
+.github-event time {
+  text-align: right;
+}
+
+.github-footnote {
+  color: #66736c;
+  font-size: 0.64rem;
+  line-height: 1.6;
+  margin: 18px 0 0;
+}
+
+@media (max-width: 900px) {
+  .github-repository-strip {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .github-repository-strip > div:nth-child(2) {
+    border-right: 0;
+  }
+
+  .github-member-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 700px) {
+  .github-repository-strip {
+    grid-template-columns: 1fr;
+  }
+
+  .github-repository-strip > div {
+    border-bottom: 1px solid #3e4a44;
+    border-right: 0;
+  }
+
+  .github-repository-strip > div:last-child {
+    border-bottom: 0;
+  }
+
+  .github-event {
+    align-items: start;
+    grid-template-columns: 86px 1fr;
+  }
+
+  .github-event time {
+    grid-column: 2;
+    text-align: left;
+  }
+}

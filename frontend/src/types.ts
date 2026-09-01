@@ -5,6 +5,7 @@ export interface User {
   id: string;
   name: string;
   role: string;
+  githubUsername?: string | null;
 }
 
 export interface Activity {
@@ -60,4 +61,43 @@ export interface ProfessorDashboardData {
   };
   members: ProfessorMemberSummary[];
   recentActivities: Activity[];
+}
+
+export interface GitHubRepositorySummary {
+  fullName: string;
+  url: string;
+  defaultBranch: string;
+  openPullRequests: number;
+  lastPushedAt: string | null;
+}
+
+export interface GitHubMemberContribution {
+  userId: string;
+  displayName: string;
+  githubUsername: string | null;
+  linked: boolean;
+  commits: number;
+  pullRequests: number;
+  openPullRequests: number;
+  mergedPullRequests: number;
+  latestContributionAt: string | null;
+}
+
+export interface GitHubTimelineEvent {
+  kind: "commit" | "pull-request";
+  userId: string;
+  githubUsername: string;
+  title: string;
+  url: string;
+  occurredAt: string;
+  detail: string;
+}
+
+export interface ProfessorGitHubDashboardData {
+  status: "ok" | "unavailable";
+  message: string | null;
+  repository: GitHubRepositorySummary | null;
+  members: GitHubMemberContribution[];
+  timeline: GitHubTimelineEvent[];
+  generatedAt: string;
 }

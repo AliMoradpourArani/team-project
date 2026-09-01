@@ -5,3 +5,4 @@ pydantic==2.13.5
 anyio==4.14.2
 uvicorn[standard]==0.52.4
 pwdlib[argon2]==0.3.1
+httpx==0.28.1

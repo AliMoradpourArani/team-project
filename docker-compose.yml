@@ -9,6 +9,11 @@ services:
       AUTH_COOKIE_NAME: ${AUTH_COOKIE_NAME:-team_session}
       AUTH_COOKIE_SECURE: ${AUTH_COOKIE_SECURE:-false}
       AUTH_SESSION_HOURS: ${AUTH_SESSION_HOURS:-8}
+      GITHUB_INTEGRATION_ENABLED: ${GITHUB_INTEGRATION_ENABLED:-true}
+      GITHUB_REPOSITORY: ${GITHUB_REPOSITORY:-HoosseinRahimi/team-project}
+      GITHUB_CACHE_TTL_SECONDS: ${GITHUB_CACHE_TTL_SECONDS:-60}
+      GITHUB_API_TIMEOUT_SECONDS: ${GITHUB_API_TIMEOUT_SECONDS:-5}
+      GITHUB_TOKEN: ${GITHUB_TOKEN:-}
     volumes:
       - ./data:/app/data
       - team-runtime:/app/runtime

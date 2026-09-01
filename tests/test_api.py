@@ -26,6 +26,7 @@ def client(tmp_path, monkeypatch):
     database_path = tmp_path / "test.db"
     monkeypatch.setenv("DATABASE_PATH", str(database_path))
     monkeypatch.setenv("AUTH_COOKIE_SECURE", "false")
+    monkeypatch.setenv("GITHUB_INTEGRATION_ENABLED", "false")
     initialize_database(database_path, seed=True)
     create_or_update_account(
         username="hossein", password=STUDENT_PASSWORD, role="student", user_id="hossein"
@@ -49,7 +50,13 @@ def test_health_remains_public(client):
 
 
 def test_protected_api_requires_authentication(client):
-    for path in ["/api/users", "/api/activities", "/api/projects", "/api/professor/dashboard"]:
+    for path in [
+        "/api/users",
+        "/api/activities",
+        "/api/projects",
+        "/api/professor/dashboard",
+        "/api/professor/github",
+    ]:
         assert client.get(path).status_code == 401
 
 
@@ -84,6 +91,7 @@ def test_student_only_sees_own_resources(client):
     users = client.get("/api/users")
     assert users.status_code == 200
     assert [user["id"] for user in users.json()] == ["hossein"]
+    assert users.json()[0]["githubUsername"] == "HoosseinRahimi"
     assert client.get("/api/users/ali").status_code == 403
 
     activities = client.get("/api/activities")
@@ -132,7 +140,7 @@ def test_student_activity_crud_requires_csrf_and_ownership(client):
     assert all(item["id"] != activity_id for item in client.get("/api/activities").json())
 
 
-def test_professor_sees_team_dashboard_but_cannot_write(client):
+def test_professor_sees_team_dashboard_and_github_panel_but_cannot_write(client):
     csrf = login(client, "professor", PROFESSOR_PASSWORD)
 
     users = client.get("/api/users")
@@ -144,6 +152,11 @@ def test_professor_sees_team_dashboard_but_cannot_write(client):
     assert body["totals"]["members"] == 3
     assert {member["user"]["id"] for member in body["members"]} == {"ali", "hossein", "reza"}
     assert isinstance(body["recentActivities"], list)
+
+    github = client.get("/api/professor/github")
+    assert github.status_code == 200
+    assert github.json()["status"] == "unavailable"
+    assert github.json()["repository"] is None
 
     blocked = client.post(
         "/api/activities",
@@ -159,9 +172,10 @@ def test_professor_sees_team_dashboard_but_cannot_write(client):
     assert blocked.status_code == 403
 
 
-def test_student_cannot_open_professor_dashboard(client):
+def test_student_cannot_open_professor_dashboards(client):
     login(client, "hossein", STUDENT_PASSWORD)
     assert client.get("/api/professor/dashboard").status_code == 403
+    assert client.get("/api/professor/github").status_code == 403
 
 
 def test_logout_revokes_session(client):

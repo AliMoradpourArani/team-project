@@ -2,7 +2,7 @@
 
 A local-first university team platform for recording daily work, presenting individual progress, integrating reviewed member projects, and giving the professor a clear team view.
 
-The application is one shared platform, not one duplicated website per student. User-specific behavior is driven by authenticated identity, `user_id`, tracked data, and project manifests.
+The application is one shared platform, not one duplicated website per student. User-specific behavior is driven by authenticated identity, `user_id`, tracked data, and typed project manifests.
 
 ## Current status
 
@@ -15,6 +15,7 @@ The application is one shared platform, not one duplicated website per student. 
 | Phase 4 | ✅ Complete | Read-only GitHub integration, repository status, commit/PR metrics, contribution timeline |
 | Phase 5 | ✅ Complete | Validated controlled Project Integration / Runner |
 | Phase 6 | ✅ Complete | Generic member-project detail pages, health checks, safe README view, runtime demo history, integration checklist |
+| Phase 7 | ✅ Complete | Typed CLI/static-web/API demos, sandboxed static preview, validated OpenAPI preview |
 
 ## What the platform does
 
@@ -28,8 +29,10 @@ Each student signs in to one protected workspace and can:
 - inspect their own projects and integration status,
 - open a generic project page at `/projects/<project_id>`,
 - see project health checks and README documentation,
-- run their reviewed project demo when the runner is explicitly enabled,
-- see recent local demo history.
+- run a reviewed Python CLI demo when execution is explicitly enabled,
+- preview static-web projects without starting a process,
+- inspect validated OpenAPI 3.x contracts for API projects,
+- see recent local history for executed demos.
 
 Students cannot access another student's protected data or project by changing a URL or API parameter.
 
@@ -41,8 +44,9 @@ The professor can:
 - drill into member dashboards,
 - inspect all member projects and integration health,
 - view repository/GitHub contribution signals,
-- open every project's detail page,
-- run reviewed project demos when local execution is enabled.
+- open every project's generic detail page,
+- preview static/OpenAPI demos safely,
+- run reviewed executable demos when local execution is enabled.
 
 The professor remains read-only for shared student data.
 
@@ -65,13 +69,18 @@ The application is a **modular monolith**.
    Git-tracked JSON            SQLite                  GitHub API
    shared source data       runtime/private state     read-only data
           │                       │
-          │                       └── project run history
+          │                       └── executed demo history
           │
           └── projects/<owner>/<project>/
                      │
                      ├── project.json
                      ├── README.md
-                     └── validated runner entry point
+                     └── validated typed entry point
+                              │
+                 ┌────────────┼────────────┐
+                 │            │            │
+             Python CLI   Static HTML   OpenAPI JSON
+              execute       preview        preview
 ```
 
 Core technology:
@@ -82,7 +91,8 @@ Core technology:
 - **Shared source:** Git-tracked JSON under `data/`
 - **Authentication:** Argon2 + server-side sessions + CSRF
 - **GitHub integration:** read-only API client with short cache
-- **Project integration:** validated manifest + generic detail read model + controlled runner
+- **Project integration:** validated typed manifests + generic detail read model
+- **Project demos:** allowlisted execution/preview contracts
 - **Testing:** pytest, Vitest, Playwright
 - **Quality/security:** Ruff, ESLint, Prettier, TypeScript, dependency audits, CodeQL
 
@@ -97,7 +107,7 @@ data/
 └── projects/<project_id>.json
 ```
 
-SQLite is derived/runtime state. It also stores private local authentication state and project demo run history.
+SQLite is derived/runtime state. It also stores private local authentication state and executed project demo history.
 
 ```text
 Git-tracked JSON
@@ -183,9 +193,9 @@ docker compose exec backend python -m backend.auth.bootstrap
 Docker mounts:
 
 ```text
-./data     -> /app/data       (read/write, Git-visible shared data)
-./projects -> /app/projects   (read-only reviewed project source)
-team-runtime -> /app/runtime  (private SQLite/auth/runtime state)
+./data        -> /app/data       (read/write, Git-visible shared data)
+./projects    -> /app/projects   (read-only reviewed project source)
+team-runtime  -> /app/runtime    (private SQLite/auth/runtime state)
 ```
 
 ## Authentication and authorization
@@ -195,14 +205,15 @@ team-runtime -> /app/runtime  (private SQLite/auth/runtime state)
 - linked to exactly one tracked user,
 - reads only their own protected user/activity/project data,
 - modifies only their own activities,
-- can inspect/run only their own visible project.
+- can inspect/run/preview only their own visible projects.
 
 ### Professor
 
 - views all members and project/activity summaries,
 - drills into member/project details,
 - views GitHub contribution analytics,
-- can invoke reviewed demos when execution is enabled,
+- can inspect all typed project previews,
+- can invoke reviewed executable demos when execution is enabled,
 - does not receive normal shared-data write access.
 
 Authentication endpoints:
@@ -259,45 +270,90 @@ A member project has two linked pieces:
 1. authoritative metadata: `data/projects/<project_id>.json`
 2. reviewed project source: `projects/<owner>/<project-directory>/`
 
-Required project source layout:
+Required source layout:
 
 ```text
 projects/<owner>/<project-directory>/
 ├── project.json
 ├── README.md
-└── main.py
+└── <typed-entry-point>
 ```
 
-Example manifest:
-
-```json
-{
-  "id": "team-foundation",
-  "name": "Team Project Foundation",
-  "owner_id": "hossein",
-  "description": "Runnable demonstration for the shared platform.",
-  "technology": ["python"],
-  "project_type": "cli",
-  "runner": "python-script-v1",
-  "entry_point": "main.py",
-  "repository_path": "projects/hossein/team-platform"
-}
-```
-
-The current runner intentionally supports only:
-
-```text
-project_type = cli
-runner       = python-script-v1
-```
-
-Do not add student-specific Core routes. A normal project automatically uses:
+A normal project automatically uses the shared routes:
 
 ```text
 /users/<user_id>
 └── Projects
      └── /projects/<project_id>
 ```
+
+Do not create member-specific Core routes or components.
+
+### Phase 7 typed demo contracts
+
+Only these `project_type` / `runner` pairs are valid:
+
+| Project type | Runner | Entry point | Demo mode | Starts a project process? |
+| --- | --- | --- | --- | --- |
+| `cli` | `python-script-v1` | `.py` | execute | yes, opt-in |
+| `static-web` | `static-site-v1` | `.html` / `.htm` | preview | no |
+| `api` | `openapi-json-v1` | `.json` | preview | no |
+
+Mismatched type/runner pairs are rejected by manifest validation.
+
+#### Python CLI
+
+```json
+{
+  "id": "example-cli",
+  "name": "Example CLI",
+  "owner_id": "student-id",
+  "description": "Reviewed Python demo.",
+  "technology": ["python"],
+  "project_type": "cli",
+  "runner": "python-script-v1",
+  "entry_point": "main.py",
+  "repository_path": "projects/student-id/example-cli"
+}
+```
+
+This remains the only contract that starts a local project process.
+
+#### Static web preview
+
+```json
+{
+  "id": "example-web",
+  "name": "Example Static Site",
+  "owner_id": "student-id",
+  "description": "Self-contained static frontend demo.",
+  "technology": ["html", "css"],
+  "project_type": "static-web",
+  "runner": "static-site-v1",
+  "entry_point": "index.html",
+  "repository_path": "projects/student-id/example-web"
+}
+```
+
+The backend reads bounded UTF-8 HTML. The frontend renders it in an iframe with an empty `sandbox` plus a restrictive CSP. Scripts, forms, network connections, nested frames, base URL changes, and navigation are not granted by the preview policy.
+
+#### OpenAPI preview
+
+```json
+{
+  "id": "example-api",
+  "name": "Example API",
+  "owner_id": "student-id",
+  "description": "API contract demo.",
+  "technology": ["openapi"],
+  "project_type": "api",
+  "runner": "openapi-json-v1",
+  "entry_point": "openapi.json",
+  "repository_path": "projects/student-id/example-api"
+}
+```
+
+The backend requires valid OpenAPI 3.x JSON with a top-level `paths` object, normalizes it, applies size limits, and returns it as a text preview. It does **not** start an API server.
 
 ### Project detail page
 
@@ -306,20 +362,12 @@ Do not add student-specific Core routes. A normal project automatically uses:
 - authoritative project metadata,
 - integration state,
 - independent health checks,
-- safe plain-text README preview,
-- controlled demo action,
-- recent local runtime history.
-
-Health currently checks:
-
-```text
-Tracked project metadata
-Manifest
-Owner mapping
-Repository / entry-point paths
-Runner contract
-README
-```
+- safe plain-text README view,
+- typed demo contract and mode,
+- sandboxed static preview when applicable,
+- validated OpenAPI preview when applicable,
+- controlled CLI demo action when applicable,
+- recent local history for executed demos.
 
 Project endpoints:
 
@@ -330,7 +378,7 @@ GET  /api/projects/{project_id}/detail
 POST /api/projects/{project_id}/run
 ```
 
-Demo history is stored only in runtime SQLite. It is never written into Git-tracked project data or source.
+Preview-only projects cannot use the process runner. Demo history is stored only in runtime SQLite and is never written into Git-tracked project data or source.
 
 ### Runner safety boundary
 
@@ -342,15 +390,17 @@ PROJECT_RUNNER_TIMEOUT_SECONDS=5
 PROJECT_RUNNER_OUTPUT_LIMIT=16000
 ```
 
-After code passes normal PR/CI/review:
+After executable Python code passes normal PR/CI/review:
 
 ```bash
 export PROJECT_RUNNER_ENABLED=true
 ```
 
-The backend derives argv, uses `shell=False`, validates ownership/paths, rejects free-form manifest commands, bounds runtime/output, and mounts project source read-only in Docker.
+For `python-script-v1`, the backend derives argv, uses `shell=False`, validates ownership/paths, rejects free-form manifest commands, and bounds runtime/output. Project source is mounted read-only in Docker.
 
-This is **not a sandbox for hostile code**. Only reviewed repository code should be enabled.
+The Python runner is **not a sandbox for hostile code**. Only reviewed repository code should be enabled.
+
+Static/OpenAPI contracts deliberately avoid starting project processes. A future untrusted web/API execution feature should use a separate isolated container/sandbox service rather than widening backend privileges.
 
 ## Member integration checklist
 
@@ -360,6 +410,7 @@ Before a teammate opens a project PR:
 [ ] data/projects/<project_id>.json exists
 [ ] owner_id is correct
 [ ] project.json validates
+[ ] project_type / runner pair is allowlisted
 [ ] repository_path exactly matches the directory
 [ ] README.md documents purpose/setup/input/output/demo
 [ ] entry point exists inside the project
@@ -433,6 +484,7 @@ Rules:
 - [Project contract](docs/project-contract.md)
 - [Project runner](docs/project-runner.md)
 - [Member project integration](docs/member-project-integration.md)
+- [Rich project demos](docs/rich-project-demos.md)
 - [Git workflow](docs/git-workflow.md)
 - [Database rules](docs/database-rules.md)
 - [Engineering quality](docs/engineering-quality.md)

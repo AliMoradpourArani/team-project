@@ -5,10 +5,20 @@ from __future__ import annotations
 from pathlib import PurePosixPath
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    field_validator,
+    model_validator,
+)
 
 from .api import ProjectResponse
 from .source_data import validate_slug
+
+ProjectType = Literal["cli", "static-web", "api"]
+ProjectRunner = Literal["python-script-v1", "static-site-v1", "openapi-json-v1"]
+DemoMode = Literal["execute", "preview"]
 
 
 class ProjectManifest(BaseModel):
@@ -21,8 +31,8 @@ class ProjectManifest(BaseModel):
     owner_id: str
     description: str = Field(min_length=1)
     technology: list[str] = Field(default_factory=list)
-    project_type: Literal["cli"]
-    runner: Literal["python-script-v1"]
+    project_type: ProjectType
+    runner: ProjectRunner
     entry_point: str
     repository_path: str
 
@@ -42,8 +52,6 @@ class ProjectManifest(BaseModel):
         path = PurePosixPath(value)
         if path.is_absolute() or not path.parts or any(part in {"", ".", ".."} for part in path.parts):
             raise ValueError("entry_point must be a clean relative path inside the project directory.")
-        if path.suffix.lower() != ".py":
-            raise ValueError("python-script-v1 entry_point must point to a .py file.")
         return path.as_posix()
 
     @field_validator("repository_path")
@@ -58,6 +66,30 @@ class ProjectManifest(BaseModel):
         validate_slug(path.parts[2], "project repository directory")
         return path.as_posix()
 
+    @model_validator(mode="after")
+    def _valid_contract(self) -> ProjectManifest:
+        expected = {
+            "cli": "python-script-v1",
+            "static-web": "static-site-v1",
+            "api": "openapi-json-v1",
+        }
+        expected_runner = expected[self.project_type]
+        if self.runner != expected_runner:
+            raise ValueError(
+                f"project_type {self.project_type!r} requires runner {expected_runner!r}."
+            )
+
+        suffix = PurePosixPath(self.entry_point).suffix.lower()
+        allowed_suffixes = {
+            "python-script-v1": {".py"},
+            "static-site-v1": {".html", ".htm"},
+            "openapi-json-v1": {".json"},
+        }
+        if suffix not in allowed_suffixes[self.runner]:
+            allowed = ", ".join(sorted(allowed_suffixes[self.runner]))
+            raise ValueError(f"{self.runner} entry_point must use one of: {allowed}.")
+        return self
+
 
 class ProjectIntegrationResponse(BaseModel):
     projectId: str
@@ -66,6 +98,8 @@ class ProjectIntegrationResponse(BaseModel):
     integrationStatus: Literal["ready", "not-integrated", "invalid"]
     runnerEnabled: bool
     runnable: bool
+    previewable: bool = False
+    demoMode: DemoMode | None = None
     projectType: str | None = None
     runner: str | None = None
     entryPoint: str | None = None
@@ -78,6 +112,13 @@ class ProjectHealthCheck(BaseModel):
     label: str
     passed: bool
     detail: str
+
+
+class ProjectPreview(BaseModel):
+    kind: Literal["static-html", "openapi-json"]
+    content: str
+    summary: str
+    truncated: bool = False
 
 
 class ProjectRunHistoryItem(BaseModel):
@@ -100,6 +141,7 @@ class ProjectDetailResponse(BaseModel):
     healthPassed: int
     healthTotal: int
     readme: str | None
+    preview: ProjectPreview | None = None
     recentRuns: list[ProjectRunHistoryItem]
 
 

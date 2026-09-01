@@ -1,0 +1,31 @@
+.project-demo-card {
+  overflow: hidden;
+}
+
+.project-demo-summary {
+  margin: 0 0 0.9rem;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  opacity: 0.76;
+}
+
+.project-static-preview {
+  width: 100%;
+  min-height: 28rem;
+  border: 1px solid var(--border-color, #d8dee9);
+  border-radius: 0.75rem;
+  background: white;
+}
+
+.project-openapi-preview {
+  max-height: 36rem;
+  overflow: auto;
+  margin: 0;
+  padding: 1rem;
+  border-radius: 0.75rem;
+  background: rgba(127, 127, 127, 0.08);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 0.84rem;
+  line-height: 1.5;
+}

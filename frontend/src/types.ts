@@ -41,6 +41,8 @@ export interface ProjectIntegration {
   integrationStatus: "ready" | "not-integrated" | "invalid";
   runnerEnabled: boolean;
   runnable: boolean;
+  previewable?: boolean;
+  demoMode?: "execute" | "preview" | null;
   projectType: string | null;
   runner: string | null;
   entryPoint: string | null;
@@ -53,6 +55,13 @@ export interface ProjectHealthCheck {
   label: string;
   passed: boolean;
   detail: string;
+}
+
+export interface ProjectPreview {
+  kind: "static-html" | "openapi-json";
+  content: string;
+  summary: string;
+  truncated: boolean;
 }
 
 export interface ProjectRunHistoryItem {
@@ -75,6 +84,7 @@ export interface ProjectDetail {
   healthPassed: number;
   healthTotal: number;
   readme: string | null;
+  preview?: ProjectPreview | null;
   recentRuns: ProjectRunHistoryItem[];
 }
 

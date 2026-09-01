@@ -1,4 +1,4 @@
-"""Controlled local execution and integration details for reviewed student projects."""
+"""Controlled local execution and rich integration details for reviewed student projects."""
 
 from __future__ import annotations
 
@@ -18,6 +18,7 @@ from ..schemas.project_runner import (
     ProjectHealthCheck,
     ProjectIntegrationResponse,
     ProjectManifest,
+    ProjectPreview,
     ProjectRunHistoryItem,
     ProjectRunResponse,
 )
@@ -27,6 +28,8 @@ DEFAULT_TIMEOUT_SECONDS = 5
 MAX_TIMEOUT_SECONDS = 30
 DEFAULT_OUTPUT_LIMIT = 16_000
 README_DISPLAY_LIMIT = 64_000
+PREVIEW_SOURCE_LIMIT = 1_000_000
+PREVIEW_DISPLAY_LIMIT = 100_000
 RUN_HISTORY_LIMIT = 10
 RUN_PREVIEW_LIMIT = 4_000
 
@@ -40,7 +43,7 @@ class ProjectRunnerDisabled(ProjectRunnerError):
 
 
 class ProjectManifestError(ProjectRunnerError):
-    """Raised when a project manifest or path violates the runner contract."""
+    """Raised when a project manifest or path violates the demo contract."""
 
 
 def runner_enabled() -> bool:
@@ -138,7 +141,7 @@ def _resolve_project_paths(manifest: ProjectManifest, manifest_path: Path) -> tu
     if root not in actual_dir.parents:
         raise ProjectManifestError("Project directory escaped the configured projects root.")
     if manifest_path.parent.is_symlink():
-        raise ProjectManifestError("Symlinked project directories are not executable.")
+        raise ProjectManifestError("Symlinked project directories are not supported.")
 
     relative = Path(manifest.entry_point)
     entry_point = (actual_dir / relative).resolve()
@@ -151,12 +154,86 @@ def _resolve_project_paths(manifest: ProjectManifest, manifest_path: Path) -> tu
     for part in relative.parts:
         cursor = cursor / part
         if cursor.is_symlink():
-            raise ProjectManifestError("Symlinked entry-point paths are not executable.")
+            raise ProjectManifestError("Symlinked entry-point paths are not supported.")
 
     owner_dir = Path(manifest.repository_path).parts[1]
     if owner_dir != manifest.owner_id:
         raise ProjectManifestError("Manifest owner_id must match its projects/<owner>/ directory.")
     return actual_dir, entry_point
+
+
+def _demo_mode(manifest: ProjectManifest) -> str:
+    return "execute" if manifest.runner == "python-script-v1" else "preview"
+
+
+def _bounded_text(path: Path, label: str) -> tuple[str, bool]:
+    try:
+        size = path.stat().st_size
+    except OSError as error:
+        raise ProjectManifestError(f"Cannot inspect {label}: {error}") from error
+    if size > PREVIEW_SOURCE_LIMIT:
+        raise ProjectManifestError(
+            f"{label} is too large for an in-app preview ({size} bytes; limit {PREVIEW_SOURCE_LIMIT})."
+        )
+    try:
+        text = path.read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError) as error:
+        raise ProjectManifestError(f"Cannot read {label} as UTF-8: {error}") from error
+    if len(text) <= PREVIEW_DISPLAY_LIMIT:
+        return text, False
+    return text[:PREVIEW_DISPLAY_LIMIT] + "\n[preview truncated]", True
+
+
+def _project_preview(manifest: ProjectManifest, entry_point: Path) -> ProjectPreview | None:
+    if manifest.runner == "python-script-v1":
+        return None
+
+    if manifest.runner == "static-site-v1":
+        content, truncated = _bounded_text(entry_point, "static HTML entry point")
+        return ProjectPreview(
+            kind="static-html",
+            content=content,
+            summary="Sandboxed static HTML preview. Scripts, forms, network requests, and navigation are blocked by the UI preview policy.",
+            truncated=truncated,
+        )
+
+    if manifest.runner == "openapi-json-v1":
+        raw, source_truncated = _bounded_text(entry_point, "OpenAPI JSON entry point")
+        if source_truncated:
+            raise ProjectManifestError("OpenAPI JSON must fit within the preview display limit.")
+        try:
+            payload = json.loads(raw)
+        except json.JSONDecodeError as error:
+            raise ProjectManifestError(f"OpenAPI entry point is not valid JSON: {error}") from error
+        if not isinstance(payload, dict):
+            raise ProjectManifestError("OpenAPI entry point must contain a JSON object.")
+        openapi_version = payload.get("openapi")
+        paths = payload.get("paths")
+        info = payload.get("info")
+        if not isinstance(openapi_version, str) or not openapi_version.startswith("3."):
+            raise ProjectManifestError("OpenAPI preview requires an OpenAPI 3.x document.")
+        if not isinstance(paths, dict):
+            raise ProjectManifestError("OpenAPI preview requires a top-level paths object.")
+        if info is not None and not isinstance(info, dict):
+            raise ProjectManifestError("OpenAPI info must be a JSON object when provided.")
+
+        normalized = json.dumps(payload, indent=2, sort_keys=True, ensure_ascii=False)
+        if len(normalized) > PREVIEW_DISPLAY_LIMIT:
+            raise ProjectManifestError("Normalized OpenAPI JSON exceeds the in-app preview limit.")
+        title = info.get("title") if isinstance(info, dict) else None
+        version = info.get("version") if isinstance(info, dict) else None
+        identity = " · ".join(value for value in (title, version) if isinstance(value, str) and value)
+        summary = f"OpenAPI {openapi_version} · {len(paths)} paths"
+        if identity:
+            summary = f"{identity} · {summary}"
+        return ProjectPreview(
+            kind="openapi-json",
+            content=normalized,
+            summary=summary,
+            truncated=False,
+        )
+
+    raise ProjectManifestError(f"Unsupported project runner: {manifest.runner}")
 
 
 def _integration_for(
@@ -174,6 +251,7 @@ def _integration_for(
             integrationStatus="invalid",
             runnerEnabled=enabled,
             runnable=False,
+            previewable=False,
             reason=invalid_reason,
         )
 
@@ -186,14 +264,17 @@ def _integration_for(
             integrationStatus="not-integrated",
             runnerEnabled=enabled,
             runnable=False,
+            previewable=False,
             reason="No valid projects/<owner>/<project>/project.json manifest is linked to this project.",
         )
 
     manifest, manifest_path = item
+    demo_mode = _demo_mode(manifest)
     try:
         if manifest.owner_id != project.userId:
             raise ProjectManifestError("Manifest owner_id does not match authoritative project owner.")
-        _resolve_project_paths(manifest, manifest_path)
+        _project_dir, entry_point = _resolve_project_paths(manifest, manifest_path)
+        _project_preview(manifest, entry_point)
     except ProjectManifestError as error:
         return ProjectIntegrationResponse(
             projectId=project.id,
@@ -202,6 +283,8 @@ def _integration_for(
             integrationStatus="invalid",
             runnerEnabled=enabled,
             runnable=False,
+            previewable=False,
+            demoMode=demo_mode,
             projectType=manifest.project_type,
             runner=manifest.runner,
             entryPoint=manifest.entry_point,
@@ -209,18 +292,25 @@ def _integration_for(
             reason=str(error),
         )
 
+    executable = demo_mode == "execute"
     return ProjectIntegrationResponse(
         projectId=project.id,
         userId=project.userId,
         name=project.name,
         integrationStatus="ready",
         runnerEnabled=enabled,
-        runnable=enabled,
+        runnable=enabled and executable,
+        previewable=not executable,
+        demoMode=demo_mode,
         projectType=manifest.project_type,
         runner=manifest.runner,
         entryPoint=manifest.entry_point,
         repositoryPath=manifest.repository_path,
-        reason=None if enabled else "Runner is disabled. Set PROJECT_RUNNER_ENABLED=true after reviewing project code.",
+        reason=(
+            None
+            if not executable or enabled
+            else "Runner is disabled. Set PROJECT_RUNNER_ENABLED=true after reviewing project code."
+        ),
     )
 
 
@@ -271,6 +361,7 @@ def project_detail(project: ProjectResponse) -> ProjectDetailResponse:
         )
     ]
     readme: str | None = None
+    preview: ProjectPreview | None = None
 
     invalid_reason = errors.get(project.id)
     item = manifests.get(project.id)
@@ -280,7 +371,7 @@ def project_detail(project: ProjectResponse) -> ProjectDetailResponse:
                 _health_check("manifest", "Manifest", False, invalid_reason),
                 _health_check("owner", "Owner mapping", False, "Cannot verify owner until manifest is valid."),
                 _health_check("paths", "Repository paths", False, "Cannot verify paths until manifest is valid."),
-                _health_check("runner", "Runner contract", False, "Cannot verify runner until manifest is valid."),
+                _health_check("runner", "Demo contract", False, "Cannot verify demo contract until manifest is valid."),
                 _health_check("readme", "README", False, "Cannot locate README until manifest is valid."),
             ]
         )
@@ -295,7 +386,7 @@ def project_detail(project: ProjectResponse) -> ProjectDetailResponse:
                 ),
                 _health_check("owner", "Owner mapping", False, "No manifest is available to verify ownership."),
                 _health_check("paths", "Repository paths", False, "No manifest is available to verify paths."),
-                _health_check("runner", "Runner contract", False, "No manifest is available to verify the runner."),
+                _health_check("runner", "Demo contract", False, "No manifest is available to verify the demo type."),
                 _health_check("readme", "README", False, "No integrated project directory is available."),
             ]
         )
@@ -307,7 +398,7 @@ def project_detail(project: ProjectResponse) -> ProjectDetailResponse:
                 "manifest",
                 "Manifest",
                 True,
-                "project.json matches the supported schema and contains no free-form shell command.",
+                "project.json matches a supported typed demo contract and contains no free-form shell command.",
             )
         )
         checks.append(
@@ -321,15 +412,15 @@ def project_detail(project: ProjectResponse) -> ProjectDetailResponse:
             )
         )
         try:
-            project_dir, _entry_point = _resolve_project_paths(manifest, manifest_path)
+            project_dir, entry_point = _resolve_project_paths(manifest, manifest_path)
         except ProjectManifestError as error:
             checks.append(_health_check("paths", "Repository paths", False, str(error)))
             checks.append(
                 _health_check(
                     "runner",
-                    "Runner contract",
+                    "Demo contract",
                     False,
-                    "Runner cannot be considered ready until repository paths are valid.",
+                    "Demo cannot be considered ready until repository paths are valid.",
                 )
             )
             checks.append(
@@ -341,17 +432,23 @@ def project_detail(project: ProjectResponse) -> ProjectDetailResponse:
                     "paths",
                     "Repository paths",
                     True,
-                    "Repository directory and Python entry point are confined to the member project.",
+                    "Repository directory and entry point are confined to the member project.",
                 )
             )
-            checks.append(
-                _health_check(
-                    "runner",
-                    "Runner contract",
-                    True,
-                    f"Supported contract: {manifest.project_type} / {manifest.runner}.",
+            try:
+                preview = _project_preview(manifest, entry_point)
+            except ProjectManifestError as error:
+                checks.append(_health_check("runner", "Demo contract", False, str(error)))
+            else:
+                mode = "controlled execution" if _demo_mode(manifest) == "execute" else "safe preview"
+                checks.append(
+                    _health_check(
+                        "runner",
+                        "Demo contract",
+                        True,
+                        f"Supported contract: {manifest.project_type} / {manifest.runner} ({mode}).",
+                    )
                 )
-            )
             readme, readme_check = _read_project_readme(project_dir)
             checks.append(readme_check)
 
@@ -364,6 +461,7 @@ def project_detail(project: ProjectResponse) -> ProjectDetailResponse:
         healthPassed=passed,
         healthTotal=len(checks),
         readme=readme,
+        preview=preview,
         recentRuns=history,
     )
 
@@ -448,6 +546,11 @@ def run_project(project: ProjectResponse) -> ProjectRunResponse:
         raise ProjectManifestError(integration.reason or "Project is not ready for execution.")
 
     manifest, manifest_path = manifests[project.id]
+    if manifest.runner != "python-script-v1":
+        raise ProjectManifestError(
+            f"{manifest.runner} is preview-only and cannot be executed by the local process runner."
+        )
+
     project_dir, entry_point = _resolve_project_paths(manifest, manifest_path)
     command = [sys.executable, "-B", str(entry_point.relative_to(project_dir))]
     safe_environment = {

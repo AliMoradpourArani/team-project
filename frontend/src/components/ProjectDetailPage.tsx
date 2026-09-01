@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import { getProjectDetail, runProject } from "../api";
 import "../project-runner.css";
 import type { ProjectDetail, ProjectRunResult } from "../types";
+import ProjectDemoPreview from "./ProjectDemoPreview";
 import StatusMessage from "./StatusMessage";
 
 interface Props {
@@ -98,8 +99,8 @@ export default function ProjectDetailPage({ projectId, backHref }: Props) {
         <section className="dashboard-card">
           <div className="section-heading compact">
             <div>
-              <p className="eyebrow">Runner</p>
-              <h2>Demo contract</h2>
+              <p className="eyebrow">Demo</p>
+              <h2>Typed contract</h2>
             </div>
           </div>
           <dl className="project-contract-list">
@@ -112,6 +113,10 @@ export default function ProjectDetailPage({ projectId, backHref }: Props) {
               <dd>{integration.runner ?? "Not configured"}</dd>
             </div>
             <div>
+              <dt>Mode</dt>
+              <dd>{integration.demoMode ?? "Not configured"}</dd>
+            </div>
+            <div>
               <dt>Entry point</dt>
               <dd>{integration.entryPoint ?? "Not configured"}</dd>
             </div>
@@ -121,16 +126,22 @@ export default function ProjectDetailPage({ projectId, backHref }: Props) {
             </div>
           </dl>
           {integration.reason ? <p className="runner-reason">{integration.reason}</p> : null}
-          <button
-            className="primary-button runner-button"
-            type="button"
-            disabled={!integration.runnable || running}
-            onClick={() => void execute()}
-          >
-            {running ? "Running…" : integration.runnerEnabled ? "Run demo" : "Runner disabled"}
-          </button>
+          {integration.demoMode === "preview" ? (
+            <p className="runner-safety-note">Preview-only demo. No project process is started.</p>
+          ) : (
+            <button
+              className="primary-button runner-button"
+              type="button"
+              disabled={!integration.runnable || running}
+              onClick={() => void execute()}
+            >
+              {running ? "Running…" : integration.runnerEnabled ? "Run demo" : "Runner disabled"}
+            </button>
+          )}
         </section>
       </div>
+
+      {detail.preview ? <ProjectDemoPreview preview={detail.preview} /> : null}
 
       {result ? (
         <section className="dashboard-card">
@@ -167,7 +178,7 @@ export default function ProjectDetailPage({ projectId, backHref }: Props) {
         <div className="section-heading compact">
           <div>
             <p className="eyebrow">Runtime history</p>
-            <h2>Recent demo runs</h2>
+            <h2>Recent executed demo runs</h2>
           </div>
           <span className="member-count">{detail.recentRuns.length}</span>
         </div>
@@ -189,7 +200,7 @@ export default function ProjectDetailPage({ projectId, backHref }: Props) {
             ))}
           </div>
         ) : (
-          <StatusMessage>No recorded demo runs yet.</StatusMessage>
+          <StatusMessage>No recorded executed demo runs yet.</StatusMessage>
         )}
       </section>
     </section>

@@ -43,8 +43,8 @@ export default function ProjectPanel({ projects }: { projects: Project[] }) {
       </div>
 
       <p className="runner-safety-note">
-        Runner executes reviewed repository code only. It does not execute manifest shell commands
-        and is not a sandbox for untrusted code.
+        Executed demos run reviewed Python only. Static web and OpenAPI projects use preview-only
+        contracts and never start a project process.
       </p>
 
       {error ? <StatusMessage error>{error}</StatusMessage> : null}
@@ -56,6 +56,12 @@ export default function ProjectPanel({ projects }: { projects: Project[] }) {
             const result = results[project.id];
             const statusLabel = integration?.integrationStatus ?? "checking";
             const statusClass = integration?.integrationStatus ?? "checking";
+            let demoMode = integration?.demoMode;
+            if (!demoMode && integration?.runner === "python-script-v1") {
+              demoMode = "execute";
+            } else if (!demoMode && integration?.previewable) {
+              demoMode = "preview";
+            }
 
             return (
               <article className="project-item project-runner-item" key={project.id}>
@@ -72,21 +78,23 @@ export default function ProjectPanel({ projects }: { projects: Project[] }) {
 
                   <div className="runner-controls">
                     <a className="text-link" href={`/projects/${project.id}`} data-link>
-                      View project details
+                      {demoMode === "preview" ? "Open safe preview" : "View project details"}
                     </a>
-                    {integration ? (
+                    {demoMode === "execute" ? (
                       <button
                         className="secondary-button runner-button"
                         type="button"
-                        disabled={!integration.runnable || runningId === project.id}
+                        disabled={!integration?.runnable || runningId === project.id}
                         onClick={() => void execute(project)}
                       >
                         {runningId === project.id
                           ? "Running…"
-                          : integration.runnerEnabled
+                          : integration?.runnerEnabled
                             ? "Run demo"
                             : "Runner disabled"}
                       </button>
+                    ) : integration?.previewable ? (
+                      <span className="runner-contract">preview-only</span>
                     ) : null}
                   </div>
 

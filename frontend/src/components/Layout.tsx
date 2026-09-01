@@ -10,34 +10,44 @@ interface Props {
 }
 
 export default function Layout({ children, session, onLogout, currentPath = "/" }: Props) {
-  const tabs = [
-    { href: "/", label: "Home" },
-    { href: "/ali-workspace", label: "Ali-Workspace" },
-  ];
   const normalizedPath = currentPath.replace(/\/+$/, "") || "/";
+  const homeHref =
+    session?.role === "professor"
+      ? "/professor"
+      : session?.role === "student" && session.userId
+        ? `/users/${session.userId}`
+        : "/";
+  const tabs =
+    session?.role === "professor"
+      ? [{ href: "/professor", label: "Team dashboard" }]
+      : session?.role === "student" && session.userId
+        ? [{ href: `/users/${session.userId}`, label: "My dashboard" }]
+        : [];
 
   return (
     <div className="app-shell">
       <header className="site-header">
-        <a className="brand" href="/" data-link>
+        <a className="brand" href={homeHref} data-link>
           Team Project
         </a>
-        <nav className="site-nav" aria-label="Main navigation">
-          {tabs.map((tab) => {
-            const isActive = normalizedPath === tab.href;
-            return (
-              <a
-                className={`nav-tab${isActive ? " nav-tab-active" : ""}`}
-                href={tab.href}
-                data-link
-                key={tab.href}
-                aria-current={isActive ? "page" : undefined}
-              >
-                {tab.label}
-              </a>
-            );
-          })}
-        </nav>
+        {tabs.length > 0 ? (
+          <nav className="site-nav" aria-label="Main navigation">
+            {tabs.map((tab) => {
+              const isActive = normalizedPath === tab.href;
+              return (
+                <a
+                  className={`nav-tab${isActive ? " nav-tab-active" : ""}`}
+                  href={tab.href}
+                  data-link
+                  key={tab.href}
+                  aria-current={isActive ? "page" : undefined}
+                >
+                  {tab.label}
+                </a>
+              );
+            })}
+          </nav>
+        ) : null}
         {session ? (
           <div className="header-session">
             <span className="header-label">

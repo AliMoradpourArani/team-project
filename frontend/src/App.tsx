@@ -191,7 +191,6 @@ export default function App() {
   }
 
   const userMatch = pathname.match(/^\/users\/([^/]+)\/?$/);
-  const aliWorkspaceMatch = pathname.match(/^\/ali-workspace\/?$/);
   let content: ReactNode;
 
   if (session.role === "student") {
@@ -199,7 +198,7 @@ export default function App() {
       content = (
         <StatusMessage error>Student account is not linked to a tracked user.</StatusMessage>
       );
-    } else if (aliWorkspaceMatch && session.userId !== "ali") {
+    } else if (userMatch && userMatch[1] !== session.userId) {
       content = (
         <div className="empty-state">
           <p className="eyebrow">403</p>
@@ -214,8 +213,6 @@ export default function App() {
     }
   } else if (userMatch) {
     content = <UserPage userId={userMatch[1]} readOnly />;
-  } else if (aliWorkspaceMatch) {
-    content = <UserPage userId="ali" readOnly />;
   } else {
     content = <ProfessorDashboard />;
   }

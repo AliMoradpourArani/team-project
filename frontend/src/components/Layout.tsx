@@ -1,16 +1,20 @@
 import type { ReactNode } from "react";
 
-export default function Layout({
-  children,
-  currentPath = "/",
-}: {
+import type { AuthSession } from "../types";
+
+interface Props {
   children: ReactNode;
+  session?: AuthSession | null;
+  onLogout?: () => void;
   currentPath?: string;
-}) {
+}
+
+export default function Layout({ children, session, onLogout, currentPath = "/" }: Props) {
   const tabs = [
     { href: "/", label: "Home" },
     { href: "/ali-workspace", label: "Ali-Workspace" },
   ];
+  const normalizedPath = currentPath.replace(/\/+$/, "") || "/";
 
   return (
     <div className="app-shell">
@@ -20,8 +24,7 @@ export default function Layout({
         </a>
         <nav className="site-nav" aria-label="Main navigation">
           {tabs.map((tab) => {
-            const isActive =
-              tab.href === "/" ? currentPath === "/" : currentPath.startsWith(tab.href);
+            const isActive = normalizedPath === tab.href;
             return (
               <a
                 className={`nav-tab${isActive ? " nav-tab-active" : ""}`}
@@ -35,7 +38,18 @@ export default function Layout({
             );
           })}
         </nav>
-        <span className="header-label">Local workspace</span>
+        {session ? (
+          <div className="header-session">
+            <span className="header-label">
+              {session.displayName} · {session.role}
+            </span>
+            <button className="header-logout" type="button" onClick={onLogout}>
+              Sign out
+            </button>
+          </div>
+        ) : (
+          <span className="header-label">Protected local workspace</span>
+        )}
       </header>
       <main className="page-content">{children}</main>
     </div>

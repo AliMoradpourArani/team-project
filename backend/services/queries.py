@@ -13,19 +13,34 @@ class NotFoundError(LookupError):
 
 def list_users() -> list[UserResponse]:
     with connect() as connection:
-        rows = connection.execute("SELECT id, display_name, role FROM users ORDER BY id").fetchall()
-    return [UserResponse(id=r["id"], name=r["display_name"], role=r["role"]) for r in rows]
+        rows = connection.execute(
+            "SELECT id, display_name, role, github_username FROM users ORDER BY id"
+        ).fetchall()
+    return [
+        UserResponse(
+            id=row["id"],
+            name=row["display_name"],
+            role=row["role"],
+            githubUsername=row["github_username"],
+        )
+        for row in rows
+    ]
 
 
 def get_user(user_id: str) -> UserResponse:
     validate_slug(user_id, "user id")
     with connect() as connection:
         row = connection.execute(
-            "SELECT id, display_name, role FROM users WHERE id = ?", (user_id,)
+            "SELECT id, display_name, role, github_username FROM users WHERE id = ?", (user_id,)
         ).fetchone()
     if row is None:
         raise NotFoundError(f"Unknown user: {user_id}")
-    return UserResponse(id=row["id"], name=row["display_name"], role=row["role"])
+    return UserResponse(
+        id=row["id"],
+        name=row["display_name"],
+        role=row["role"],
+        githubUsername=row["github_username"],
+    )
 
 
 def list_activities() -> list[ActivityResponse]:
@@ -38,14 +53,14 @@ def list_activities() -> list[ActivityResponse]:
         ).fetchall()
     return [
         ActivityResponse(
-            id=r["id"],
-            userId=r["user_id"],
-            date=r["date"],
-            title=r["title"],
-            status=r["status"],
-            projectId=r["project_id"],
+            id=row["id"],
+            userId=row["user_id"],
+            date=row["date"],
+            title=row["title"],
+            status=row["status"],
+            projectId=row["project_id"],
         )
-        for r in rows
+        for row in rows
     ]
 
 
@@ -59,14 +74,14 @@ def list_projects() -> list[ProjectResponse]:
         ).fetchall()
     return [
         ProjectResponse(
-            id=r["id"],
-            userId=r["user_id"],
-            name=r["name"],
-            description=r["description"],
-            technology=[item for item in r["technology"].split(",") if item],
-            status=r["status"],
+            id=row["id"],
+            userId=row["user_id"],
+            name=row["name"],
+            description=row["description"],
+            technology=[item for item in row["technology"].split(",") if item],
+            status=row["status"],
         )
-        for r in rows
+        for row in rows
     ]
 
 

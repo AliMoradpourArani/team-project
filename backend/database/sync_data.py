@@ -18,12 +18,13 @@ def sync_source_data(connection) -> dict[str, int]:
     with connection:
         connection.executemany(
             """
-            INSERT INTO users (id, display_name, role) VALUES (?, ?, ?)
+            INSERT INTO users (id, display_name, role, github_username) VALUES (?, ?, ?, ?)
             ON CONFLICT(id) DO UPDATE SET
               display_name=excluded.display_name,
-              role=excluded.role
+              role=excluded.role,
+              github_username=excluded.github_username
             """,
-            [(u.id, u.display_name, u.role) for u in users],
+            [(u.id, u.display_name, u.role, u.github_username) for u in users],
         )
 
         connection.executemany(

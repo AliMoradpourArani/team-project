@@ -2,8 +2,8 @@ import type { Activity } from "../types";
 
 interface Props {
   activities: Activity[];
-  onEdit: (activity: Activity) => void;
-  onDelete: (activity: Activity) => void;
+  onEdit?: (activity: Activity) => void;
+  onDelete?: (activity: Activity) => void;
 }
 
 export default function TimelineView({ activities, onEdit, onDelete }: Props) {
@@ -13,6 +13,8 @@ export default function TimelineView({ activities, onEdit, onDelete }: Props) {
     group.push(activity);
     groups.set(activity.date, group);
   }
+
+  const editable = Boolean(onEdit && onDelete);
 
   return (
     <section className="dashboard-card timeline-card">
@@ -36,14 +38,16 @@ export default function TimelineView({ activities, onEdit, onDelete }: Props) {
                     <h3>{activity.title}</h3>
                     <span className={`pill ${activity.status}`}>{activity.status}</span>
                   </div>
-                  <div className="item-actions">
-                    <button type="button" onClick={() => onEdit(activity)}>
-                      Edit
-                    </button>
-                    <button type="button" onClick={() => onDelete(activity)}>
-                      Delete
-                    </button>
-                  </div>
+                  {editable ? (
+                    <div className="item-actions">
+                      <button type="button" onClick={() => onEdit?.(activity)}>
+                        Edit
+                      </button>
+                      <button type="button" onClick={() => onDelete?.(activity)}>
+                        Delete
+                      </button>
+                    </div>
+                  ) : null}
                 </article>
               ))}
             </div>

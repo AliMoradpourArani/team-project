@@ -28,6 +28,7 @@ export default defineConfig({
         ...process.env,
         DATABASE_PATH: process.env.DATABASE_PATH ?? "/tmp/team-project-e2e.db",
         CORS_ORIGINS: "http://127.0.0.1:5173",
+        GITHUB_INTEGRATION_ENABLED: "false",
       },
     },
     {

@@ -1,9 +1,11 @@
 export type ActivityStatus = "planned" | "in-progress" | "completed";
+export type AuthRole = "student" | "professor";
 
 export interface User {
   id: string;
   name: string;
   role: string;
+  githubUsername?: string | null;
 }
 
 export interface Activity {
@@ -30,4 +32,72 @@ export interface Project {
   description: string;
   technology: string[];
   status: string;
+}
+
+export interface AuthSession {
+  username: string;
+  displayName: string;
+  role: AuthRole;
+  userId: string | null;
+  csrfToken: string;
+}
+
+export interface ProfessorMemberSummary {
+  user: User;
+  totalActivities: number;
+  completedActivities: number;
+  inProgressActivities: number;
+  plannedActivities: number;
+  activeProjects: number;
+  latestActivityDate: string | null;
+}
+
+export interface ProfessorDashboardData {
+  totals: {
+    members: number;
+    activities: number;
+    completedActivities: number;
+    activeProjects: number;
+  };
+  members: ProfessorMemberSummary[];
+  recentActivities: Activity[];
+}
+
+export interface GitHubRepositorySummary {
+  fullName: string;
+  url: string;
+  defaultBranch: string;
+  openPullRequests: number;
+  lastPushedAt: string | null;
+}
+
+export interface GitHubMemberContribution {
+  userId: string;
+  displayName: string;
+  githubUsername: string | null;
+  linked: boolean;
+  commits: number;
+  pullRequests: number;
+  openPullRequests: number;
+  mergedPullRequests: number;
+  latestContributionAt: string | null;
+}
+
+export interface GitHubTimelineEvent {
+  kind: "commit" | "pull-request";
+  userId: string;
+  githubUsername: string;
+  title: string;
+  url: string;
+  occurredAt: string;
+  detail: string;
+}
+
+export interface ProfessorGitHubDashboardData {
+  status: "ok" | "unavailable";
+  message: string | null;
+  repository: GitHubRepositorySummary | null;
+  members: GitHubMemberContribution[];
+  timeline: GitHubTimelineEvent[];
+  generatedAt: string;
 }

@@ -1,6 +1,6 @@
 # Convenience wrappers. Every command here also exists as a documented script.
 
-.PHONY: setup test lint format db-init db-sync db-reset dev check
+.PHONY: setup test lint format db-init db-sync db-reset auth-bootstrap dev check
 
 setup:            ## Create venv, install dependencies, initialize DB with data
 	./scripts/setup.sh
@@ -24,6 +24,9 @@ db-sync:          ## Idempotently sync Git-tracked data/ into the DB
 
 db-reset:         ## Delete the local dev database (safe, fixed path)
 	./scripts/reset-dev-db.sh
+
+auth-bootstrap:   ## Interactively create/rotate a student or professor login
+	.venv/bin/python -m backend.auth.bootstrap
 
 dev:              ## Print the two development server commands
 	@echo "Backend:  .venv/bin/python -m uvicorn backend.app.main:app --reload"

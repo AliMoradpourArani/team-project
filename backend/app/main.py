@@ -9,7 +9,7 @@ from fastapi.responses import JSONResponse
 
 from ..schemas.api import ErrorResponse
 from ..services.queries import NotFoundError
-from .api import activities, health, projects, users
+from .api import activities, auth, health, professor, projects, users
 from .observability import request_observability
 
 
@@ -20,24 +20,26 @@ def configured_origins() -> list[str]:
 
 app = FastAPI(
     title="Team Project API",
-    version="0.2.0",
-    description="Team activity, calendar, timeline, project, and dashboard API.",
+    version="0.3.0",
+    description="Authenticated team activity, calendar, timeline, project, and professor dashboard API.",
 )
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=configured_origins(),
-    allow_credentials=False,
-    allow_methods=["GET", "POST", "PUT", "DELETE"],
-    allow_headers=["*"],
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["Content-Type", "X-CSRF-Token", "X-Request-ID"],
 )
 
 app.middleware("http")(request_observability)
 
 app.include_router(health.router)
+app.include_router(auth.router)
 app.include_router(users.router)
 app.include_router(activities.router)
 app.include_router(projects.router)
+app.include_router(professor.router)
 
 
 @app.exception_handler(NotFoundError)

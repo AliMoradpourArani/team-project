@@ -13,6 +13,7 @@ class UserResponse(BaseModel):
     id: str
     name: str
     role: str
+    githubUsername: str | None = None
 
 
 class ActivityResponse(BaseModel):

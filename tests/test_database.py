@@ -24,9 +24,15 @@ def test_initialize_database_creates_schema_from_scratch(tmp_path):
         "002_create_activities",
         "003_create_projects",
         "004_add_activity_status",
+        "005_create_auth",
+        "006_add_user_github_username",
     ]
     with connect(database_path) as connection:
-        assert row_count(connection, "schema_migrations") == 4
+        assert row_count(connection, "schema_migrations") == 6
+        assert row_count(connection, "auth_accounts") == 0
+        assert row_count(connection, "auth_sessions") == 0
+        columns = {row[1] for row in connection.execute("PRAGMA table_info(users)")}
+        assert "github_username" in columns
 
 
 def test_migrations_are_idempotent(tmp_path):
@@ -55,6 +61,10 @@ def test_sync_is_idempotent(tmp_path):
         assert row_count(connection, "users") == 3
         assert row_count(connection, "activities") == 3
         assert row_count(connection, "projects") == 3
+        hossein = connection.execute(
+            "SELECT github_username FROM users WHERE id = 'hossein'"
+        ).fetchone()
+        assert hossein["github_username"] == "HoosseinRahimi"
 
 
 def test_seeded_database_matches_tracked_source_files(tmp_path):
@@ -100,24 +110,31 @@ def test_path_traversal_user_id_is_rejected():
         validate_slug("../../etc/passwd", "user id")
 
 
+def test_invalid_github_username_is_rejected():
+    from backend.schemas.source_data import validate_github_username
+
+    with pytest.raises(ValueError):
+        validate_github_username("-not-valid-")
+
+
 def test_duplicate_migration_prefix_is_rejected(tmp_path):
-    """Two branches adding 005_*.sql must never merge into silent data loss."""
+    """Two branches adding the same migration number must fail loudly."""
     from backend.database.init_db import MIGRATIONS_ROOT
     from backend.database.source_files import REPOSITORY_ROOT
 
-    first = MIGRATIONS_ROOT / "005_first.sql"
-    second = MIGRATIONS_ROOT / "005_second.sql"
+    first = MIGRATIONS_ROOT / "007_first.sql"
+    second = MIGRATIONS_ROOT / "007_second.sql"
     first.write_text("CREATE TABLE first_probe (id TEXT);", encoding="utf-8")
     second.write_text("CREATE TABLE second_probe (id TEXT);", encoding="utf-8")
     try:
-        with pytest.raises(RuntimeError, match="Duplicate migration prefix '005'"):
+        with pytest.raises(RuntimeError, match="Duplicate migration prefix '007'"):
             initialize_database(tmp_path / "fresh.db")
         with connect(tmp_path / "fresh.db") as connection:
             assert row_count(connection, "schema_migrations") == 0
     finally:
         first.unlink()
         second.unlink()
-    assert not list(REPOSITORY_ROOT.glob("backend/database/migrations/005_*.sql"))
+    assert not list(REPOSITORY_ROOT.glob("backend/database/migrations/007_*.sql"))
 
 
 def test_sync_deletes_rows_removed_from_source_files(tmp_path, monkeypatch):
@@ -147,7 +164,6 @@ def test_sync_deletes_rows_removed_from_source_files(tmp_path, monkeypatch):
         assert row_count(connection, "users") == 1
         assert row_count(connection, "activities") == 1
 
-    # The user deletes the tracked activity file, then syncs again.
     (user_dir / "2026-01-01.json").unlink()
     with connect(database_path) as connection:
         sync_source_data(connection)

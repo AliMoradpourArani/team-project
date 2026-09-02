@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 
 import { useI18n } from "../i18n";
 import LanguageSwitcher from "../i18n/LanguageSwitcher";
+import ThemeSwitcher from "../theme/ThemeSwitcher";
 import type { AuthSession } from "../types";
 
 interface Props {
@@ -52,6 +53,7 @@ export default function Layout({ children, session, onLogout, currentPath = "/" 
           </nav>
         ) : null}
         <div className="header-tools">
+          <ThemeSwitcher />
           <LanguageSwitcher />
           {session ? (
             <div className="header-session">

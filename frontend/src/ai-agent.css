@@ -1,7 +1,7 @@
-.ai-agent-panel {
+﻿.ai-agent-panel {
   margin-top: 1.5rem;
   padding: 1rem;
-  border: 1px solid var(--border-color, #d9dde5);
+  border: 1px solid var(--border-color, var(--color-slate-soft));
   border-radius: 16px;
   background: rgba(255, 255, 255, 0.55);
 }
@@ -23,7 +23,7 @@
 .ai-agent-review {
   margin-top: 1rem;
   padding: 0.9rem;
-  border: 1px solid var(--border-color, #d9dde5);
+  border: 1px solid var(--border-color, var(--color-slate-soft));
   border-radius: 14px;
   background: rgba(127, 127, 127, 0.05);
 }
@@ -47,7 +47,7 @@
 }
 
 .ai-agent-thread-tabs button {
-  border: 1px solid var(--border-color, #d9dde5);
+  border: 1px solid var(--border-color, var(--color-slate-soft));
   border-radius: 999px;
   padding: 0.45rem 0.75rem;
   background: transparent;

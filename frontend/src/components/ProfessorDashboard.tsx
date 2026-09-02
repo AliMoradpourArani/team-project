@@ -120,10 +120,6 @@ export default function ProfessorDashboard() {
         </div>
       </section>
 
-      <GitHubContributionPanel />
-      <ProfessorReviewQueue />
-      <ProfessorSubmissionPanel />
-
       <section className="dashboard-card professor-recent">
         <div className="section-heading compact">
           <div>
@@ -150,6 +146,10 @@ export default function ProfessorDashboard() {
           <StatusMessage>{t("timeline.noActivities")}</StatusMessage>
         )}
       </section>
+
+      <GitHubContributionPanel />
+      <ProfessorReviewQueue />
+      <ProfessorSubmissionPanel />
     </section>
   );
 }

@@ -20,6 +20,8 @@ const en = {
   "header.protectedWorkspace": "Protected local workspace",
   "header.language": "Language",
   "header.changeLanguage": "Change language",
+  "theme.dark": "Switch to dark theme",
+  "theme.light": "Switch to light theme",
 
   "app.checkingSession": "Checking session…",
   "app.loadingUserDashboard": "Loading user dashboard…",
@@ -153,6 +155,8 @@ const fa: Partial<Record<TranslationKey, string>> = {
   "header.protectedWorkspace": "فضای کاری محلی محافظت‌شده",
   "header.language": "زبان",
   "header.changeLanguage": "تغییر زبان",
+  "theme.dark": "تغییر به تم تاریک",
+  "theme.light": "تغییر به تم روشن",
 
   "app.checkingSession": "در حال بررسی نشست…",
   "app.loadingUserDashboard": "در حال بارگذاری داشبورد کاربر…",
@@ -285,6 +289,8 @@ const de: Partial<Record<TranslationKey, string>> = {
   "header.protectedWorkspace": "Geschützter lokaler Arbeitsbereich",
   "header.language": "Sprache",
   "header.changeLanguage": "Sprache ändern",
+  "theme.dark": "Zum dunklen Design wechseln",
+  "theme.light": "Zum hellen Design wechseln",
 
   "app.checkingSession": "Sitzung wird geprüft…",
   "app.loadingUserDashboard": "Benutzer-Dashboard wird geladen…",

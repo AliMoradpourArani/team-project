@@ -1,89 +1,87 @@
 # Contributing
 
-## 1. Create a branch (never commit features directly to `main`)
+## 1. Create a branch
+
+Do not develop normal features directly on `main`.
 
 ```bash
 git switch main
 git pull
-git switch -c feature/<feature-name>   # or fix/ docs/ refactor/ test/
+git switch -c feature/<feature-name>
 ```
 
-## 2. Update from main (default strategy: merge)
+Use focused prefixes such as `feature/`, `fix/`, `docs/`, `refactor/`, or `test/`.
 
-Before opening or updating a Pull Request, merge the latest main into your
-branch and resolve conflicts **on the feature branch**:
+## 2. Keep the branch current
+
+Merge the latest `main` into the feature branch and resolve conflicts there:
 
 ```bash
 git switch feature/<feature-name>
 git merge main
-# resolve conflicts, then verify:
 ./scripts/test.sh
 ```
 
-Do not mix rebase into this workflow, do not force-push `main`.
+Do not force-push `main`.
 
-## 3. Commit format (Conventional Commits)
+## 3. Commit style
+
+Use meaningful Conventional Commit-style messages:
 
 ```text
-feat: add calendar page
-fix: handle missing activity files
-docs: document migration workflow
-test: add user API tests
+feat: add project health panel
+fix: preserve activity source authority
+docs: sync AI autonomy configuration
+test: cover approved action execution
 chore: update dependencies
 ```
 
-Meaningful messages only — no `update`, `final`, `fix stuff`.
-
-## 4. Run tests and checks before pushing
+## 4. Local checks
 
 ```bash
-./scripts/test.sh                                  # full integration check
-.venv/bin/python -m pytest -q                      # backend tests
-.venv/bin/python -m ruff check backend tests      # backend lint
-.venv/bin/python -m ruff format backend tests     # backend format
-npm run lint --prefix frontend                    # frontend lint
-npm run type-check --prefix frontend              # frontend types
-npm test --prefix frontend                        # frontend unit tests
-npm run build --prefix frontend                   # frontend build
+./scripts/test.sh
+.venv/bin/python -m pytest -q
+.venv/bin/python -m ruff check backend tests
+npm run lint --prefix frontend
+npm run type-check --prefix frontend
+npm test --prefix frontend
+npm run build --prefix frontend
 ```
 
-## 5. Database migration workflow
+## 5. Database migrations
+
+Every schema change requires a new ordered migration. Never edit a migration already merged into `main`.
 
 ```bash
-# add backend/database/migrations/00N_description.sql, then verify:
-rm -f /tmp/mig-test.db
 DATABASE_PATH=/tmp/mig-test.db .venv/bin/python -m backend.database.init_db --seed
 ```
 
-Never edit a migration that is already merged into `main`; add a new one.
-Details: `docs/database-rules.md`.
+See `docs/database-rules.md`.
 
-## 6. Resolving conflicts
+## 6. AI/autonomy contribution rules
 
-1. Inspect **both** sides; never blindly take `ours` or `theirs`.
-2. Determine the intended combined behavior.
-3. Remove all conflict markers (`<<<<<<<`, `=======`, `>>>>>>>`).
-4. Build/run affected components, run `./scripts/test.sh`.
-5. If migrations conflicted, normalize order and verify a fresh DB init.
-6. Commit the resolution on the feature branch.
+AI features have stricter invariants:
 
-High-risk files: migrations, `package.json`/lock files, `requirements*.txt`,
-Dockerfiles, `docker-compose.yml`, `backend/app/main.py`, shared schemas,
-CI config. Lock-file conflicts are regenerated with `npm install` — never
-solved by deleting the lock file.
+- never place model/provider/GitHub secrets in tracked files or frontend code,
+- verify student/project ownership server-side before AI retrieval or mutation,
+- durable/external AI side effects must use an explicit authenticated control path,
+- new external action kinds belong in the typed allowlist and must participate in `propose -> approve -> execute`,
+- automatic task/progress mutations must use the authoritative activity-write service rather than direct SQLite writes,
+- repository RAG must remain bounded to approved roots/types/sizes,
+- provider and external-network calls need timeout/failure handling,
+- add tests proving an unapproved action cannot execute,
+- document any new environment variable in `.env.example` and Docker/deployment configuration when applicable.
 
-## 7. Open a Pull Request
+See `docs/ai-autonomy-platform.md` and `SECURITY.md`.
 
-```bash
-git push -u origin feature/<feature-name>
-```
+## 7. Resolve conflicts deliberately
 
-Open a PR into `main` using the repository template. CI must pass. Squash-merge
-is the default merge strategy; delete the branch after merging.
+Inspect both sides, preserve intended behavior, remove all conflict markers, and rerun affected tests. Lock files should be regenerated instead of deleted. Migration conflicts require schema review and normalized numbering.
 
-## 8. Definition of Done
+## 8. Pull requests
 
-A task is Done when: implementation completed, code formatted, lint passed,
-tests added/updated and passing, migrations included where required, API
-documentation/contract updated where required, docs updated where required,
-PR reviewed and merged, and `main` remains runnable.
+Push the feature branch and open a PR to `main`. CI/security checks must pass. Squash merge is preferred for focused change sets.
+
+## Definition of Done
+
+A change is Done when implementation is complete, formatting/lint/types/tests/build are green, migrations and contracts are updated when required, environment/deployment changes are documented, security boundaries remain intact, documentation reflects user-visible behavior, and `main` remains runnable after merge.

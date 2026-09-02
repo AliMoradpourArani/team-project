@@ -1,75 +1,64 @@
 # Database rules
 
-The runtime database is local SQLite at `backend/database/dev.db` by default and
-is ignored by Git. It is generated state, not the source of truth. Never commit
-it or manually copy another developer's database.
+The runtime database is local SQLite and is generated/private state, not the shared Git source of truth. Never commit it or copy another developer's database into the repository.
 
 ## Layers
 
-1. **Schema migrations** — versioned SQL files in `backend/database/migrations/`.
-2. **Git-tracked source data** — JSON files in `data/` (the authoritative shared
-   source for team information). See `docs/project-contract.md`.
-3. **Runtime database** — generated local SQLite, derived from 1 + 2.
+1. **Schema migrations**: ordered SQL files in `backend/database/migrations/`.
+2. **Git-tracked source data**: JSON under `data/`, authoritative for shared users, activities, and project metadata.
+3. **Runtime/private SQLite state**: authentication, sessions, demo history, professor reviews, submissions/releases, AI conversations/memory, repository index chunks, governed AI actions, notifications, and other local audit/intelligence state.
 
 ## Commands
 
 ```bash
-make db-init     # create DB from scratch, apply migrations (schema only)
-make db-sync     # reconcile Git-tracked data/ into the DB
-make db-reset    # delete the local dev database (fixed safe path only)
-
-# equivalent direct commands:
-.venv/bin/python -m backend.database.init_db --seed
-.venv/bin/python -m backend.database.sync_data
+make db-init
+make db-sync
+make db-reset
 ```
 
-`init_db --seed` and `sync_data` are **idempotent**: running them repeatedly
-with unchanged repository data produces the same database state and never
-duplicates records. `sync_data` performs full **reconciliation**: rows whose
-source records were deleted are removed from the database, so SQLite exactly
-mirrors the tracked source IDs under `data/`.
+`db-sync` reconciles Git-tracked shared source into SQLite. Runtime/private tables are not treated as replacements for `data/`.
 
 ## Migration rules
 
-- Every schema change is a new, version-controlled SQL file under
-  `backend/database/migrations/`.
-- Use a zero-padded numeric prefix and descriptive name, for example
-  `005_add_activity_project_id.sql`.
-- Migrations are applied in sorted filename order. The **full file stem** (for
-  example `005_add_calendar`) is recorded as the version in `schema_migrations`.
-- Duplicate numeric prefixes (e.g. two files both starting `005_`) are rejected
-  with an error instead of silently skipping the second migration. If two
-  branches collide, renumber one on the feature branch before merging.
-- Never rewrite or delete a migration after it has merged into `main`. Add a
-  new migration for a correction or schema change.
-- Migration conflicts require review of both schema changes. Normalize numbering
-  and assumptions before merging; do not discard a migration to make the
-  conflict disappear.
+- Every schema change gets a new numbered SQL migration.
+- Use a zero-padded prefix such as `013_description.sql`.
+- Duplicate numeric prefixes are invalid.
+- Never rewrite/delete a migration already merged into `main`.
+- Resolve migration conflicts by preserving both intended schema changes and renumbering on the feature branch when necessary.
 
-## Data authority
+The current schema includes AI platform migrations after the original product/runtime migrations, including persistent AI threads, structured memory/GitHub links, repository chunks, action audit records, memory events, health snapshots, and notifications.
 
-For Git-shared team activities and project metadata, **the Git-tracked files
-under `data/` are authoritative**. SQLite is only a local derived runtime
-representation.
+## Shared-data authority
 
-Activity create/update/delete operations must follow this flow:
+For Git-shared activities and project metadata, `data/` is authoritative.
+
+Activity mutations must follow:
 
 ```text
-validated API request
+validated request / approved AI action
+        ↓
+authoritative activity write service
         ↓
 data/activities/<user_id>/<date>.json
         ↓
-database reconciliation
-        ↓
-SQLite runtime state
+SQLite reconciliation
 ```
 
-The activity write service updates the tracked JSON source atomically and then
-reconciles SQLite. If reconciliation fails, the source-file change is restored
-instead of leaving the repository and runtime database knowingly inconsistent.
-Stable activity IDs are authoritative: after a successful sync, the set of
-activity IDs in SQLite must equal the set currently present in tracked activity
-files.
+AI progress automation is not allowed to update only SQLite. When `apply=true`, it goes through this same activity-write path.
 
-When running with Docker Compose, `./data` is bind-mounted into the backend
-container so web/API edits remain visible to Git on the host.
+## Runtime-only AI state
+
+These classes of AI data intentionally remain outside tracked source data:
+
+- chat threads/messages and thread memory,
+- structured project memory and decision events,
+- lexical repository RAG chunks,
+- GitHub evidence-link records,
+- proposed/approved/executed AI action audit records,
+- health snapshots and notifications.
+
+These records support local intelligence and auditability but do not redefine the shared project/task source of truth.
+
+## Docker
+
+Docker Compose bind-mounts `./data` read/write so authoritative activity edits remain visible to Git, mounts `./projects` read-only, and stores private SQLite state in the `team-runtime` volume.

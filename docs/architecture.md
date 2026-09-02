@@ -2,74 +2,99 @@
 
 ## Overview
 
-The project is a **modular monolith**: one FastAPI backend, one React frontend, and one SQLite runtime database. No microservices, queues, or distributed infrastructure.
+The application is a modular monolith: one React/Vite frontend, one FastAPI backend, and one SQLite runtime database. It deliberately avoids microservices and distributed infrastructure.
 
-- **Frontend** (`frontend/`): React + Vite + TypeScript. Shared types live in `src/types.ts`, the credential-aware API client in `src/api.ts`, and UI modules under `src/components/`.
-- **Backend** (`backend/`):
-  - `app/` - FastAPI application, API routes, request observability, authentication/role/CSRF dependencies.
-  - `auth/` - local account bootstrap CLI.
-  - `schemas/` - Pydantic HTTP/auth/source-data/GitHub read-model contracts.
-  - `services/` - authentication/session logic, professor aggregation, GitHub aggregation, queries, tracked activity writes.
-  - `database/` - connection helpers, ordered SQL migrations, init/seed/sync commands.
-- **Data** (`data/`): Git-tracked source of truth for shared team information (users, activities, projects), including optional explicit GitHub identity mappings.
-- **Student projects** (`projects/<owner>/<project>/`): runnable member projects with a `project.json` manifest.
+The platform now combines four major concerns:
+
+1. team activity/project management,
+2. professor review/submission/release workflows,
+3. GitHub-backed project intelligence,
+4. governed AI planning, repository intelligence, and controlled automation.
+
+## Major components
+
+- `frontend/`: React + Vite + TypeScript UI, including the student AI cockpit.
+- `backend/app/`: FastAPI routes, authentication, role/CSRF enforcement, observability, and application lifespan.
+- `backend/services/`: activity/project logic, GitHub integration, AI agent, repository RAG, code review, debugging, health, orchestration, and automation.
+- `backend/schemas/`: typed Pydantic API contracts.
+- `backend/database/`: SQLite connection helpers and ordered append-only migrations.
+- `data/`: Git-tracked authoritative shared users, activities, and project metadata.
+- `projects/`: reviewed member-project source and typed demo manifests.
 
 ## State boundaries
 
-The application intentionally has three kinds of state/data:
+The application intentionally separates state into four classes:
 
-1. **Shared Git-tracked state**: users, activities, and projects under `data/`. This is authoritative across clones and is synchronized into SQLite.
-2. **Private runtime state**: authentication accounts and sessions. These exist only in SQLite and must never be synchronized into Git-tracked JSON.
-3. **External read models**: GitHub repository activity. This is fetched on demand, cached briefly, and is never authoritative for project state.
+1. **Git-tracked shared state**: users, activities, and projects under `data/`. This remains authoritative across clones.
+2. **Private/runtime SQLite state**: auth accounts, sessions, project-run history, professor evaluations, submissions/releases, AI threads/memory, repository chunks, governed AI actions, notifications, and related audit records.
+3. **External read models**: GitHub repository/contribution data used for dashboards and intelligence.
+4. **Governed external mutations**: optional GitHub branch/issue/PR writes performed only through the AI action approval pipeline using server-side credentials.
 
-This boundary lets the professor clone and reproduce project data while keeping passwords and sessions private and making external analytics optional/offline-safe.
+AI automation must never bypass the tracked activity-write contract. When progress changes are applied, they go through the same authoritative activity service that updates Git-tracked JSON and reconciles SQLite.
+
+## Request and authorization boundary
+
+FastAPI is the security boundary. React routing never grants authority.
+
+- Student: own protected workspace, activities, projects, AI threads/memory/intelligence, and explicitly approved actions.
+- Professor: team-wide dashboards, review/submission/release controls, and shared project inspection according to existing professor permissions.
+- Unsafe authenticated requests require a valid session-specific CSRF token.
+- AI project lookup verifies student/project ownership before retrieval or mutation.
+
+## AI architecture
+
+The AI layer is split into several services instead of one unrestricted agent:
+
+- `ai_agent`: persistent project chat, snapshots, replanning, memory, briefs, and specialist review.
+- `ai_autonomy`: lexical repository RAG, governed actions, GitHub evidence/progress sync, debugging, health scoring, notifications, and safety controls.
+- `ai_code_review`: diff-aware review.
+- `ai_multi_agent`: seven-specialist orchestration with provider-backed execution when configured and deterministic fallback otherwise.
+- `ai_automation`: recurring maintenance loop for health/notifications and optional evidence-backed progress application.
+
+The key mutation model is:
+
+```text
+AI/user proposes action
+        ↓
+authenticated pending record
+        ↓
+explicit user approval
+        ↓
+execute through allowlisted handler
+        ↓
+audit result persisted
+```
+
+## Repository intelligence
+
+Repository indexing is bounded to approved roots and text/code file types. Chunks are stored in runtime SQLite and retrieval is explicitly reported as `lexical-rag`. This is not presented as an embedding/vector system.
+
+## GitHub boundaries
+
+Two GitHub paths exist and must not be confused:
+
+### Read-only integration
+
+`GITHUB_*` configuration powers dashboard/contribution intelligence and is designed to fail safely when GitHub is unavailable.
+
+### Governed write integration
+
+`AI_GITHUB_*` configuration is optional and server-only. It can create allowlisted GitHub branches, issues, and pull requests only after an authenticated propose -> approve -> execute flow.
+
+No browser-provided token and no model-generated credential is accepted.
 
 ## Database approach
 
-We deliberately use **SQLite with ordered plain-SQL migrations** instead of SQLAlchemy + Alembic. For a student team the stdlib `sqlite3` approach is simple to understand and debug while still giving deterministic, reviewable schema evolution.
-
-- All application timestamps are UTC.
-- Activity dates are explicit ISO-8601 dates (`YYYY-MM-DD`).
-- Shared project primary keys are stable text slugs.
-- Authentication accounts use integer runtime IDs; session tokens are stored only as SHA-256 digests.
-- `users.github_username` is derived from the optional Git-tracked user mapping.
-- Merged migrations are append-only.
+SQLite uses ordered plain SQL migrations. Merged migrations are append-only. Shared Git-visible data remains authoritative while runtime/private/AI state lives only in SQLite.
 
 See `docs/database-rules.md`.
 
-## Authentication boundary
+## Extension rules
 
-FastAPI is the security boundary. React route selection never grants access.
+- New backend feature: route in `backend/app/api/`, business logic in `backend/services/`.
+- New protected mutation: enforce principal/CSRF and ownership server-side.
+- New schema state: add a new numbered migration, never edit a merged migration.
+- New external integration: trusted server configuration, bounded permissions, timeout/failure handling, and no secret exposure.
+- New AI action: add a typed allowlisted action kind, explicit validation, audit result, and approval requirement before side effects.
 
-- Public: health endpoints and login.
-- Student: own profile, own activities, own projects; own activity writes only.
-- Professor: all shared data plus professor dashboards; read-only.
-- Session: server-side SQLite session + HttpOnly cookie.
-- Unsafe request protection: session-specific CSRF token in `X-CSRF-Token`.
-
-See `docs/authentication.md` and `docs/adr/0002-server-side-cookie-sessions.md`.
-
-## GitHub integration boundary
-
-GitHub is treated as a read-only external dependency, not as project authority.
-
-- professor-only endpoint: `GET /api/professor/github`
-- fixed API host: `https://api.github.com`
-- trusted runtime configuration chooses one repository
-- tracked `github_username` explicitly maps users to GitHub logins
-- no request parameter can select an arbitrary repository or GitHub identity
-- three API requests per refresh maximum: repository metadata, recent commits, recent PRs
-- short in-process TTL cache reduces latency and rate-limit pressure
-- failures return an `unavailable` response without affecting the core professor dashboard
-- E2E disables the external call; deterministic unit tests verify aggregation
-
-See `docs/github-integration.md` and `docs/adr/0003-github-integration-read-model.md`.
-
-## Extension points
-
-- **New backend feature:** add `backend/app/api/<feature>.py`, register it in `backend/app/main.py`, and keep business logic in `backend/services/`.
-- **New protected route:** start from `get_current_principal`, `require_professor`, or `require_csrf`; never authorize from request JSON alone.
-- **New frontend feature:** add a component under `frontend/src/components/` and reuse `src/api.ts` so credentials/CSRF behavior stays centralized.
-- **New external integration:** isolate it behind a service/read model, use trusted configuration, fail safely, and keep core shared data authoritative.
-- **New schema change:** add a new numbered SQL migration. Never edit an already-merged migration.
-- **New shared data:** add files under `data/` following `docs/project-contract.md`, then run `make db-sync`.
+See also `docs/ai-autonomy-platform.md`, `docs/authentication.md`, `docs/github-integration.md`, and `docs/adr/`.

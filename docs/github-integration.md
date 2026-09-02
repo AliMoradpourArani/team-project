@@ -1,25 +1,20 @@
 # GitHub integration
 
-Phase 4 adds a **read-only GitHub contribution view** to the professor dashboard.
-It is intentionally separated from the core activity dashboard so temporary
-GitHub failures never block local project data.
+The platform uses GitHub in two separate ways. Keeping them distinct is important for both security and architecture.
 
-## What the professor sees
+## 1. Read-only contribution integration
 
-For the configured repository the dashboard shows:
+The professor dashboard and AI project snapshots can consume repository signals such as:
 
-- repository name, default branch, last push, and open PR count
-- per-member recent default-branch commit count
-- per-member pull request, merged PR, and open PR counts
-- latest linked contribution timestamp
-- a combined recent commit / pull-request timeline
+- repository/default-branch status,
+- recent commits,
+- pull requests and merged/open PR counts,
+- contribution timeline,
+- explicit member GitHub identity mappings.
 
-These numbers are repository signals, **not a productivity score**. Commit counts
-cover the recent commits returned for the repository default branch. Work that is
-only on an unmerged branch may not appear in the commit count, while its pull
-request can still appear in PR metrics.
+This path uses `GITHUB_*` configuration and is a read model. GitHub failures must not block the core local application.
 
-## Identity mapping
+### Identity mapping
 
 A member is linked only through the optional tracked field:
 
@@ -32,18 +27,9 @@ A member is linked only through the optional tracked field:
 }
 ```
 
-Add the real GitHub username to `data/users/<id>.json`, then run:
+Never guess another member's GitHub account from a name or email.
 
-```bash
-make db-sync
-```
-
-Never guess another member's GitHub account from a name or email. Unlinked
-members remain visible as `not linked`.
-
-## Configuration
-
-Defaults are listed in `.env.example`:
+### Read configuration
 
 ```text
 GITHUB_INTEGRATION_ENABLED=true
@@ -52,70 +38,58 @@ GITHUB_CACHE_TTL_SECONDS=60
 GITHUB_API_TIMEOUT_SECONDS=5
 ```
 
-Public repositories can be read without authentication, subject to GitHub's
-lower unauthenticated API rate limits.
+`GITHUB_TOKEN` is optional for public repositories and should be a runtime-only read token when needed for private access or higher rate limits.
 
-For a private repository or higher API limits, provide a fine-grained token at
-runtime only:
-
-```bash
-export GITHUB_TOKEN='...'
-```
-
-Do not put the token in Git-tracked files. The integration needs read access only.
-For the current repository, grant the minimum repository metadata / contents /
-pull-request read permissions required by GitHub for the API calls.
-
-Docker Compose forwards the same variables into the backend container.
-
-## API
-
-Professor-only endpoint:
+Professor endpoint:
 
 ```text
 GET /api/professor/github
 ```
 
-The endpoint never accepts a repository or username from request parameters.
-Repository configuration comes from the trusted runtime environment and user
-mapping comes from validated tracked user data.
+The endpoint does not accept an arbitrary repository or GitHub identity from request parameters.
 
-The response has two states:
+## 2. Governed AI GitHub writes
 
-- `ok`: repository/member/timeline data is present
-- `unavailable`: the integration is disabled, misconfigured, timed out, rate
-  limited, or temporarily unavailable
-
-An unavailable GitHub response does not affect `/api/professor/dashboard`.
-
-## Request behavior
-
-A refresh performs at most three GitHub API calls:
-
-1. repository metadata
-2. up to 100 recent commits from the default branch
-3. up to 100 recent pull requests
-
-The assembled response is cached in-process for 60 seconds by default. This
-keeps the professor page responsive and reduces rate-limit pressure.
-
-## CI behavior
-
-Browser E2E explicitly sets:
+The AI autonomy layer may create a branch, issue, or pull request, but only through the authenticated action engine:
 
 ```text
-GITHUB_INTEGRATION_ENABLED=false
+propose -> approve -> execute
 ```
 
-so CI does not depend on external GitHub availability. The GitHub aggregation
-logic is tested with deterministic fixtures/mocks instead.
+These write operations use separate server-only configuration:
 
-## Security properties
+```text
+AI_GITHUB_REPOSITORY=HoosseinRahimi/team-project
+AI_GITHUB_TIMEOUT_SECONDS=15
+AI_GITHUB_TOKEN=<server-only token>
+```
 
-- professor authorization is enforced by FastAPI, not the frontend
-- integration is read-only
-- GitHub API host is fixed to `api.github.com`
-- repository is validated as `owner/repository`
-- user mapping is explicit and validated
-- `GITHUB_TOKEN` is never returned to the frontend or logged by this service
-- network errors return a generic offline-safe response
+Supported write action kinds currently include:
+
+- `github-branch`
+- `github-issue`
+- `github-pull-request`
+
+No write occurs merely because a model suggests it. The action must exist as a pending record, be explicitly approved by the owning authenticated student, and then be executed through an allowlisted handler.
+
+The browser never supplies the write token and the model cannot choose a credential. GitHub execution results/failures are persisted in the AI action audit record.
+
+## Evidence links and progress
+
+Activities can be linked to GitHub evidence of type branch, commit, pull request, or issue. Progress synchronization can then infer:
+
+- branch/commit/open-PR evidence -> `in-progress`
+- verifiably merged linked PR -> `completed`
+
+`apply=false` previews inferred changes. `apply=true` routes updates through the authoritative activity write service so Git-tracked JSON remains the shared source of truth.
+
+## Security summary
+
+- read and write credentials are separate,
+- repository selection comes from trusted runtime configuration,
+- write side effects require explicit approval,
+- network calls use timeouts,
+- tokens are server-only and never returned to the frontend,
+- GitHub signals are useful evidence, not a productivity score or the authoritative task database.
+
+See `docs/ai-autonomy-platform.md` and `SECURITY.md`.

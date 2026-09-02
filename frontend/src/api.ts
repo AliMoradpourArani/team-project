@@ -1,6 +1,9 @@
 import type {
   Activity,
   ActivityInput,
+  AIStatus,
+  AIWorkspaceInput,
+  AIWorkspaceResult,
   AuthSession,
   DeliveryPreflightData,
   ProfessorDashboardData,
@@ -86,6 +89,7 @@ export async function logout(): Promise<void> {
 export const getUsers = (): Promise<User[]> => getCollection<User>("users");
 export const getActivities = (): Promise<Activity[]> => getCollection<Activity>("activities");
 export const getProjects = (): Promise<Project[]> => getCollection<Project>("projects");
+export const getAIStatus = (): Promise<AIStatus> => request<AIStatus>("/api/ai/status");
 export const getProjectIntegrations = (): Promise<ProjectIntegration[]> =>
   request<ProjectIntegration[]>("/api/projects/integrations");
 export const getProjectOnboardingList = (): Promise<ProjectOnboarding[]> =>
@@ -112,6 +116,13 @@ export const getSubmissionReleases = (): Promise<SubmissionReleaseSummary[]> =>
   request<SubmissionReleaseSummary[]>("/api/professor/releases");
 export const getSubmissionRelease = (releaseId: number): Promise<SubmissionReleaseDetail> =>
   request<SubmissionReleaseDetail>(`/api/professor/releases/${releaseId}`);
+
+export async function runAIWorkspace(payload: AIWorkspaceInput): Promise<AIWorkspaceResult> {
+  return request<AIWorkspaceResult>("/api/ai/workspace", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
 
 export async function runProject(projectId: string): Promise<ProjectRunResult> {
   return request<ProjectRunResult>(`/api/projects/${projectId}/run`, { method: "POST" });

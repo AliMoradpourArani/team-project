@@ -1,4 +1,11 @@
-import type { AIAgentReply, AIAgentThread } from "./ai-agent-types";
+import type {
+  AIAgentReply,
+  AIAgentReplanResponse,
+  AIAgentSnapshot,
+  AIAgentThread,
+  AIDailyBrief,
+  AIMultiAgentReview,
+} from "./ai-agent-types";
 import type {
   Activity,
   ActivityInput,
@@ -65,6 +72,10 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
 
 async function getCollection<T>(name: string): Promise<T[]> {
   return request<T[]>(`/api/${name}`);
+}
+
+function projectQuery(projectId: string | null): string {
+  return projectId ? `?projectId=${encodeURIComponent(projectId)}` : "";
 }
 
 export async function login(username: string, password: string): Promise<AuthSession> {
@@ -134,12 +145,32 @@ export async function createAIThread(projectId: string | null): Promise<AIAgentT
   });
 }
 
+export const getAIAgentSnapshot = (threadId: string): Promise<AIAgentSnapshot> =>
+  request<AIAgentSnapshot>(`/api/ai/threads/${threadId}/snapshot`);
+
 export async function postAIMessage(threadId: string, content: string): Promise<AIAgentReply> {
   return request<AIAgentReply>(`/api/ai/threads/${threadId}/messages`, {
     method: "POST",
     body: JSON.stringify({ content }),
   });
 }
+
+export async function replanAIThread(
+  threadId: string,
+  applyTasks: boolean,
+  taskCount = 5,
+): Promise<AIAgentReplanResponse> {
+  return request<AIAgentReplanResponse>(`/api/ai/threads/${threadId}/replan`, {
+    method: "POST",
+    body: JSON.stringify({ applyTasks, taskCount }),
+  });
+}
+
+export const getAIDailyBrief = (projectId: string | null): Promise<AIDailyBrief> =>
+  request<AIDailyBrief>(`/api/ai/brief${projectQuery(projectId)}`);
+
+export const getAIMultiAgentReview = (projectId: string | null): Promise<AIMultiAgentReview> =>
+  request<AIMultiAgentReview>(`/api/ai/multi-agent-review${projectQuery(projectId)}`);
 
 export async function deleteAIThread(threadId: string): Promise<void> {
   await request<void>(`/api/ai/threads/${threadId}`, { method: "DELETE" });

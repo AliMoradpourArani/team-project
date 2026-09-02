@@ -7,9 +7,21 @@ import type { AIAction, AIStatus, AIWorkspaceResult, Project } from "../types";
 const actions: { value: AIAction; label: string; description: string }[] = [
   { value: "plan", label: "Plan", description: "Turn a goal into dated, actionable tasks." },
   { value: "roadmap", label: "Roadmap", description: "Build milestones from scope to delivery." },
-  { value: "progress", label: "Progress", description: "Measure tracked work and suggest next steps." },
-  { value: "debug", label: "Debug", description: "Inspect project health and recent run failures." },
-  { value: "review", label: "Review", description: "Check completed work for errors and quality gaps." },
+  {
+    value: "progress",
+    label: "Progress",
+    description: "Measure tracked work and suggest next steps.",
+  },
+  {
+    value: "debug",
+    label: "Debug",
+    description: "Inspect project health and recent run failures.",
+  },
+  {
+    value: "review",
+    label: "Review",
+    description: "Check completed work for errors and quality gaps.",
+  },
 ];
 
 interface AIWorkspaceProps {
@@ -29,9 +41,7 @@ export default function AIWorkspace({ projects, onTasksApplied }: AIWorkspacePro
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    getAIStatus()
-      .then(setStatus)
-      .catch(() => setStatus(null));
+    getAIStatus().then(setStatus).catch(() => setStatus(null));
   }, []);
 
   useEffect(() => {

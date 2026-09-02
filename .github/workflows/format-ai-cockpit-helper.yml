@@ -1,0 +1,24 @@
+name: Format AI Cockpit Helper
+
+on:
+  push:
+    branches:
+      - feature/ai-native-platform
+
+permissions:
+  contents: read
+
+jobs:
+  print-format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+        working-directory: frontend
+      - run: npx prettier src/components/AIAgentPanel.tsx
+        working-directory: frontend

@@ -1,5 +1,6 @@
 export type ActivityStatus = "planned" | "in-progress" | "completed";
 export type AuthRole = "student" | "professor";
+export type ProjectReviewStatus = "in-review" | "changes-requested" | "approved";
 
 export interface User {
   id: string;
@@ -97,6 +98,37 @@ export interface ProjectRunResult {
   stdout: string;
   stderr: string;
   outputTruncated: boolean;
+}
+
+export interface ProjectReviewInput {
+  status: ProjectReviewStatus;
+  functionalityScore: number;
+  codeQualityScore: number;
+  documentationScore: number;
+  integrationScore: number;
+  contributionScore: number;
+  feedback: string;
+}
+
+export interface ProjectReview extends ProjectReviewInput {
+  projectId: string;
+  reviewerUsername: string;
+  totalScore: number;
+  updatedAt: string;
+}
+
+export interface ProfessorReviewQueueItem {
+  project: Project;
+  review: ProjectReview | null;
+}
+
+export interface ProfessorReviewQueueData {
+  totalProjects: number;
+  pending: number;
+  inReview: number;
+  changesRequested: number;
+  approved: number;
+  items: ProfessorReviewQueueItem[];
 }
 
 export interface AuthSession {

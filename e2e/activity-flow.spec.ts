@@ -9,6 +9,7 @@ async function signIn(page: Page, username: string, password: string) {
   await page.getByLabel("Username").fill(username);
   await page.getByLabel("Password").fill(password);
   await page.getByRole("button", { name: "Sign in" }).click();
+  await expect(page.getByRole("button", { name: "Sign out" })).toBeVisible();
 }
 
 test("student signs in and manages only their activity", async ({ page }) => {
@@ -44,10 +45,42 @@ test("professor sees team overview and a read-only member drill-down", async ({ 
   await expect(page.getByText("Professor dashboard")).toBeVisible();
   await expect(page.getByRole("heading", { name: /Team overview/i, level: 1 })).toBeVisible();
   await expect(page.locator(".professor-member-row")).toHaveCount(3);
+  await expect(page.getByRole("heading", { name: "Project review queue" })).toBeVisible();
 
   await page.locator(".professor-member-row").filter({ hasText: "Hossein" }).click();
   await expect(page.getByText("Professor · read-only member view")).toBeVisible();
   await expect(page.getByRole("heading", { name: "Hossein", level: 1 })).toBeVisible();
   await expect(page.getByRole("button", { name: "Add activity" })).toHaveCount(0);
   await expect(page.locator(".item-actions")).toHaveCount(0);
+});
+
+test("professor reviews a project and the student sees feedback read-only", async ({ page }) => {
+  await signIn(page, "professor", professorPassword);
+  await expect(page.getByRole("heading", { name: "Project review queue" })).toBeVisible();
+
+  await page.locator(".review-queue-row").filter({ hasText: "Team Project Foundation" }).click();
+  await expect(page.getByRole("heading", { name: /Start review|Update rubric/ })).toBeVisible();
+
+  await page.getByLabel("Review status").selectOption("approved");
+  await page.getByLabel("Functionality").fill("28");
+  await page.getByLabel("Code quality").fill("18");
+  await page.getByLabel("Documentation").fill("13");
+  await page.getByLabel("Integration").fill("19");
+  await page.getByLabel("Contribution").fill("14");
+  await page.getByLabel("Feedback").fill("E2E professor feedback: approved for submission.");
+  await page.getByRole("button", { name: "Save review" }).click();
+
+  await expect(page.getByText("Review saved.")).toBeVisible();
+  await expect(page.getByText("92/100")).toBeVisible();
+
+  await page.getByRole("button", { name: "Sign out" }).click();
+  await expect(page.getByRole("button", { name: "Sign in" })).toBeVisible();
+  await signIn(page, "hossein", studentPassword);
+  await expect(page).toHaveURL(/\/users\/hossein$/);
+  await page.goto("/projects/team-foundation");
+
+  await expect(page.getByRole("heading", { name: "Approved" })).toBeVisible();
+  await expect(page.getByText("92/100")).toBeVisible();
+  await expect(page.getByText("E2E professor feedback: approved for submission.")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Save review" })).toHaveCount(0);
 });

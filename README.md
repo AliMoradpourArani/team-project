@@ -16,6 +16,7 @@ The application is one shared platform, not one duplicated website per student. 
 | Phase 5 | ✅ Complete | Validated controlled Project Integration / Runner |
 | Phase 6 | ✅ Complete | Generic member-project detail pages, health checks, safe README view, runtime demo history, integration checklist |
 | Phase 7 | ✅ Complete | Typed CLI/static-web/API demos, sandboxed static preview, validated OpenAPI preview |
+| Phase 8 | ✅ Complete | Professor review queue, fixed 100-point rubric, runtime-only feedback/evaluation, student read-only feedback |
 
 ## What the platform does
 
@@ -32,9 +33,10 @@ Each student signs in to one protected workspace and can:
 - run a reviewed Python CLI demo when execution is explicitly enabled,
 - preview static-web projects without starting a process,
 - inspect validated OpenAPI 3.x contracts for API projects,
-- see recent local history for executed demos.
+- see recent local history for executed demos,
+- read professor review status, rubric score, and written feedback for their own project.
 
-Students cannot access another student's protected data or project by changing a URL or API parameter.
+Students cannot access another student's protected data, project, or review by changing a URL or API parameter.
 
 ### Professor
 
@@ -46,9 +48,12 @@ The professor can:
 - view repository/GitHub contribution signals,
 - open every project's generic detail page,
 - preview static/OpenAPI demos safely,
-- run reviewed executable demos when local execution is enabled.
+- run reviewed executable demos when local execution is enabled,
+- view a project review queue across the team,
+- create/update/reset runtime-only project evaluations with a fixed 100-point rubric,
+- leave written feedback visible to the owning student.
 
-The professor remains read-only for shared student data.
+The professor remains read-only for **shared student source data**. Phase 8 writes only to separate private/runtime evaluation state in SQLite.
 
 ## Architecture
 
@@ -69,7 +74,9 @@ The application is a **modular monolith**.
    Git-tracked JSON            SQLite                  GitHub API
    shared source data       runtime/private state     read-only data
           │                       │
-          │                       └── executed demo history
+          │                       ├── auth/session state
+          │                       ├── executed demo history
+          │                       └── professor project reviews
           │
           └── projects/<owner>/<project>/
                      │
@@ -93,6 +100,7 @@ Core technology:
 - **GitHub integration:** read-only API client with short cache
 - **Project integration:** validated typed manifests + generic detail read model
 - **Project demos:** allowlisted execution/preview contracts
+- **Evaluation:** professor-owned runtime-only rubric state in SQLite
 - **Testing:** pytest, Vitest, Playwright
 - **Quality/security:** Ruff, ESLint, Prettier, TypeScript, dependency audits, CodeQL
 
@@ -107,7 +115,7 @@ data/
 └── projects/<project_id>.json
 ```
 
-SQLite is derived/runtime state. It also stores private local authentication state and executed project demo history.
+SQLite is derived/runtime state. It also stores private local authentication state, executed project demo history, and professor evaluations.
 
 ```text
 Git-tracked JSON
@@ -116,7 +124,7 @@ Git-tracked JSON
    db-sync
       │
       ▼
-    SQLite
+    SQLite ───── runtime auth / history / reviews
       │
       ▼
   FastAPI API
@@ -125,7 +133,7 @@ Git-tracked JSON
    React UI
 ```
 
-Passwords, password hashes, sessions, API tokens, and other secrets are never stored in Git-tracked user JSON.
+Passwords, password hashes, sessions, API tokens, and other secrets are never stored in Git-tracked user JSON. Professor reviews are also intentionally not written into student Git-tracked data.
 
 ## Repository structure
 
@@ -135,7 +143,7 @@ team-project/
 ├── backend/
 │   ├── auth/                  # Local account bootstrap
 │   ├── app/                   # FastAPI routes/dependencies
-│   ├── schemas/               # API/source/auth/integration contracts
+│   ├── schemas/               # API/source/auth/integration/review contracts
 │   ├── services/              # Business logic and integrations
 │   └── database/              # SQLite migrations/init/sync
 ├── data/                      # Authoritative shared metadata
@@ -195,7 +203,7 @@ Docker mounts:
 ```text
 ./data        -> /app/data       (read/write, Git-visible shared data)
 ./projects    -> /app/projects   (read-only reviewed project source)
-team-runtime  -> /app/runtime    (private SQLite/auth/runtime state)
+team-runtime  -> /app/runtime    (private SQLite/auth/history/review state)
 ```
 
 ## Authentication and authorization
@@ -205,7 +213,9 @@ team-runtime  -> /app/runtime    (private SQLite/auth/runtime state)
 - linked to exactly one tracked user,
 - reads only their own protected user/activity/project data,
 - modifies only their own activities,
-- can inspect/run/preview only their own visible projects.
+- can inspect/run/preview only their own visible projects,
+- can read only the professor review attached to their own visible project,
+- cannot mutate project review state.
 
 ### Professor
 
@@ -214,6 +224,7 @@ team-runtime  -> /app/runtime    (private SQLite/auth/runtime state)
 - views GitHub contribution analytics,
 - can inspect all typed project previews,
 - can invoke reviewed executable demos when execution is enabled,
+- can write only to runtime project-evaluation state,
 - does not receive normal shared-data write access.
 
 Authentication endpoints:
@@ -367,15 +378,19 @@ The backend requires valid OpenAPI 3.x JSON with a top-level `paths` object, nor
 - sandboxed static preview when applicable,
 - validated OpenAPI preview when applicable,
 - controlled CLI demo action when applicable,
-- recent local history for executed demos.
+- recent local history for executed demos,
+- professor evaluation and feedback when available.
 
 Project endpoints:
 
 ```text
-GET  /api/projects
-GET  /api/projects/integrations
-GET  /api/projects/{project_id}/detail
-POST /api/projects/{project_id}/run
+GET    /api/projects
+GET    /api/projects/integrations
+GET    /api/projects/{project_id}/detail
+POST   /api/projects/{project_id}/run
+GET    /api/projects/{project_id}/review
+PUT    /api/projects/{project_id}/review      # professor + CSRF
+DELETE /api/projects/{project_id}/review      # professor + CSRF
 ```
 
 Preview-only projects cannot use the process runner. Demo history is stored only in runtime SQLite and is never written into Git-tracked project data or source.
@@ -401,6 +416,33 @@ For `python-script-v1`, the backend derives argv, uses `shell=False`, validates 
 The Python runner is **not a sandbox for hostile code**. Only reviewed repository code should be enabled.
 
 Static/OpenAPI contracts deliberately avoid starting project processes. A future untrusted web/API execution feature should use a separate isolated container/sandbox service rather than widening backend privileges.
+
+## Phase 8 Project Review & Evaluation
+
+The professor dashboard includes a review queue for all tracked projects. A project with no review is `pending`; saved reviews can be `in-review`, `changes-requested`, or `approved`.
+
+The fixed rubric totals 100 points:
+
+| Criterion | Max |
+| --- | ---: |
+| Functionality | 30 |
+| Code quality | 20 |
+| Documentation | 15 |
+| Integration | 20 |
+| Contribution | 15 |
+| **Total** | **100** |
+
+Professor review state is stored only in runtime SQLite table `project_reviews`. It does not modify `data/`, project source, activities, or Git history.
+
+Professor queue endpoint:
+
+```text
+GET /api/professor/reviews
+```
+
+Students see their own review read-only on the same generic project detail page. The backend, not frontend routing, enforces review ownership and professor-only mutations.
+
+See [Project Review & Evaluation](docs/project-review-evaluation.md) for the full boundary and authorization model.
 
 ## Member integration checklist
 
@@ -443,11 +485,11 @@ CI covers:
 - conflict-marker detection,
 - backend Ruff/tests/coverage + fresh DB sync,
 - frontend ESLint/Prettier/TypeScript/unit/build,
-- Playwright Chromium E2E,
+- Playwright Chromium E2E including professor review → student feedback visibility,
 - Python/npm dependency audits,
 - CodeQL for Python and JavaScript/TypeScript.
 
-Executable project paths remain CODEOWNERS-protected.
+Executable project and evaluation-sensitive paths remain CODEOWNERS-protected.
 
 ## Git workflow
 
@@ -485,6 +527,7 @@ Rules:
 - [Project runner](docs/project-runner.md)
 - [Member project integration](docs/member-project-integration.md)
 - [Rich project demos](docs/rich-project-demos.md)
+- [Project review & evaluation](docs/project-review-evaluation.md)
 - [Git workflow](docs/git-workflow.md)
 - [Database rules](docs/database-rules.md)
 - [Engineering quality](docs/engineering-quality.md)
@@ -500,6 +543,6 @@ Rules:
 - unknown resources -> `404`, malformed input -> `422`, unauthenticated -> `401`, forbidden -> `403`,
 - never trust a frontend-provided user id as authorization proof,
 - keep Git-tracked JSON authoritative for shared team data,
-- keep credentials/sessions/secrets/runtime history outside Git,
+- keep credentials/sessions/secrets/runtime history/reviews outside Git,
 - keep external integrations isolated/read-only where possible,
 - never introduce arbitrary shell execution through project manifests.

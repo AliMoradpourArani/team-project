@@ -1,10 +1,11 @@
-"""Professor-only read dashboards."""
+"""Professor-only dashboards and review queue."""
 
 from fastapi import APIRouter
 
 from ...schemas.auth import ProfessorDashboardResponse
 from ...schemas.github import ProfessorGitHubDashboardResponse
-from ...services import github_integration, professor
+from ...schemas.project_review import ProfessorReviewQueueResponse
+from ...services import github_integration, professor, project_reviews, queries
 from ..auth_dependencies import ProfessorPrincipal
 
 router = APIRouter(prefix="/api/professor", tags=["professor"])
@@ -20,3 +21,9 @@ def dashboard(principal: ProfessorPrincipal) -> ProfessorDashboardResponse:
 def github_dashboard(principal: ProfessorPrincipal) -> ProfessorGitHubDashboardResponse:
     del principal
     return github_integration.get_professor_github_dashboard()
+
+
+@router.get("/reviews", response_model=ProfessorReviewQueueResponse)
+def review_queue(principal: ProfessorPrincipal) -> ProfessorReviewQueueResponse:
+    del principal
+    return project_reviews.get_review_queue(queries.list_projects())

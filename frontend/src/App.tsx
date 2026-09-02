@@ -199,6 +199,7 @@ export default function App() {
     content = (
       <ProjectDetailPage
         projectId={projectMatch[1]}
+        role={session.role}
         backHref={
           session.role === "student" && session.userId ? `/users/${session.userId}` : "/professor"
         }

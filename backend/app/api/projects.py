@@ -1,15 +1,16 @@
-"""Project routes with role-based visibility and controlled local execution."""
+"""Project routes with role-based visibility, reviews, and controlled local execution."""
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, Response, status
 
 from ...schemas.api import ProjectResponse
+from ...schemas.project_review import ProjectReviewInput, ProjectReviewResponse
 from ...schemas.project_runner import (
     ProjectDetailResponse,
     ProjectIntegrationResponse,
     ProjectRunResponse,
 )
-from ...services import project_runner, queries
-from ..auth_dependencies import CsrfPrincipal, CurrentPrincipal
+from ...services import project_reviews, project_runner, queries
+from ..auth_dependencies import CsrfPrincipal, CurrentPrincipal, ProfessorCsrfPrincipal
 
 router = APIRouter(prefix="/api/projects", tags=["projects"])
 
@@ -46,6 +47,31 @@ def get_project_detail(project_id: str, principal: CurrentPrincipal) -> ProjectD
         return project_runner.project_detail(project)
     except project_runner.ProjectRunnerError as error:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(error)) from error
+
+
+@router.get("/{project_id}/review", response_model=ProjectReviewResponse | None)
+def get_project_review(
+    project_id: str, principal: CurrentPrincipal
+) -> ProjectReviewResponse | None:
+    _project_for_principal(project_id, principal)
+    return project_reviews.get_review(project_id)
+
+
+@router.put("/{project_id}/review", response_model=ProjectReviewResponse)
+def save_project_review(
+    project_id: str,
+    payload: ProjectReviewInput,
+    principal: ProfessorCsrfPrincipal,
+) -> ProjectReviewResponse:
+    _project_for_principal(project_id, principal)
+    return project_reviews.save_review(project_id, principal.account_id, payload)
+
+
+@router.delete("/{project_id}/review", status_code=status.HTTP_204_NO_CONTENT)
+def delete_project_review(project_id: str, principal: ProfessorCsrfPrincipal) -> Response:
+    _project_for_principal(project_id, principal)
+    project_reviews.delete_review(project_id)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post("/{project_id}/run", response_model=ProjectRunResponse)

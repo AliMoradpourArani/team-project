@@ -4,9 +4,12 @@ import type {
   AuthSession,
   ProfessorDashboardData,
   ProfessorGitHubDashboardData,
+  ProfessorReviewQueueData,
   Project,
   ProjectDetail,
   ProjectIntegration,
+  ProjectReview,
+  ProjectReviewInput,
   ProjectRunResult,
   User,
 } from "./types";
@@ -78,13 +81,31 @@ export const getProjectIntegrations = (): Promise<ProjectIntegration[]> =>
   request<ProjectIntegration[]>("/api/projects/integrations");
 export const getProjectDetail = (projectId: string): Promise<ProjectDetail> =>
   request<ProjectDetail>(`/api/projects/${projectId}/detail`);
+export const getProjectReview = (projectId: string): Promise<ProjectReview | null> =>
+  request<ProjectReview | null>(`/api/projects/${projectId}/review`);
 export const getProfessorDashboard = (): Promise<ProfessorDashboardData> =>
   request<ProfessorDashboardData>("/api/professor/dashboard");
 export const getProfessorGitHubDashboard = (): Promise<ProfessorGitHubDashboardData> =>
   request<ProfessorGitHubDashboardData>("/api/professor/github");
+export const getProfessorReviewQueue = (): Promise<ProfessorReviewQueueData> =>
+  request<ProfessorReviewQueueData>("/api/professor/reviews");
 
 export async function runProject(projectId: string): Promise<ProjectRunResult> {
   return request<ProjectRunResult>(`/api/projects/${projectId}/run`, { method: "POST" });
+}
+
+export async function saveProjectReview(
+  projectId: string,
+  payload: ProjectReviewInput,
+): Promise<ProjectReview> {
+  return request<ProjectReview>(`/api/projects/${projectId}/review`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function deleteProjectReview(projectId: string): Promise<void> {
+  await request<void>(`/api/projects/${projectId}/review`, { method: "DELETE" });
 }
 
 export async function createActivity(payload: ActivityInput): Promise<Activity> {

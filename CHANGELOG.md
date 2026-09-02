@@ -6,6 +6,18 @@ All notable project changes are recorded here. The project follows a lightweight
 
 ### Added
 
+- Phase 8 professor Project Review & Evaluation workflow
+- runtime-only `project_reviews` SQLite state with append-only migration 008
+- fixed 100-point rubric for functionality, code quality, documentation, integration, and contribution
+- professor review states: in-review, changes-requested, and approved; missing review means pending
+- professor project review queue with status counts and direct project links
+- project-level professor review create/update/reset endpoints protected by professor role + CSRF
+- student read-only visibility into feedback and rubric for their own projects
+- frontend review editor, read-only feedback panel, queue UI, unit tests, and Playwright review flow
+- `docs/project-review-evaluation.md` documenting the runtime-only evaluation boundary
+- Phase 7 typed CLI, static-web, and OpenAPI demo contracts
+- sandboxed static HTML project preview with restrictive CSP
+- validated bounded OpenAPI 3.x JSON preview without starting an API server
 - Phase 6 generic member-project detail pages at `/projects/<project_id>`
 - project integration health checklist for tracked metadata, manifest, owner mapping, paths, runner contract, and README
 - safe plain-text project README preview in the shared UI
@@ -39,10 +51,12 @@ All notable project changes are recorded here. The project follows a lightweight
 
 ### Changed
 
+- professor access remains read-only for shared student data, while Phase 8 permits writes only to separate runtime evaluation state
+- project detail pages now surface professor evaluation in the same generic route for every member project
 - project cards now link to generic data-driven detail pages instead of requiring Core changes per member project
 - demo executions invoked through the API are recorded in runtime history without modifying Git-tracked project data
 - the reference `team-foundation` project now includes the README required by the Phase 6 health checklist
-- executable member-project paths are now CODEOWNERS-protected because reviewed repository code may be run locally
+- executable and evaluation-sensitive paths are CODEOWNERS-protected
 - the example project manifest now links to authoritative project id `team-foundation` and uses `runner: python-script-v1`
 - Docker mounts `./projects` read-only into the backend container
 - user runtime schema now carries optional GitHub identity mapping via append-only migration 006
@@ -52,7 +66,7 @@ All notable project changes are recorded here. The project follows a lightweight
 - protected API collections require authentication and filter by role
 - professor access is explicitly read-only for shared application data
 - CORS allows credentials only for configured explicit origins
-- CODEOWNERS covers authentication, professor dashboard, GitHub integration, and project runner paths
+- CODEOWNERS covers authentication, professor dashboard, GitHub integration, project runner, and project evaluation paths
 
 ## 0.2.5 - 2026-09-01
 

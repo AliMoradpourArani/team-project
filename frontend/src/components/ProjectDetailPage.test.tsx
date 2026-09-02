@@ -9,6 +9,10 @@ vi.mock("../api", () => ({
   runProject: vi.fn(),
 }));
 
+vi.mock("./ProjectReviewPanel", () => ({
+  default: () => <div>Professor review panel</div>,
+}));
+
 const getDetail = vi.mocked(getProjectDetail);
 const executeProject = vi.mocked(runProject);
 
@@ -68,14 +72,17 @@ describe("ProjectDetailPage", () => {
     getDetail.mockResolvedValue(detail);
   });
 
-  it("renders health, safe readme text, and runtime history", async () => {
-    render(<ProjectDetailPage projectId="team-foundation" backHref="/users/hossein" />);
+  it("renders health, review panel, safe readme text, and runtime history", async () => {
+    render(
+      <ProjectDetailPage projectId="team-foundation" backHref="/users/hossein" role="student" />,
+    );
 
     expect(
       await screen.findByRole("heading", { name: "Team Project Foundation" }),
     ).toBeInTheDocument();
     expect(screen.getByText("1/1 checks passing")).toBeInTheDocument();
     expect(screen.getByText("Manifest is valid.")).toBeInTheDocument();
+    expect(screen.getByText("Professor review panel")).toBeInTheDocument();
     expect(screen.getByText(/Demo documentation/)).toBeInTheDocument();
     expect(screen.getByText("history-ok")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "← Back" })).toHaveAttribute("href", "/users/hossein");
@@ -93,7 +100,9 @@ describe("ProjectDetailPage", () => {
       outputTruncated: false,
     });
 
-    render(<ProjectDetailPage projectId="team-foundation" backHref="/users/hossein" />);
+    render(
+      <ProjectDetailPage projectId="team-foundation" backHref="/users/hossein" role="student" />,
+    );
 
     fireEvent.click(await screen.findByRole("button", { name: "Run demo" }));
 

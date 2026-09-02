@@ -2,16 +2,18 @@ import { useCallback, useEffect, useState } from "react";
 
 import { getProjectDetail, runProject } from "../api";
 import "../project-runner.css";
-import type { ProjectDetail, ProjectRunResult } from "../types";
+import type { AuthRole, ProjectDetail, ProjectRunResult } from "../types";
 import ProjectDemoPreview from "./ProjectDemoPreview";
+import ProjectReviewPanel from "./ProjectReviewPanel";
 import StatusMessage from "./StatusMessage";
 
 interface Props {
   projectId: string;
   backHref: string;
+  role: AuthRole;
 }
 
-export default function ProjectDetailPage({ projectId, backHref }: Props) {
+export default function ProjectDetailPage({ projectId, backHref, role }: Props) {
   const [detail, setDetail] = useState<ProjectDetail | null>(null);
   const [result, setResult] = useState<ProjectRunResult | null>(null);
   const [running, setRunning] = useState(false);
@@ -140,6 +142,8 @@ export default function ProjectDetailPage({ projectId, backHref }: Props) {
           )}
         </section>
       </div>
+
+      <ProjectReviewPanel projectId={projectId} role={role} />
 
       {detail.preview ? <ProjectDemoPreview preview={detail.preview} /> : null}
 

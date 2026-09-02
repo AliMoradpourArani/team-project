@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { getProfessorDashboard } from "../api";
 import type { ProfessorDashboardData } from "../types";
 import GitHubContributionPanel from "./GitHubContributionPanel";
+import ProfessorReviewQueue from "./ProfessorReviewQueue";
 import StatusMessage from "./StatusMessage";
 
 export default function ProfessorDashboard() {
@@ -117,6 +118,7 @@ export default function ProfessorDashboard() {
       </section>
 
       <GitHubContributionPanel />
+      <ProfessorReviewQueue />
 
       <section className="dashboard-card professor-recent">
         <div className="section-heading compact">

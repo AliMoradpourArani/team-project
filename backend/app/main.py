@@ -20,8 +20,10 @@ def configured_origins() -> list[str]:
 
 app = FastAPI(
     title="Team Project API",
-    version="0.3.0",
-    description="Authenticated team activity, calendar, timeline, project, and professor dashboard API.",
+    version="0.8.0",
+    description=(
+        "Authenticated team activity, project demo, professor analytics, and project evaluation API."
+    ),
 )
 
 app.add_middleware(

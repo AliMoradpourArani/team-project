@@ -5,10 +5,16 @@ import {
   deleteAIThread,
   getAIAgentSnapshot,
   getAIDailyBrief,
+  getAIHealth,
   getAIMultiAgentReview,
+  getAIOrchestration,
   getAIThreads,
+  getAIWeeklyBrief,
+  indexAIRepository,
   postAIMessage,
+  refreshAINotifications,
   replanAIThread,
+  syncAIProgress,
 } from "../api";
 import "../ai-agent.css";
 import type {
@@ -17,7 +23,11 @@ import type {
   AIAgentSnapshot,
   AIAgentThread,
   AIDailyBrief,
+  AIHealthScore,
   AIMultiAgentReview,
+  AIOrchestrationResult,
+  AIRepoIndexResult,
+  AIWeeklyBrief,
 } from "../ai-agent-types";
 
 interface AIAgentPanelProps {
@@ -31,8 +41,12 @@ export default function AIAgentPanel({ projectId }: AIAgentPanelProps) {
   const [lastReply, setLastReply] = useState<AIAgentReply | null>(null);
   const [snapshot, setSnapshot] = useState<AIAgentSnapshot | null>(null);
   const [brief, setBrief] = useState<AIDailyBrief | null>(null);
+  const [weekly, setWeekly] = useState<AIWeeklyBrief | null>(null);
+  const [health, setHealth] = useState<AIHealthScore | null>(null);
   const [replan, setReplan] = useState<AIAgentReplanResponse | null>(null);
   const [review, setReview] = useState<AIMultiAgentReview | null>(null);
+  const [orchestration, setOrchestration] = useState<AIOrchestrationResult | null>(null);
+  const [repoIndex, setRepoIndex] = useState<AIRepoIndexResult | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
@@ -50,19 +64,28 @@ export default function AIAgentPanel({ projectId }: AIAgentPanelProps) {
   }, []);
 
   const loadProjectIntelligence = useCallback(async () => {
-    const [nextBrief, nextReview] = await Promise.all([
+    const [nextBrief, nextWeekly, nextHealth, nextReview, nextOrchestration] = await Promise.all([
       getAIDailyBrief(projectId),
+      getAIWeeklyBrief(projectId),
+      getAIHealth(projectId),
       getAIMultiAgentReview(projectId),
+      getAIOrchestration(projectId),
     ]);
     setBrief(nextBrief);
+    setWeekly(nextWeekly);
+    setHealth(nextHealth);
     setReview(nextReview);
+    setOrchestration(nextOrchestration);
   }, [projectId]);
 
   useEffect(() => {
     refresh().catch(() => setThreads([]));
     loadProjectIntelligence().catch(() => {
       setBrief(null);
+      setWeekly(null);
+      setHealth(null);
       setReview(null);
+      setOrchestration(null);
     });
   }, [loadProjectIntelligence, refresh]);
 
@@ -129,6 +152,39 @@ export default function AIAgentPanel({ projectId }: AIAgentPanelProps) {
     }
   }
 
+  async function buildRepoIndex() {
+    setBusy(true);
+    setError("");
+    try {
+      const result = await indexAIRepository(projectId);
+      setRepoIndex(result);
+      await loadProjectIntelligence();
+    } catch (requestError) {
+      setError(
+        requestError instanceof Error ? requestError.message : "Repository indexing failed.",
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function synchronizeProgress() {
+    setBusy(true);
+    setError("");
+    try {
+      const result = await syncAIProgress(projectId, true);
+      await refreshAINotifications(projectId);
+      await loadProjectIntelligence();
+      if (result.changes.length === 0) {
+        setError("No GitHub evidence required a task status change.");
+      }
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : "Progress sync failed.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function removeThread() {
     if (!activeThread) return;
     setBusy(true);
@@ -150,17 +206,32 @@ export default function AIAgentPanel({ projectId }: AIAgentPanelProps) {
     <section className="ai-agent-panel" aria-labelledby="ai-agent-title">
       <div className="ai-agent-header">
         <div>
-          <p className="eyebrow">AI project agent</p>
+          <p className="eyebrow">AI project operating system</p>
           <h3 id="ai-agent-title">Project intelligence cockpit</h3>
           <p>
-            Persistent context, GitHub evidence, replanning, engineering review, and specialist
-            agents.
+            Persistent context, repository RAG, GitHub evidence, governed actions, progress sync,
+            debugging, health scoring, and specialist agents.
           </p>
         </div>
         <button type="button" className="secondary-button" onClick={startThread} disabled={busy}>
           New thread
         </button>
       </div>
+
+      {health ? (
+        <div className="ai-agent-brief">
+          <strong>Project health {health.overall}/100</strong>
+          <div className="ai-agent-snapshot">
+            <span>Delivery {health.delivery}</span>
+            <span>Code {health.code}</span>
+            <span>Security {health.security}</span>
+            <span>Tests {health.tests}</span>
+            <span>Schedule {health.schedule}</span>
+            <span>Docs {health.documentation}</span>
+          </div>
+          {health.reasons[0] ? <p>{health.reasons[0]}</p> : null}
+        </div>
+      ) : null}
 
       {brief ? (
         <div className="ai-agent-brief">
@@ -174,6 +245,39 @@ export default function AIAgentPanel({ projectId }: AIAgentPanelProps) {
             <p>Today: {brief.priorities.slice(0, 3).join(" · ")}</p>
           ) : null}
         </div>
+      ) : null}
+
+      {weekly ? (
+        <div className="ai-agent-brief">
+          <strong>Weekly intelligence</strong>
+          <p>{weekly.headline}</p>
+          <div className="ai-agent-snapshot">
+            <span>{weekly.completedTasks} completed</span>
+            <span>{weekly.inProgressTasks} in progress</span>
+            <span>{weekly.overdueTasks} overdue</span>
+            <span>{weekly.githubSignals} GitHub signals</span>
+          </div>
+        </div>
+      ) : null}
+
+      <div className="ai-agent-actions">
+        <button type="button" className="secondary-button" onClick={buildRepoIndex} disabled={busy}>
+          Index repository
+        </button>
+        <button
+          type="button"
+          className="secondary-button"
+          onClick={synchronizeProgress}
+          disabled={busy}
+        >
+          Sync GitHub progress
+        </button>
+      </div>
+
+      {repoIndex ? (
+        <p className="ai-agent-provider">
+          Repository index: {repoIndex.filesIndexed} files · {repoIndex.chunksIndexed} chunks
+        </p>
       ) : null}
 
       {threads.length > 0 ? (
@@ -298,6 +402,16 @@ export default function AIAgentPanel({ projectId }: AIAgentPanelProps) {
             Delete thread
           </button>
         </>
+      ) : null}
+
+      {orchestration ? (
+        <div className="ai-agent-review">
+          <strong>Multi-agent coordinator</strong>
+          <p>{orchestration.executiveSummary}</p>
+          {orchestration.nextActions.slice(0, 4).map((action) => (
+            <p key={action}>Next: {action}</p>
+          ))}
+        </div>
       ) : null}
 
       {review ? (

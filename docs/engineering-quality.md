@@ -1,94 +1,86 @@
 # Engineering quality gates
 
-Phase 2.5 adds automated quality and security controls around the shared platform.
-The intent is to keep `main` runnable after every merge and make review rules
-visible to the whole team.
+The repository treats `main` as a continuously runnable integration branch. Pull requests are validated across backend, frontend, browser flows, database initialization, security tooling, and AI-specific contracts.
 
-## Pull-request gates
+## Pull-request CI
 
-The main CI workflow runs:
+The primary CI workflow covers:
 
-1. unresolved merge-conflict marker detection
-2. backend Ruff linting
-3. AI reviewer script syntax validation
-4. backend pytest suite with a 70% coverage floor
-5. fresh SQLite initialization and source-data reconciliation
-6. frontend ESLint, Prettier, TypeScript, unit tests, and production build
-7. Playwright E2E flow in Chromium against a real FastAPI + Vite stack
+1. unresolved conflict-marker detection,
+2. backend Ruff linting,
+3. AI reviewer script syntax validation,
+4. backend pytest suite with coverage gate,
+5. member-project onboarding contracts,
+6. fresh SQLite initialization/source reconciliation,
+7. final-delivery preflight smoke validation,
+8. frontend ESLint and Prettier checks,
+9. TypeScript type checking,
+10. frontend unit tests and production build,
+11. Playwright browser E2E flows against FastAPI + Vite.
 
-The browser test creates an activity through the UI, verifies it in the timeline
-and calendar, then deletes it. The runner uses an isolated SQLite database and
-throwaway Git checkout, so the repository's real tracked data is not changed.
+AI/autonomy integration tests cover repository RAG, prompt-injection defense, governed action approval/execution, project isolation, authoritative task writes, GitHub evidence progress inference, health scoring, orchestration, and notifications.
 
 ## Security automation
 
-`.github/workflows/security.yml` runs:
+`.github/workflows/security.yml` includes:
 
-- GitHub dependency review on pull requests when Dependency Graph is enabled
-- `pip-audit` for Python runtime dependencies
-- `npm audit` for frontend dependencies
-- CodeQL for Python and JavaScript/TypeScript
-- a scheduled weekly re-check even when no PR is open
+- dependency review when GitHub Dependency Graph is available,
+- `pip-audit`,
+- `npm audit`,
+- CodeQL for Python when GitHub code scanning is available,
+- CodeQL for JavaScript/TypeScript when GitHub code scanning is available.
 
-If GitHub Dependency Graph is disabled, the workflow detects that condition and
-skips only the dependency-review action instead of failing the whole security
-suite. Enable Dependency Graph under repository security settings before making
-`dependency-review` an enforced branch-protection gate.
+The private upstream skips CodeQL by default because GitHub code-scanning upload may be unavailable for the repository/account configuration. To enable CodeQL on the private upstream after code scanning is enabled in GitHub, set the repository variable:
 
-Dependabot opens weekly update PRs for Python, frontend npm, E2E Playwright, and
-GitHub Actions dependencies.
+```text
+ENABLE_CODEQL_ON_PRIVATE=true
+```
 
-## Runtime resilience and observability
+Public repositories run the CodeQL matrix without that variable. Dependency and package audits continue regardless of this CodeQL gate.
 
-The API adds an `X-Request-ID` response header and emits structured JSON request
-logs with method, path, status, duration, and correlation ID. The frontend has an
-application-level Error Boundary so an unexpected render failure produces a
-recoverable fallback instead of a blank page.
+Dependabot performs scheduled dependency updates.
 
 ## AI pull-request reviewer
 
-`.github/workflows/ai-review.yml` uses `pull_request_target` deliberately, but it
-never executes pull-request code. It checks out the trusted base revision and
-fetches only PR metadata and patch text through the GitHub API. The reviewer has
-read access to repository contents and permission to write review comments, but
-no contents-write or merge permission.
+`.github/workflows/ai-review.yml` uses trusted base-branch code and PR patch text. It does not execute pull-request code and does not have contents-write or merge permission.
 
-The reviewer checks project-specific invariants such as JSON source authority,
-SQLite reproducibility, append-only migrations, API/data-contract compatibility,
-security-sensitive changes, and test adequacy.
-
-### Enable it
-
-Create a GitHub Actions repository secret named:
+Configure the optional Actions secret:
 
 ```text
 OPENAI_API_KEY
 ```
 
-Optionally create a repository variable:
+and optionally the repository variable:
 
 ```text
 OPENAI_REVIEW_MODEL=gpt-5.6-luna
 ```
 
-If the API key is absent, the AI job exits successfully with review disabled so
-normal PRs are not blocked. Only make `AI Review / ai-review` a required status
-check after a test PR proves the configured key/model works.
+If the reviewer secret is unavailable, the workflow reports a successful skip rather than blocking normal CI. A green AI Review workflow therefore means the workflow itself passed; confirm the secret is configured if an actual provider-backed review is required.
 
-## CODEOWNERS
+This Actions reviewer is separate from the in-app `AI_API_KEY` used by the project copilot/orchestrator.
 
-`.github/CODEOWNERS` assigns sensitive platform areas to `@HoosseinRahimi`.
-Enable **Require review from Code Owners** in branch protection for this file to
-become an enforced merge gate.
+## Runtime safety quality
 
-## Architecture decisions
+AI features are expected to preserve these testable invariants:
 
-Record durable architecture or workflow decisions under `docs/adr/`. Add a new
-ADR instead of silently rewriting the rationale behind an accepted decision.
+- no side effect before action approval,
+- no cross-student/project retrieval,
+- no direct SQLite-only mutation of authoritative task state,
+- no client-provided external credentials,
+- bounded RAG/payload sizes,
+- timeout/fallback behavior for provider and GitHub calls,
+- automatic progress mutation disabled unless explicitly opted in.
+
+## Observability
+
+The API emits request IDs and structured request logs. AI action status/results and notifications are persisted in runtime state, giving important autonomy operations an auditable trail.
+
+## CODEOWNERS and branch protection
+
+High-risk platform paths are owned by `@HoosseinRahimi`. Recommended required checks and branch-protection settings are documented in `docs/branch-protection.md`.
 
 ## Local equivalents
-
-Most checks can be run locally with:
 
 ```bash
 make test
@@ -96,12 +88,4 @@ python -m pytest --cov=backend --cov-report=term-missing
 npm audit --prefix frontend --audit-level=high
 ```
 
-For E2E testing, install the application dependencies plus `e2e/` dependencies,
-install Chromium with Playwright, initialize a throwaway database, and run:
-
-```bash
-npm install --prefix e2e
-cd e2e
-npx playwright install chromium
-DATABASE_PATH=/tmp/team-project-e2e.db npm test
-```
+For Playwright, install the E2E dependencies and Chromium, initialize an isolated runtime DB, and run the browser suite from `e2e/`.

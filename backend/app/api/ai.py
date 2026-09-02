@@ -1,4 +1,4 @@
-"""Authenticated in-app AI workspace and persistent agent endpoints."""
+"""Authenticated in-app AI workspace, repository intelligence, and governed autonomy."""
 
 from __future__ import annotations
 
@@ -24,7 +24,24 @@ from ...schemas.ai import (
     AIWorkspaceRequest,
     AIWorkspaceResponse,
 )
-from ...services import ai_agent, ai_workspace
+from ...schemas.ai_autonomy import (
+    AIActionProposalRequest,
+    AIActionRecord,
+    AIDebugRequest,
+    AIDebugResponse,
+    AIHealthScore,
+    AIMemorySearchResponse,
+    AINotification,
+    AIOrchestrationResponse,
+    AIProgressSyncRequest,
+    AIProgressSyncResponse,
+    AIRagQuery,
+    AIRagResponse,
+    AIRepoIndexResponse,
+    AIWeeklyBrief,
+)
+from ...schemas.ai_review import AICodeReviewRequest, AICodeReviewResponse
+from ...services import ai_agent, ai_autonomy, ai_code_review, ai_multi_agent, ai_workspace
 from ..auth_dependencies import CsrfPrincipal, CurrentPrincipal
 
 router = APIRouter(prefix="/api/ai", tags=["ai"])
@@ -81,7 +98,12 @@ def post_ai_message(
     payload: AIAgentMessageWrite,
     principal: CsrfPrincipal,
 ) -> AIAgentReply:
-    return ai_agent.post_message(thread_id, payload.content, _student_user_id(principal))
+    user_id = _student_user_id(principal)
+    try:
+        ai_autonomy.guard_prompt(user_id, payload.content)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+    return ai_agent.post_message(thread_id, payload.content, user_id)
 
 
 @router.post("/threads/{thread_id}/replan", response_model=AIAgentReplanResponse)
@@ -118,6 +140,15 @@ def upsert_ai_memory(
     )
 
 
+@router.get("/memory/search", response_model=AIMemorySearchResponse)
+def search_ai_memory(
+    principal: CurrentPrincipal,
+    q: str = Query(min_length=2, max_length=1000),
+    project_id: str | None = Query(default=None, alias="projectId"),
+) -> AIMemorySearchResponse:
+    return ai_autonomy.search_memory(_project_param(project_id), q, _student_user_id(principal))
+
+
 @router.get("/github-links", response_model=list[AIGitHubLink])
 def list_ai_github_links(
     principal: CurrentPrincipal,
@@ -145,9 +176,116 @@ def get_ai_daily_brief(
     return ai_agent.daily_brief(_project_param(project_id), _student_user_id(principal))
 
 
+@router.get("/weekly-brief", response_model=AIWeeklyBrief)
+def get_ai_weekly_brief(
+    principal: CurrentPrincipal,
+    project_id: str | None = Query(default=None, alias="projectId"),
+) -> AIWeeklyBrief:
+    return ai_autonomy.weekly_brief(_project_param(project_id), _student_user_id(principal))
+
+
 @router.get("/multi-agent-review", response_model=AIMultiAgentReview)
 def get_ai_multi_agent_review(
     principal: CurrentPrincipal,
     project_id: str | None = Query(default=None, alias="projectId"),
 ) -> AIMultiAgentReview:
     return ai_agent.multi_agent_review(_project_param(project_id), _student_user_id(principal))
+
+
+@router.get("/orchestrate", response_model=AIOrchestrationResponse)
+def orchestrate_ai_agents(
+    principal: CurrentPrincipal,
+    project_id: str | None = Query(default=None, alias="projectId"),
+) -> AIOrchestrationResponse:
+    return ai_multi_agent.orchestrate(_project_param(project_id), _student_user_id(principal))
+
+
+@router.post("/repo/index", response_model=AIRepoIndexResponse)
+def index_ai_repository(
+    principal: CsrfPrincipal,
+    project_id: str | None = Query(default=None, alias="projectId"),
+) -> AIRepoIndexResponse:
+    return ai_autonomy.index_repository(_project_param(project_id), _student_user_id(principal))
+
+
+@router.post("/repo/query", response_model=AIRagResponse)
+def query_ai_repository(
+    payload: AIRagQuery,
+    principal: CurrentPrincipal,
+    project_id: str | None = Query(default=None, alias="projectId"),
+) -> AIRagResponse:
+    return ai_autonomy.query_repository(
+        _project_param(project_id), payload, _student_user_id(principal)
+    )
+
+
+@router.post("/code-review", response_model=AICodeReviewResponse)
+def review_code_with_ai(
+    payload: AICodeReviewRequest,
+    principal: CurrentPrincipal,
+) -> AICodeReviewResponse:
+    result = ai_code_review.review_diff(payload.projectId, payload.diff, _student_user_id(principal))
+    return AICodeReviewResponse(**result)
+
+
+@router.post("/debug", response_model=AIDebugResponse)
+def debug_with_ai(payload: AIDebugRequest, principal: CurrentPrincipal) -> AIDebugResponse:
+    return ai_autonomy.debug_logs(payload.projectId, payload.logs, _student_user_id(principal))
+
+
+@router.get("/health", response_model=AIHealthScore)
+def get_ai_health(
+    principal: CurrentPrincipal,
+    project_id: str | None = Query(default=None, alias="projectId"),
+) -> AIHealthScore:
+    return ai_autonomy.health_score(_project_param(project_id), _student_user_id(principal))
+
+
+@router.post("/progress/sync", response_model=AIProgressSyncResponse)
+def sync_ai_progress(
+    payload: AIProgressSyncRequest,
+    principal: CsrfPrincipal,
+) -> AIProgressSyncResponse:
+    return ai_autonomy.sync_progress(payload, _student_user_id(principal))
+
+
+@router.get("/actions", response_model=list[AIActionRecord])
+def list_ai_actions(
+    principal: CurrentPrincipal,
+    project_id: str | None = Query(default=None, alias="projectId"),
+) -> list[AIActionRecord]:
+    return ai_autonomy.list_actions(_project_param(project_id), _student_user_id(principal))
+
+
+@router.post("/actions", response_model=AIActionRecord, status_code=status.HTTP_201_CREATED)
+def propose_ai_action(payload: AIActionProposalRequest, principal: CsrfPrincipal) -> AIActionRecord:
+    return ai_autonomy.propose_action(payload, _student_user_id(principal))
+
+
+@router.post("/actions/{action_id}/approve", response_model=AIActionRecord)
+def approve_ai_action(action_id: int, principal: CsrfPrincipal) -> AIActionRecord:
+    return ai_autonomy.approve_action(action_id, _student_user_id(principal))
+
+
+@router.post("/actions/{action_id}/execute", response_model=AIActionRecord)
+def execute_ai_action(action_id: int, principal: CsrfPrincipal) -> AIActionRecord:
+    try:
+        return ai_autonomy.execute_action(action_id, _student_user_id(principal))
+    except (ValueError, RuntimeError) as exc:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
+
+
+@router.get("/notifications", response_model=list[AINotification])
+def list_ai_notifications(
+    principal: CurrentPrincipal,
+    project_id: str | None = Query(default=None, alias="projectId"),
+) -> list[AINotification]:
+    return ai_autonomy.list_notifications(_project_param(project_id), _student_user_id(principal))
+
+
+@router.post("/notifications/refresh", response_model=list[AINotification])
+def refresh_ai_notifications(
+    principal: CsrfPrincipal,
+    project_id: str | None = Query(default=None, alias="projectId"),
+) -> list[AINotification]:
+    return ai_autonomy.refresh_notifications(_project_param(project_id), _student_user_id(principal))

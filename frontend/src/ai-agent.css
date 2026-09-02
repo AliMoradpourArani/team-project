@@ -19,10 +19,30 @@
   margin-bottom: 0.25rem;
 }
 
-.ai-agent-thread-tabs {
+.ai-agent-brief,
+.ai-agent-review {
+  margin-top: 1rem;
+  padding: 0.9rem;
+  border: 1px solid var(--border-color, #d9dde5);
+  border-radius: 14px;
+  background: rgba(127, 127, 127, 0.05);
+}
+
+.ai-agent-brief p,
+.ai-agent-review p,
+.ai-agent-provider {
+  margin: 0.45rem 0 0;
+}
+
+.ai-agent-thread-tabs,
+.ai-agent-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 0.5rem;
   margin: 1rem 0;
+}
+
+.ai-agent-thread-tabs {
   overflow-x: auto;
 }
 
@@ -103,6 +123,19 @@
 .ai-agent-composer textarea {
   width: 100%;
   resize: vertical;
+}
+
+.ai-agent-specialists {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 0.65rem;
+  margin-top: 0.75rem;
+}
+
+.ai-agent-specialists article {
+  padding: 0.75rem;
+  border-radius: 12px;
+  background: rgba(127, 127, 127, 0.08);
 }
 
 .ai-agent-delete {

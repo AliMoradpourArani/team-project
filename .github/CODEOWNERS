@@ -6,6 +6,7 @@
 /backend/app/api/professor.py    @HoosseinRahimi
 /backend/app/api/projects.py     @HoosseinRahimi
 /backend/project_check.py        @HoosseinRahimi
+/backend/delivery_preflight.py   @HoosseinRahimi
 /backend/services/auth.py        @HoosseinRahimi
 /backend/services/professor.py   @HoosseinRahimi
 /backend/services/github_integration.py @HoosseinRahimi
@@ -13,6 +14,8 @@
 /backend/services/project_reviews.py @HoosseinRahimi
 /backend/services/project_onboarding.py @HoosseinRahimi
 /backend/services/submissions.py @HoosseinRahimi
+/backend/services/delivery_preflight.py @HoosseinRahimi
+/backend/services/delivery_rules.py @HoosseinRahimi
 /backend/database/               @HoosseinRahimi
 /backend/schemas/                @HoosseinRahimi
 /backend/requirements*.txt       @HoosseinRahimi
@@ -35,5 +38,6 @@
 /docs/project-review-evaluation.md @HoosseinRahimi
 /docs/submission-release.md      @HoosseinRahimi
 /docs/member-project-onboarding.md @HoosseinRahimi
+/docs/final-delivery-preflight.md @HoosseinRahimi
 /docs/database-rules.md          @HoosseinRahimi
 /docs/project-contract.md        @HoosseinRahimi

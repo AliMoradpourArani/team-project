@@ -1,8 +1,9 @@
-"""Professor-only dashboards, review queue, submissions, and releases."""
+"""Professor-only dashboards, review queue, submissions, releases, and final preflight."""
 
 from fastapi import APIRouter, HTTPException, status
 
 from ...schemas.auth import ProfessorDashboardResponse
+from ...schemas.delivery_preflight import DeliveryPreflightResponse
 from ...schemas.github import ProfessorGitHubDashboardResponse
 from ...schemas.project_review import ProfessorReviewQueueResponse
 from ...schemas.submission import (
@@ -13,7 +14,14 @@ from ...schemas.submission import (
     SubmissionSettingsInput,
     SubmissionSettingsResponse,
 )
-from ...services import github_integration, professor, project_reviews, queries, submissions
+from ...services import (
+    delivery_preflight,
+    github_integration,
+    professor,
+    project_reviews,
+    queries,
+    submissions,
+)
 from ..auth_dependencies import ProfessorCsrfPrincipal, ProfessorPrincipal
 
 router = APIRouter(prefix="/api/professor", tags=["professor"])
@@ -41,6 +49,12 @@ def review_queue(principal: ProfessorPrincipal) -> ProfessorReviewQueueResponse:
 def submission_dashboard(principal: ProfessorPrincipal) -> ProfessorSubmissionDashboardResponse:
     del principal
     return submissions.get_professor_dashboard(queries.list_projects())
+
+
+@router.get("/preflight", response_model=DeliveryPreflightResponse)
+def final_delivery_preflight(principal: ProfessorPrincipal) -> DeliveryPreflightResponse:
+    del principal
+    return delivery_preflight.get_delivery_preflight(queries.list_projects())
 
 
 @router.put("/submission-settings", response_model=SubmissionSettingsResponse)
@@ -71,7 +85,14 @@ def create_release(
     payload: SubmissionReleaseInput,
     principal: ProfessorCsrfPrincipal,
 ) -> SubmissionReleaseDetail:
+    projects = queries.list_projects()
+    preflight = delivery_preflight.get_delivery_preflight(projects)
+    if not preflight.releaseCandidateReady:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=preflight.summary,
+        )
     try:
-        return submissions.create_release(queries.list_projects(), principal.account_id, payload)
+        return submissions.create_release(projects, principal.account_id, payload)
     except submissions.SubmissionConflict as error:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(error)) from error

@@ -6,6 +6,17 @@ All notable project changes are recorded here. The project follows a lightweight
 
 ### Added
 
+- Phase 11 Final Delivery Preflight shared across professor API, UI, local CLI, CI smoke checks, and release creation
+- global final-delivery gates for tracked projects, runtime professor/student accounts, complete Phase 10 integration, frozen submissions, and final approval ordering
+- per-project final-delivery gates for integration readiness, frozen submission, professor approval, and approval-after-freeze sequencing
+- professor-only `GET /api/professor/preflight` readiness report with blocker counts, remediation, and release-candidate readiness
+- `make delivery-preflight` strict local final gate plus `make delivery-preflight-report` diagnostic mode
+- server-side release-candidate guard that refuses `POST /api/professor/releases` while preflight is blocked
+- final approval sequencing invariant requiring the professor approval timestamp to be at or after the latest frozen submission timestamp
+- professor Final Delivery Control UI with global gates, per-project blockers, exact remediation, and release-candidate controls
+- CI report-only preflight smoke check against a fresh runtime database
+- `docs/final-delivery-preflight.md` documenting the final order: integrate → freeze → approve → preflight → release candidate
+- Phase 11 backend/frontend tests covering professor-only access, blocked-state reporting, release bypass prevention, and approval sequencing
 - Phase 10 shared Member Project Onboarding & Integration Gates model for API, UI, local CLI, and CI
 - six blocking readiness gates for tracked metadata, manifest, owner mapping, paths, typed demo contract, and README
 - authenticated onboarding endpoints for visible project lists and per-project readiness
@@ -69,10 +80,13 @@ All notable project changes are recorded here. The project follows a lightweight
 
 ### Changed
 
-- API version is now `0.10.0`
+- API version is now `0.11.0`
+- release candidate creation now re-runs Phase 11 preflight server-side and cannot be bypassed through direct HTTP calls
+- a final professor approval only covers a frozen submission when the approval is recorded after that submission
+- normal CI exercises final-delivery preflight in report-only mode while the strict command remains reserved for the real final checkpoint
 - Phase 9 submission status now reports `canSubmit=false` until Phase 10 onboarding gates are ready, while the actual submission mutation still revalidates server-side
 - project detail pages now show the same readiness model and remediation used by local project checks and CI
-- CODEOWNERS now protects onboarding schemas/services/CLI/UI/docs alongside existing runner, review, and submission boundaries
+- CODEOWNERS now protects onboarding and final-delivery schemas/services/CLI/UI/docs alongside existing runner, review, and submission boundaries
 - professor access remains read-only for shared student data; Phase 9 adds writes only to separate runtime submission settings and immutable release manifests
 - project detail pages now surface immutable submission state beside integration, demo, and professor review information
 - CODEOWNERS now protects submission/release backend services and frontend controls as high-risk Core paths
@@ -91,7 +105,7 @@ All notable project changes are recorded here. The project follows a lightweight
 - protected API collections require authentication and filter by role
 - professor access is explicitly read-only for shared application data
 - CORS allows credentials only for configured explicit origins
-- CODEOWNERS covers authentication, professor dashboard, GitHub integration, project runner, project evaluation, and submission/release paths
+- CODEOWNERS covers authentication, professor dashboard, GitHub integration, project runner, project evaluation, submission/release, onboarding, and final-delivery paths
 
 ## 0.2.5 - 2026-09-01
 

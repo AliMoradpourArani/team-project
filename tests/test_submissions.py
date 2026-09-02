@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import shutil
+from types import SimpleNamespace
 
 import pytest
 from fastapi.testclient import TestClient
@@ -11,7 +12,7 @@ from backend.app.main import app
 from backend.database import source_files
 from backend.database.connection import REPOSITORY_ROOT, connect
 from backend.database.init_db import initialize_database
-from backend.services import submissions
+from backend.services import delivery_preflight, submissions
 from backend.services.auth import create_or_update_account
 
 STUDENT_PASSWORD = "student-pass-123"
@@ -160,7 +161,14 @@ def test_professor_controls_submission_window_and_deadline_validation(client):
     assert naive_deadline.status_code == 422
 
 
-def test_professor_freezes_release_only_after_every_project_is_submitted_and_approved(client):
+def test_professor_freezes_release_only_after_every_project_is_submitted_and_approved(
+    client, monkeypatch
+):
+    monkeypatch.setattr(
+        delivery_preflight,
+        "get_delivery_preflight",
+        lambda projects: SimpleNamespace(releaseCandidateReady=True, summary="READY"),
+    )
     professor_csrf = login(client, "professor", PROFESSOR_PASSWORD)
 
     initial = client.get("/api/professor/submissions")

@@ -85,7 +85,7 @@ test("professor reviews a project and the student sees feedback read-only", asyn
   await expect(page.getByRole("button", { name: "Save review" })).toHaveCount(0);
 });
 
-test("student freezes an integrated project and professor sees delivery readiness", async ({ page }) => {
+test("student freezes an integrated project and professor sees final preflight blockers", async ({ page }) => {
   await signIn(page, "hossein", studentPassword);
   await page.goto("/projects/team-foundation");
 
@@ -104,6 +104,10 @@ test("student freezes an integrated project and professor sees delivery readines
     .locator(".professor-submission-row")
     .filter({ hasText: "Team Project Foundation" });
   await expect(teamProject).toContainText(/v\d+/);
-  await expect(page.getByText("Release blocked")).toBeVisible();
-  await expect(page.getByRole("button", { name: "Freeze final release" })).toBeDisabled();
+  await expect(
+    page.getByRole("heading", { name: /BLOCKED: \d+ final-delivery gate/ }),
+  ).toBeVisible();
+  await expect(page.getByText("Release candidate blocked")).toBeVisible();
+  await expect(page.getByText("make delivery-preflight")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Freeze release candidate" })).toBeDisabled();
 });

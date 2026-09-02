@@ -20,10 +20,10 @@ def configured_origins() -> list[str]:
 
 app = FastAPI(
     title="Team Project API",
-    version="0.10.0",
+    version="0.11.0",
     description=(
         "Authenticated team activity, typed member-project onboarding and demos, professor evaluation, "
-        "immutable submissions, and frozen release manifests."
+        "immutable submissions, final-delivery preflight, and frozen release candidates."
     ),
 )
 

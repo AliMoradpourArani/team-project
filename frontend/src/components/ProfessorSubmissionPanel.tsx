@@ -3,13 +3,18 @@ import type { FormEvent } from "react";
 
 import {
   createSubmissionRelease,
+  getProfessorDeliveryPreflight,
   getProfessorSubmissionDashboard,
   getSubmissionRelease,
   getSubmissionReleases,
   saveSubmissionSettings,
 } from "../api";
 import "../submission.css";
-import type { ProfessorSubmissionDashboardData, SubmissionReleaseSummary } from "../types";
+import type {
+  DeliveryPreflightData,
+  ProfessorSubmissionDashboardData,
+  SubmissionReleaseSummary,
+} from "../types";
 import StatusMessage from "./StatusMessage";
 
 function toLocalDateTime(value: string | null): string {
@@ -21,6 +26,7 @@ function toLocalDateTime(value: string | null): string {
 
 export default function ProfessorSubmissionPanel() {
   const [data, setData] = useState<ProfessorSubmissionDashboardData | null>(null);
+  const [preflight, setPreflight] = useState<DeliveryPreflightData | null>(null);
   const [releases, setReleases] = useState<SubmissionReleaseSummary[]>([]);
   const [isOpen, setIsOpen] = useState(true);
   const [deadline, setDeadline] = useState("");
@@ -32,11 +38,13 @@ export default function ProfessorSubmissionPanel() {
   const [message, setMessage] = useState("");
 
   const load = useCallback(async () => {
-    const [nextData, nextReleases] = await Promise.all([
+    const [nextData, nextPreflight, nextReleases] = await Promise.all([
       getProfessorSubmissionDashboard(),
+      getProfessorDeliveryPreflight(),
       getSubmissionReleases(),
     ]);
     setData(nextData);
+    setPreflight(nextPreflight);
     setReleases(nextReleases);
     setIsOpen(nextData.settings.isOpen);
     setDeadline(toLocalDateTime(nextData.settings.deadlineAt));
@@ -72,11 +80,15 @@ export default function ProfessorSubmissionPanel() {
     setMessage("");
     try {
       const release = await createSubmissionRelease(releaseLabel);
-      setMessage(`Release “${release.label}” frozen.`);
+      setMessage(`Release candidate “${release.label}” frozen.`);
       setReleaseLabel("");
       await load();
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "Could not freeze release.");
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Could not freeze release candidate.",
+      );
     } finally {
       setCreatingRelease(false);
     }
@@ -105,8 +117,8 @@ export default function ProfessorSubmissionPanel() {
     }
   }
 
-  if (!data && error) return <StatusMessage error>{error}</StatusMessage>;
-  if (!data) return <StatusMessage>Loading submission controls…</StatusMessage>;
+  if ((!data || !preflight) && error) return <StatusMessage error>{error}</StatusMessage>;
+  if (!data || !preflight) return <StatusMessage>Loading final delivery controls…</StatusMessage>;
 
   return (
     <section className="dashboard-card professor-submission-card">
@@ -186,22 +198,83 @@ export default function ProfessorSubmissionPanel() {
         ))}
       </div>
 
-      <div className={`release-readiness ${data.releaseReady ? "ready" : "blocked"}`}>
-        <strong>{data.releaseReady ? "Ready to freeze release" : "Release blocked"}</strong>
+      <section className={`delivery-preflight ${preflight.status}`}>
+        <div className="section-heading compact">
+          <div>
+            <p className="eyebrow">Phase 11 preflight</p>
+            <h3>{preflight.summary}</h3>
+          </div>
+          <span
+            className={`submission-state ${preflight.releaseCandidateReady ? "open" : "closed"}`}
+          >
+            {preflight.releaseCandidateReady ? "ready" : `${preflight.blockerCount} blockers`}
+          </span>
+        </div>
+        <div className="delivery-preflight-meta">
+          <span>
+            {preflight.readyProjects}/{preflight.totalProjects} projects ready
+          </span>
+          <code>{preflight.localCheckCommand}</code>
+        </div>
+        <div className="delivery-preflight-gates">
+          {preflight.globalGates.map((gate) => (
+            <article className={gate.passed ? "passed" : "blocked"} key={gate.key}>
+              <strong>
+                {gate.passed ? "✓" : "×"} {gate.label}
+              </strong>
+              <span>{gate.detail}</span>
+              {!gate.passed ? <small>{gate.remediation}</small> : null}
+            </article>
+          ))}
+        </div>
+        <div className="delivery-project-grid">
+          {preflight.projects.map((project) => {
+            const failed = project.gates.filter((gate) => !gate.passed);
+            return (
+              <a
+                href={`/projects/${project.project.id}`}
+                data-link
+                className={`delivery-project ${project.status}`}
+                key={project.project.id}
+              >
+                <div>
+                  <strong>{project.project.name}</strong>
+                  <small>{project.project.userId}</small>
+                </div>
+                <span>{project.status}</span>
+                <small>
+                  {project.latestSubmissionVersion
+                    ? `frozen v${project.latestSubmissionVersion}`
+                    : "not frozen"}
+                  {project.reviewStatus ? ` · ${project.reviewStatus}` : " · no review"}
+                </small>
+                {failed.length ? <small>{failed[0].remediation}</small> : null}
+              </a>
+            );
+          })}
+        </div>
+      </section>
+
+      <div className={`release-readiness ${preflight.releaseCandidateReady ? "ready" : "blocked"}`}>
+        <strong>
+          {preflight.releaseCandidateReady
+            ? "Ready to freeze release candidate"
+            : "Release candidate blocked"}
+        </strong>
         <span>
-          {data.releaseReady
-            ? "Every project has a frozen submission and an approved professor review."
-            : data.releaseBlockedReason}
+          {preflight.releaseCandidateReady
+            ? "Every project is integrated, frozen, and approved after its latest frozen submission."
+            : preflight.summary}
         </span>
       </div>
 
       <form className="release-form" onSubmit={(event) => void freezeRelease(event)}>
         <label>
-          <span>Release label</span>
+          <span>Release candidate label</span>
           <input
             type="text"
             maxLength={120}
-            placeholder="Final submission · Fall 2026"
+            placeholder="RC1 · Fall 2026"
             value={releaseLabel}
             onChange={(event) => setReleaseLabel(event.target.value)}
           />
@@ -209,9 +282,9 @@ export default function ProfessorSubmissionPanel() {
         <button
           className="primary-button"
           type="submit"
-          disabled={!data.releaseReady || !releaseLabel.trim() || creatingRelease}
+          disabled={!preflight.releaseCandidateReady || !releaseLabel.trim() || creatingRelease}
         >
-          {creatingRelease ? "Freezing release…" : "Freeze final release"}
+          {creatingRelease ? "Freezing candidate…" : "Freeze release candidate"}
         </button>
       </form>
 

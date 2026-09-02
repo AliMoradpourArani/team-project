@@ -215,6 +215,38 @@ export interface ProfessorSubmissionDashboardData {
   items: ProfessorSubmissionItem[];
 }
 
+export interface DeliveryPreflightGate {
+  key: string;
+  label: string;
+  passed: boolean;
+  blocking: boolean;
+  detail: string;
+  remediation: string;
+}
+
+export interface ProjectDeliveryPreflight {
+  project: Project;
+  status: "ready" | "blocked";
+  latestSubmissionVersion: number | null;
+  reviewStatus: string | null;
+  reviewAfterSubmission: boolean;
+  gates: DeliveryPreflightGate[];
+}
+
+export interface DeliveryPreflightData {
+  status: "ready" | "blocked";
+  releaseCandidateReady: boolean;
+  totalProjects: number;
+  readyProjects: number;
+  blockingProjects: number;
+  blockerCount: number;
+  generatedAt: string;
+  localCheckCommand: string;
+  summary: string;
+  globalGates: DeliveryPreflightGate[];
+  projects: ProjectDeliveryPreflight[];
+}
+
 export interface SubmissionReleaseSummary {
   id: number;
   label: string;

@@ -1,6 +1,6 @@
 # Convenience wrappers. Every command here also exists as a documented script.
 
-.PHONY: setup test lint format db-init db-sync db-reset auth-bootstrap project-check dev check
+.PHONY: setup test lint format db-init db-sync db-reset auth-bootstrap project-check delivery-preflight delivery-preflight-report dev check
 
 setup:            ## Create venv, install dependencies, initialize DB with data
 	./scripts/setup.sh
@@ -30,6 +30,12 @@ auth-bootstrap:   ## Interactively create/rotate a student or professor login
 
 project-check:     ## Validate onboarding gates; set PROJECT_ID=<id> to require one project to be ready
 	.venv/bin/python -m backend.project_check $(if $(PROJECT_ID),--project-id $(PROJECT_ID),)
+
+delivery-preflight: ## Strict final-delivery gate; exits nonzero until the release candidate is ready
+	.venv/bin/python -m backend.delivery_preflight
+
+delivery-preflight-report: ## Print current final-delivery blockers without failing
+	.venv/bin/python -m backend.delivery_preflight --report-only
 
 dev:              ## Print the two development server commands
 	@echo "Backend:  .venv/bin/python -m uvicorn backend.app.main:app --reload"

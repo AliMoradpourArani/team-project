@@ -42,6 +42,10 @@ jobs:
           python -m backend.database.sync_data
         env:
           DATABASE_PATH: /tmp/ci-app.db
+      - name: Smoke test final delivery preflight
+        run: python -m backend.delivery_preflight --report-only
+        env:
+          DATABASE_PATH: /tmp/ci-app.db
 
   frontend:
     runs-on: ubuntu-latest

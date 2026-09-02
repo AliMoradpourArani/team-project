@@ -2,6 +2,7 @@ import type {
   Activity,
   ActivityInput,
   AuthSession,
+  DeliveryPreflightData,
   ProfessorDashboardData,
   ProfessorGitHubDashboardData,
   ProfessorReviewQueueData,
@@ -105,6 +106,8 @@ export const getProfessorReviewQueue = (): Promise<ProfessorReviewQueueData> =>
   request<ProfessorReviewQueueData>("/api/professor/reviews");
 export const getProfessorSubmissionDashboard = (): Promise<ProfessorSubmissionDashboardData> =>
   request<ProfessorSubmissionDashboardData>("/api/professor/submissions");
+export const getProfessorDeliveryPreflight = (): Promise<DeliveryPreflightData> =>
+  request<DeliveryPreflightData>("/api/professor/preflight");
 export const getSubmissionReleases = (): Promise<SubmissionReleaseSummary[]> =>
   request<SubmissionReleaseSummary[]>("/api/professor/releases");
 export const getSubmissionRelease = (releaseId: number): Promise<SubmissionReleaseDetail> =>

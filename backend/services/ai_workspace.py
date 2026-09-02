@@ -261,8 +261,8 @@ def _provider_output(
             response_body = json.loads(response.read().decode("utf-8"))
         content = response_body["choices"][0]["message"]["content"]
         provider_output = AIModelOutput.model_validate(json.loads(content))
-        return provider_output, "provider", None
-    except (error.URLError, TimeoutError, KeyError, ValueError) as exc:
+        return provider_output, "openai-compatible", None
+    except (error.URLError, TimeoutError, KeyError, IndexError, TypeError, ValueError) as exc:
         fallback = _local_output(payload, user_id, project)
         return (
             fallback,
@@ -297,7 +297,9 @@ def run_workspace(payload: AIWorkspaceRequest, user_id: str) -> AIWorkspaceRespo
     return AIWorkspaceResponse(
         action=payload.action,
         provider=provider,
-        model=os.getenv("AI_MODEL") if provider == "provider" else None,
+        model=(os.getenv("AI_MODEL", "gpt-5-mini").strip() or "gpt-5-mini")
+        if provider == "openai-compatible"
+        else None,
         providerMessage=provider_message,
         appliedActivities=applied,
         **output.model_dump(),

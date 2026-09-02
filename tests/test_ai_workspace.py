@@ -45,6 +45,16 @@ def login(client: TestClient, username: str, password: str) -> str:
     return response.json()["csrfToken"]
 
 
+def create_thread(client: TestClient, csrf: str) -> str:
+    response = client.post(
+        "/api/ai/threads",
+        json={"projectId": "team-foundation", "title": "Release agent"},
+        headers={"X-CSRF-Token": csrf},
+    )
+    assert response.status_code == 201
+    return response.json()["id"]
+
+
 def test_ai_status_requires_auth_and_supports_local_mode(client):
     assert client.get("/api/ai/status").status_code == 401
     login(client, "hossein", STUDENT_PASSWORD)
@@ -123,13 +133,7 @@ def test_professor_cannot_mutate_student_ai_workspace(client):
 
 def test_student_agent_thread_persists_messages_and_memory(client):
     csrf = login(client, "hossein", STUDENT_PASSWORD)
-    create_response = client.post(
-        "/api/ai/threads",
-        json={"projectId": "team-foundation", "title": "Release agent"},
-        headers={"X-CSRF-Token": csrf},
-    )
-    assert create_response.status_code == 201
-    thread_id = create_response.json()["id"]
+    thread_id = create_thread(client, csrf)
 
     message_response = client.post(
         f"/api/ai/threads/{thread_id}/messages",
@@ -142,11 +146,16 @@ def test_student_agent_thread_persists_messages_and_memory(client):
     assert len(body["thread"]["messages"]) == 2
     assert body["thread"]["memory"]
     assert body["snapshot"]["progressPercent"] >= 0
+    assert body["provider"] == "local"
 
     listed = client.get("/api/ai/threads")
     assert listed.status_code == 200
     assert listed.json()[0]["id"] == thread_id
     assert len(listed.json()[0]["messages"]) == 2
+
+    snapshot = client.get(f"/api/ai/threads/{thread_id}/snapshot")
+    assert snapshot.status_code == 200
+    assert snapshot.json()["progressPercent"] >= 0
 
 
 def test_agent_thread_requires_csrf_and_owned_project(client):
@@ -169,3 +178,85 @@ def test_agent_thread_requires_csrf_and_owned_project(client):
 def test_professor_cannot_read_student_agent_threads(client):
     login(client, "professor", PROFESSOR_PASSWORD)
     assert client.get("/api/ai/threads").status_code == 403
+
+
+def test_agent_replan_has_preview_and_explicit_apply(client):
+    csrf = login(client, "hossein", STUDENT_PASSWORD)
+    thread_id = create_thread(client, csrf)
+
+    preview = client.post(
+        f"/api/ai/threads/{thread_id}/replan",
+        json={"applyTasks": False, "taskCount": 2},
+        headers={"X-CSRF-Token": csrf},
+    )
+    assert preview.status_code == 200
+    assert len(preview.json()["tasks"]) == 2
+    assert preview.json()["appliedActivities"] == []
+
+    applied = client.post(
+        f"/api/ai/threads/{thread_id}/replan",
+        json={"applyTasks": True, "taskCount": 2},
+        headers={"X-CSRF-Token": csrf},
+    )
+    assert applied.status_code == 200
+    assert len(applied.json()["appliedActivities"]) == 2
+    assert all(item["projectId"] == "team-foundation" for item in applied.json()["appliedActivities"])
+
+
+def test_project_memory_is_structured_and_scoped(client):
+    csrf = login(client, "hossein", STUDENT_PASSWORD)
+    saved = client.put(
+        "/api/ai/memory?projectId=team-foundation",
+        json={"key": "definition-of-done", "value": "Tests green, docs current, PR reviewed"},
+        headers={"X-CSRF-Token": csrf},
+    )
+    assert saved.status_code == 200
+    assert saved.json()["key"] == "definition-of-done"
+
+    listed = client.get("/api/ai/memory?projectId=team-foundation")
+    assert listed.status_code == 200
+    assert listed.json()[0]["value"] == "Tests green, docs current, PR reviewed"
+
+    foreign = client.get("/api/ai/memory?projectId=ali-sample-project")
+    assert foreign.status_code == 404
+
+
+def test_daily_brief_and_multi_agent_review_are_grounded(client):
+    login(client, "hossein", STUDENT_PASSWORD)
+    brief = client.get("/api/ai/brief?projectId=team-foundation")
+    assert brief.status_code == 200
+    assert brief.json()["projectId"] == "team-foundation"
+    assert 0 <= brief.json()["progressPercent"] <= 100
+
+    review = client.get("/api/ai/multi-agent-review?projectId=team-foundation")
+    assert review.status_code == 200
+    assert len(review.json()["results"]) == 7
+    assert {item["specialist"] for item in review.json()["results"]} == {
+        "planner",
+        "project-manager",
+        "code-reviewer",
+        "debugger",
+        "progress-tracker",
+        "github-agent",
+        "documentation-agent",
+    }
+
+
+def test_activity_can_be_linked_to_github_evidence(client):
+    csrf = login(client, "hossein", STUDENT_PASSWORD)
+    payload = {
+        "activityId": "hossein-2026-08-31-init-repository",
+        "kind": "pull-request",
+        "reference": "https://github.com/HoosseinRahimi/team-project/pull/30",
+    }
+    created = client.post(
+        "/api/ai/github-links?projectId=team-foundation",
+        json=payload,
+        headers={"X-CSRF-Token": csrf},
+    )
+    assert created.status_code == 201
+    assert created.json()["kind"] == "pull-request"
+
+    links = client.get("/api/ai/github-links?projectId=team-foundation")
+    assert links.status_code == 200
+    assert links.json()[0]["activityId"] == payload["activityId"]

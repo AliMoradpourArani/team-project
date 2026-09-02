@@ -11,6 +11,22 @@ from .source_data import validate_date_string, validate_slug
 
 AIAction = Literal["plan", "roadmap", "progress", "debug", "review"]
 AIFindingSeverity = Literal["info", "warning", "error"]
+AIAgentSpecialist = Literal[
+    "planner",
+    "project-manager",
+    "code-reviewer",
+    "debugger",
+    "progress-tracker",
+    "github-agent",
+    "documentation-agent",
+]
+AIAgentActionKind = Literal[
+    "create-task",
+    "replan",
+    "update-progress",
+    "link-github",
+    "record-decision",
+]
 
 
 class AITaskSuggestion(BaseModel):
@@ -132,3 +148,71 @@ class AIAgentReply(BaseModel):
     reply: AIAgentMessage
     snapshot: AIAgentSnapshot
     suggestedTasks: list[AITaskSuggestion] = Field(default_factory=list, max_length=12)
+    provider: str = "local"
+    model: str | None = None
+    providerMessage: str | None = None
+
+
+class AIAgentReplanRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    applyTasks: bool = False
+    taskCount: int = Field(default=5, ge=1, le=12)
+
+
+class AIAgentReplanResponse(BaseModel):
+    summary: str
+    tasks: list[AITaskSuggestion] = Field(default_factory=list, max_length=12)
+    appliedActivities: list[ActivityResponse] = Field(default_factory=list)
+    snapshot: AIAgentSnapshot
+
+
+class AIGitHubLinkWrite(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    activityId: str = Field(min_length=1, max_length=120)
+    kind: Literal["branch", "commit", "pull-request", "issue"]
+    reference: str = Field(min_length=1, max_length=500)
+
+
+class AIGitHubLink(BaseModel):
+    id: int
+    activityId: str
+    kind: str
+    reference: str
+    createdAt: str
+
+
+class AIMemoryWrite(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    key: str = Field(min_length=1, max_length=80)
+    value: str = Field(min_length=1, max_length=4000)
+
+
+class AIMemoryItem(BaseModel):
+    id: int
+    key: str
+    value: str
+    createdAt: str
+    updatedAt: str
+
+
+class AIDailyBrief(BaseModel):
+    projectId: str | None
+    headline: str
+    progressPercent: int = Field(ge=0, le=100)
+    overdueCount: int = Field(ge=0)
+    githubSignalCount: int = Field(ge=0)
+    blockers: list[str] = Field(default_factory=list, max_length=10)
+    priorities: list[str] = Field(default_factory=list, max_length=8)
+
+
+class AISpecialistResult(BaseModel):
+    specialist: AIAgentSpecialist
+    summary: str
+    findings: list[AIFinding] = Field(default_factory=list, max_length=20)
+    suggestedTasks: list[AITaskSuggestion] = Field(default_factory=list, max_length=12)
+
+
+class AIMultiAgentReview(BaseModel):
+    projectId: str | None
+    results: list[AISpecialistResult] = Field(default_factory=list, max_length=7)
+    executiveSummary: str

@@ -30,9 +30,10 @@ def test_initialize_database_creates_schema_from_scratch(tmp_path):
         "008_create_project_reviews",
         "009_create_submissions",
         "010_create_ai_agent",
+        "011_ai_native_platform",
     ]
     with connect(database_path) as connection:
-        assert row_count(connection, "schema_migrations") == 10
+        assert row_count(connection, "schema_migrations") == 11
         assert row_count(connection, "auth_accounts") == 0
         assert row_count(connection, "auth_sessions") == 0
         assert row_count(connection, "project_run_history") == 0
@@ -42,6 +43,8 @@ def test_initialize_database_creates_schema_from_scratch(tmp_path):
         assert row_count(connection, "submission_releases") == 0
         assert row_count(connection, "ai_agent_threads") == 0
         assert row_count(connection, "ai_agent_messages") == 0
+        assert row_count(connection, "ai_project_memory") == 0
+        assert row_count(connection, "ai_github_links") == 0
         columns = {row[1] for row in connection.execute("PRAGMA table_info(users)")}
         assert "github_username" in columns
 
@@ -133,19 +136,19 @@ def test_duplicate_migration_prefix_is_rejected(tmp_path):
     from backend.database.init_db import MIGRATIONS_ROOT
     from backend.database.source_files import REPOSITORY_ROOT
 
-    first = MIGRATIONS_ROOT / "011_first.sql"
-    second = MIGRATIONS_ROOT / "011_second.sql"
+    first = MIGRATIONS_ROOT / "012_first.sql"
+    second = MIGRATIONS_ROOT / "012_second.sql"
     first.write_text("CREATE TABLE first_probe (id TEXT);", encoding="utf-8")
     second.write_text("CREATE TABLE second_probe (id TEXT);", encoding="utf-8")
     try:
-        with pytest.raises(RuntimeError, match="Duplicate migration prefix '011'"):
+        with pytest.raises(RuntimeError, match="Duplicate migration prefix '012'"):
             initialize_database(tmp_path / "fresh.db")
         with connect(tmp_path / "fresh.db") as connection:
             assert row_count(connection, "schema_migrations") == 0
     finally:
         first.unlink()
         second.unlink()
-    assert not list(REPOSITORY_ROOT.glob("backend/database/migrations/011_*.sql"))
+    assert not list(REPOSITORY_ROOT.glob("backend/database/migrations/012_*.sql"))
 
 
 def test_sync_deletes_rows_removed_from_source_files(tmp_path, monkeypatch):

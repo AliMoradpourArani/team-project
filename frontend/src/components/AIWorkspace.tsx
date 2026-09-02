@@ -29,7 +29,9 @@ export default function AIWorkspace({ projects, onTasksApplied }: AIWorkspacePro
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    getAIStatus().then(setStatus).catch(() => setStatus(null));
+    getAIStatus()
+      .then(setStatus)
+      .catch(() => setStatus(null));
   }, []);
 
   useEffect(() => {
@@ -54,7 +56,9 @@ export default function AIWorkspace({ projects, onTasksApplied }: AIWorkspacePro
       setResult(response);
       if (response.appliedActivities.length > 0) await onTasksApplied();
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "AI workspace request failed.");
+      setError(
+        requestError instanceof Error ? requestError.message : "AI workspace request failed.",
+      );
     } finally {
       setLoading(false);
     }
@@ -144,8 +148,15 @@ export default function AIWorkspace({ projects, onTasksApplied }: AIWorkspacePro
         </label>
       ) : null}
 
-      <button className="primary-button ai-run-button" type="button" disabled={loading} onClick={generate}>
-        {loading ? "Analyzing workspace…" : `Run ${actions.find((item) => item.value === action)?.label}`}
+      <button
+        className="primary-button ai-run-button"
+        type="button"
+        disabled={loading}
+        onClick={generate}
+      >
+        {loading
+          ? "Analyzing workspace…"
+          : `Run ${actions.find((item) => item.value === action)?.label}`}
       </button>
 
       {error ? <p className="ai-error">{error}</p> : null}
@@ -167,11 +178,13 @@ export default function AIWorkspace({ projects, onTasksApplied }: AIWorkspacePro
             <span style={{ width: `${result.progressPercent}%` }} />
           </div>
 
-          {result.providerMessage ? <p className="ai-provider-note">{result.providerMessage}</p> : null}
+          {result.providerMessage ? (
+            <p className="ai-provider-note">{result.providerMessage}</p>
+          ) : null}
           {result.appliedActivities.length > 0 ? (
             <p className="ai-applied-note">
-              Added {result.appliedActivities.length} task{result.appliedActivities.length === 1 ? "" : "s"} to
-              your timeline.
+              Added {result.appliedActivities.length} task
+              {result.appliedActivities.length === 1 ? "" : "s"} to your timeline.
             </p>
           ) : null}
 
@@ -201,7 +214,9 @@ export default function AIWorkspace({ projects, onTasksApplied }: AIWorkspacePro
                       <time>{milestone.targetDate}</time>
                     </div>
                     <p>{milestone.objective}</p>
-                    {milestone.tasks.length > 0 ? <small>{milestone.tasks.join(" · ")}</small> : null}
+                    {milestone.tasks.length > 0 ? (
+                      <small>{milestone.tasks.join(" · ")}</small>
+                    ) : null}
                   </li>
                 ))}
               </ol>

@@ -1,4 +1,4 @@
-﻿.ai-workspace {
+.ai-workspace {
   margin: 2rem 0;
   padding: 1.4rem;
   border: 1px solid var(--border, var(--color-slate-soft));
@@ -50,7 +50,7 @@
 .ai-action {
   min-height: 96px;
   padding: 0.8rem;
-  text-align: left;
+  text-align: start;
   border: 1px solid var(--border, var(--color-slate-soft));
   border-radius: 14px;
   background: rgba(255, 255, 255, 0.72);
@@ -150,7 +150,7 @@
 
 .ai-progress-score {
   min-width: 100px;
-  text-align: right;
+  text-align: end;
 }
 
 .ai-progress-score strong,
@@ -286,6 +286,6 @@
   }
 
   .ai-progress-score {
-    text-align: left;
+    text-align: start;
   }
 }

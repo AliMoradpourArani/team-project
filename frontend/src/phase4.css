@@ -1,4 +1,4 @@
-﻿.github-panel {
+.github-panel {
   margin-bottom: 20px;
 }
 
@@ -12,12 +12,12 @@
 }
 
 .github-repository-strip > div {
-  border-right: 1px solid var(--color-warm-muted);
+  border-inline-end: 1px solid var(--color-warm-muted);
   padding: 18px;
 }
 
 .github-repository-strip > div:last-child {
-  border-right: 0;
+  border-inline-end: 0;
 }
 
 .github-repository-strip span,
@@ -107,16 +107,16 @@
 }
 
 .github-member-metrics div {
-  border-right: 1px solid var(--color-card-2);
-  padding-right: 8px;
+  border-inline-end: 1px solid var(--color-card-2);
+  padding-inline-end: 8px;
 }
 
 .github-member-metrics div + div {
-  padding-left: 8px;
+  padding-inline-start: 8px;
 }
 
 .github-member-metrics div:last-child {
-  border-right: 0;
+  border-inline-end: 0;
 }
 
 .github-member-metrics dt {
@@ -198,7 +198,7 @@
 }
 
 .github-event time {
-  text-align: right;
+  text-align: end;
 }
 
 .github-footnote {
@@ -214,7 +214,7 @@
   }
 
   .github-repository-strip > div:nth-child(2) {
-    border-right: 0;
+    border-inline-end: 0;
   }
 
   .github-member-grid {
@@ -229,7 +229,7 @@
 
   .github-repository-strip > div {
     border-bottom: 1px solid var(--color-warm-muted);
-    border-right: 0;
+    border-inline-end: 0;
   }
 
   .github-repository-strip > div:last-child {
@@ -243,6 +243,6 @@
 
   .github-event time {
     grid-column: 2;
-    text-align: left;
+    text-align: start;
   }
 }

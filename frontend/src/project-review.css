@@ -1,4 +1,4 @@
-﻿.project-review-card {
+.project-review-card {
   display: grid;
   gap: 1rem;
 }
@@ -138,7 +138,7 @@
 
 .review-queue-score {
   min-width: 4.7rem;
-  text-align: right;
+  text-align: end;
 }
 
 @media (max-width: 900px) {

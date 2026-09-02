@@ -1,4 +1,4 @@
-﻿.project-runner-card {
+.project-runner-card {
   overflow: hidden;
 }
 
@@ -110,7 +110,7 @@
 
 .runner-result .runner-stderr,
 .project-run-history-item .runner-stderr {
-  border-left: 3px solid currentColor;
+  border-inline-start: 3px solid currentColor;
 }
 
 .project-detail-page {

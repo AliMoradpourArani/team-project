@@ -271,7 +271,7 @@ h2 {
 .card-arrow {
   color: var(--color-warn);
   font-size: 1.4rem;
-  margin-left: auto;
+  margin-inline-start: auto;
 }
 .status-message {
   color: var(--color-muted);
@@ -586,8 +586,7 @@ h2 {
 @media (max-width: 700px) {
   .site-header,
   .page-content {
-    padding-left: 20px;
-    padding-right: 20px;
+    padding-inline: 20px;
   }
   .site-header {
     flex-wrap: wrap;

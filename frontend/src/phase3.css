@@ -1,4 +1,4 @@
-﻿.header-session {
+.header-session {
   align-items: center;
   display: flex;
   gap: 14px;
@@ -87,11 +87,11 @@
 }
 
 .professor-summary-note {
-  border-left: 1px solid var(--color-border);
+  border-inline-start: 1px solid var(--color-border);
   display: flex;
   flex-direction: column;
   margin-bottom: 10px;
-  padding-left: 22px;
+  padding-inline-start: 22px;
 }
 
 .professor-summary-note strong {
@@ -186,7 +186,7 @@
 }
 
 .professor-activity-row time {
-  text-align: right;
+  text-align: end;
 }
 
 .read-only-dashboard-grid {
@@ -221,9 +221,9 @@
   }
 
   .professor-summary-note {
-    border-left: 0;
+    border-inline-start: 0;
     border-top: 1px solid var(--color-border);
-    padding-left: 0;
+    padding-inline-start: 0;
     padding-top: 16px;
   }
 
@@ -237,6 +237,6 @@
 
   .professor-activity-row time {
     grid-column: 2 / -1;
-    text-align: left;
+    text-align: start;
   }
 }

@@ -54,19 +54,19 @@ export default function Layout({ children, session, onLogout, currentPath = "/" 
         ) : null}
         <div className="header-tools">
           {session ? (
-            <button className="header-logout" type="button" onClick={onLogout}>
-              {t("header.signOut")}
-            </button>
-          ) : null}
-          <LanguageSwitcher />
-          <ThemeSwitcher />
-          {session ? (
             <span className="header-label">
               {session.displayName} · {session.role}
             </span>
           ) : (
             <span className="header-label">{t("header.protectedWorkspace")}</span>
           )}
+          <ThemeSwitcher />
+          <LanguageSwitcher />
+          {session ? (
+            <button className="header-logout" type="button" onClick={onLogout}>
+              {t("header.signOut")}
+            </button>
+          ) : null}
         </div>
       </header>
       <main className="page-content">{children}</main>

@@ -119,3 +119,53 @@ def test_professor_cannot_mutate_student_ai_workspace(client):
         headers={"X-CSRF-Token": csrf},
     )
     assert response.status_code == 403
+
+
+def test_student_agent_thread_persists_messages_and_memory(client):
+    csrf = login(client, "hossein", STUDENT_PASSWORD)
+    create_response = client.post(
+        "/api/ai/threads",
+        json={"projectId": "team-foundation", "title": "Release agent"},
+        headers={"X-CSRF-Token": csrf},
+    )
+    assert create_response.status_code == 201
+    thread_id = create_response.json()["id"]
+
+    message_response = client.post(
+        f"/api/ai/threads/{thread_id}/messages",
+        json={"content": "Replan my work and check current blockers"},
+        headers={"X-CSRF-Token": csrf},
+    )
+    assert message_response.status_code == 200
+    body = message_response.json()
+    assert body["thread"]["projectId"] == "team-foundation"
+    assert len(body["thread"]["messages"]) == 2
+    assert body["thread"]["memory"]
+    assert body["snapshot"]["progressPercent"] >= 0
+
+    listed = client.get("/api/ai/threads")
+    assert listed.status_code == 200
+    assert listed.json()[0]["id"] == thread_id
+    assert len(listed.json()[0]["messages"]) == 2
+
+
+def test_agent_thread_requires_csrf_and_owned_project(client):
+    csrf = login(client, "hossein", STUDENT_PASSWORD)
+    assert (
+        client.post(
+            "/api/ai/threads",
+            json={"projectId": "team-foundation", "title": "No csrf"},
+        ).status_code
+        == 403
+    )
+    forbidden = client.post(
+        "/api/ai/threads",
+        json={"projectId": "ali-sample-project", "title": "Foreign project"},
+        headers={"X-CSRF-Token": csrf},
+    )
+    assert forbidden.status_code == 404
+
+
+def test_professor_cannot_read_student_agent_threads(client):
+    login(client, "professor", PROFESSOR_PASSWORD)
+    assert client.get("/api/ai/threads").status_code == 403

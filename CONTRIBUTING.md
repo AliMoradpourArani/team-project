@@ -1,16 +1,20 @@
 # Contributing
 
-## 0. Access prerequisites
+## 0. Access prerequisites and Legal Gate
 
 `ForgeFlow-AI-Core` is a private production repository. Access is granted for authorized development work only.
 
-Before a developer receives Core access, the Founder/Owner must have a completed onboarding record that includes the applicable Developer/IP/Confidentiality Agreement, a pre-existing IP disclosure, and an access authorization record. Signed legal documents and personal information must **not** be committed to this repository.
-
-Repository access, commits, pull requests, authorship, contributor status, issue assignments, or technical responsibility do not by themselves grant equity, partnership rights, or ownership in ForgeFlow. Ownership and licence rights are governed by the applicable signed agreement.
+Repository access, commits, pull requests, authorship, contributor status, issue assignments, or technical responsibility do not by themselves grant equity, partnership rights, co-founder status, revenue share, or commercial ownership in ForgeFlow.
 
 Normal developers should receive the minimum repository role needed to contribute, normally **Write**, not Maintain or Admin. Access must be removed promptly when the engagement ends or no longer requires Core access.
 
-See `docs/team-governance/developer-access-policy.md` and `docs/team-governance/legal-onboarding-checklist.md`.
+Before a non-exempt contributor's code may be merged to `main`, the contributor must pass the automated **ForgeFlow Legal Gate** for the current agreement version. The gate links to `.github/legal/FORGEFLOW_DEVELOPER_CONTRIBUTION_TERMS.md` and requires the PR author to post the exact versioned acceptance statement from the same GitHub account.
+
+Acceptance is reusable for later PRs while that agreement version remains current. A material legal-term update changes `.github/legal/AGREEMENT_VERSION` and requires fresh acceptance.
+
+The Legal Gate is a minimum repository governance/evidence control. It does not waive mandatory Iranian labour or other legal protections and does not replace a fuller signed employment/IP/confidentiality agreement when one is appropriate for the engagement.
+
+See `.github/legal/README.md`, `docs/team-governance/developer-access-policy.md`, and `docs/team-governance/legal-onboarding-checklist.md`.
 
 ## 1. Create a branch
 
@@ -92,7 +96,7 @@ Do not introduce code, models, datasets, fonts, images, documentation, or other 
 
 AI-assisted output must be reviewed as code, not treated as automatically safe. Check provenance, licence risk, confidential-data exposure, secrets, security, correctness, and maintainability before committing it.
 
-If a contribution contains the developer's pre-existing material, identify it before merge and record the applicable ownership/licence treatment through the legal onboarding process.
+If a contribution contains the developer's pre-existing material, identify it before merge and record the applicable ownership/licence treatment through the onboarding process.
 
 ## 8. Resolve conflicts deliberately
 
@@ -100,14 +104,14 @@ Inspect both sides, preserve intended behavior, remove all conflict markers, and
 
 ## 9. Pull requests
 
-Push the feature branch and open a PR to `main`. CI/security checks must pass. Changes should be reviewed by the applicable CODEOWNER. Squash merge is preferred for focused change sets.
+Push the feature branch and open a PR to `main`. CI/security checks and **ForgeFlow Legal Gate** must pass. Changes should be reviewed by the applicable CODEOWNER. Squash merge is preferred for focused change sets.
 
-Never use a PR checkbox as a substitute for a signed legal agreement. The PR template is an engineering/audit control only.
+The repository rule for `main` should require the exact custom commit-status context `ForgeFlow Legal Gate`; otherwise the automation cannot technically block a bypass-capable merge.
 
 ## 10. End of access
 
-When a developer leaves the engagement or no longer needs Core access, the Owner should revoke repository and deployment access, rotate any credentials the developer could access, and complete the offboarding record. The developer must return or delete ForgeFlow confidential material as required by the applicable agreement.
+When a developer leaves the engagement or no longer needs Core access, the Owner should revoke repository and deployment access, rotate any credentials the developer could access, and complete the offboarding record. The developer must return or delete ForgeFlow confidential material as required by applicable law and any agreement in force.
 
 ## Definition of Done
 
-A change is Done when implementation is complete, formatting/lint/types/tests/build are green, migrations and contracts are updated when required, environment/deployment changes are documented, security boundaries remain intact, third-party material is authorized, documentation reflects user-visible behavior, and `main` remains runnable after merge.
+A change is Done when implementation is complete, formatting/lint/types/tests/build are green, the current Legal Gate version is accepted where required, migrations and contracts are updated when required, environment/deployment changes are documented, security boundaries remain intact, third-party material is authorized, documentation reflects user-visible behavior, and `main` remains runnable after merge.

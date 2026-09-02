@@ -1,0 +1,164 @@
+name: ForgeFlow Legal Agreement Automation
+
+on:
+  pull_request_target:
+    types: [opened, reopened, synchronize, ready_for_review]
+  issue_comment:
+    types: [created, edited, deleted]
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+  statuses: write
+
+jobs:
+  legal-gate:
+    if: >-
+      github.event_name == 'pull_request_target' ||
+      (github.event_name == 'issue_comment' && github.event.issue.pull_request)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Evaluate ForgeFlow agreement acceptance
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const statusContext = 'ForgeFlow Legal Gate';
+            const agreementPath = '.github/legal/FORGEFLOW_DEVELOPER_CONTRIBUTION_TERMS.md';
+            const versionPath = '.github/legal/AGREEMENT_VERSION';
+            const exemptUsers = new Set([
+              'HoosseinRahimi',
+              'dependabot[bot]',
+              'github-actions[bot]'
+            ]);
+
+            const prNumber = context.eventName === 'pull_request_target'
+              ? context.payload.pull_request.number
+              : context.payload.issue.number;
+
+            const { data: pr } = await github.rest.pulls.get({
+              owner,
+              repo,
+              pull_number: prNumber
+            });
+
+            const author = pr.user.login;
+            const headSha = pr.head.sha;
+            const agreementUrl = `https://github.com/${owner}/${repo}/blob/main/${agreementPath}`;
+
+            const versionResponse = await github.rest.repos.getContent({
+              owner,
+              repo,
+              path: versionPath,
+              ref: pr.base.ref
+            });
+            const version = Buffer.from(versionResponse.data.content, 'base64').toString('utf8').trim();
+            const acceptanceText = `I have read and accept the ForgeFlow Developer Contribution Terms v${version}.`;
+            const promptMarker = `<!-- forgeflow-legal-gate:${version} -->`;
+            const confirmationMarker = `<!-- forgeflow-legal-accepted:${version}:${author} -->`;
+
+            async function setStatus(state, description, targetUrl = agreementUrl) {
+              await github.rest.repos.createCommitStatus({
+                owner,
+                repo,
+                sha: headSha,
+                state,
+                context: statusContext,
+                description: description.slice(0, 140),
+                target_url: targetUrl
+              });
+            }
+
+            if (exemptUsers.has(author)) {
+              await setStatus('success', 'Founder/system account exempt from contributor acceptance');
+              core.info(`${author} is exempt from the contributor agreement gate.`);
+              return;
+            }
+
+            async function findAcceptance() {
+              const query = `repo:${owner}/${repo} is:pr author:${author}`;
+              const authoredPrs = await github.paginate(
+                github.rest.search.issuesAndPullRequests,
+                { q: query, per_page: 100 }
+              );
+
+              for (const item of authoredPrs.slice(0, 100)) {
+                const comments = await github.paginate(
+                  github.rest.issues.listComments,
+                  { owner, repo, issue_number: item.number, per_page: 100 }
+                );
+                const match = comments.find(comment =>
+                  comment.user?.login === author &&
+                  (comment.body || '').trim() === acceptanceText
+                );
+                if (match) {
+                  return {
+                    accepted: true,
+                    url: match.html_url,
+                    pr: item.number,
+                    timestamp: match.created_at
+                  };
+                }
+              }
+              return { accepted: false };
+            }
+
+            const acceptance = await findAcceptance();
+
+            if (acceptance.accepted) {
+              await setStatus(
+                'success',
+                `Agreement ${version} accepted by @${author}`,
+                acceptance.url
+              );
+
+              if (context.eventName === 'issue_comment') {
+                const comment = context.payload.comment;
+                if (
+                  comment?.user?.login === author &&
+                  (comment.body || '').trim() === acceptanceText
+                ) {
+                  const existing = await github.paginate(
+                    github.rest.issues.listComments,
+                    { owner, repo, issue_number: prNumber, per_page: 100 }
+                  );
+                  const alreadyConfirmed = existing.some(c =>
+                    (c.body || '').includes(confirmationMarker)
+                  );
+                  if (!alreadyConfirmed) {
+                    await github.rest.issues.createComment({
+                      owner,
+                      repo,
+                      issue_number: prNumber,
+                      body: `${confirmationMarker}\n✅ **ForgeFlow Legal Gate accepted**\n\n@${author} accepted **Developer Contribution Terms ${version}** from their own GitHub account. This acceptance is reusable for later PRs while this agreement version remains current.\n\nAcceptance record: ${comment.html_url}`
+                    });
+                  }
+                }
+              }
+
+              core.info(`Agreement ${version} accepted by ${author}.`);
+              return;
+            }
+
+            await setStatus('pending', `Agreement ${version} acceptance required from @${author}`);
+
+            const comments = await github.paginate(
+              github.rest.issues.listComments,
+              { owner, repo, issue_number: prNumber, per_page: 100 }
+            );
+            const alreadyPrompted = comments.some(comment =>
+              (comment.body || '').includes(promptMarker)
+            );
+
+            if (!alreadyPrompted) {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number: prNumber,
+                body: `${promptMarker}\n## 🔐 ForgeFlow Legal Gate\n\nBefore this PR can be merged, @${author} must accept the current ForgeFlow Developer Contribution Terms.\n\n1. Read the agreement: ${agreementUrl}\n2. Reply to **this PR** from the same GitHub account with exactly:\n\n\`${acceptanceText}\`\n\nUntil that exact acceptance is found on a PR authored by @${author}, the **${statusContext}** commit status remains pending.\n\nAcceptance applies only to agreement version **${version}**. A future version change requires re-acceptance.`
+              });
+            }
+
+            core.notice(`Waiting for ${author} to accept agreement ${version}.`);

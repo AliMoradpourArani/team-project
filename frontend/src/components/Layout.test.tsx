@@ -25,7 +25,7 @@ describe("Layout", () => {
     render(<Layout currentPath="/">Home content</Layout>);
 
     expect(screen.queryByRole("link", { name: "Ali-Workspace" })).not.toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Team Project" })).toHaveAttribute("href", "/");
+    expect(screen.getByRole("link", { name: "ForgeFlow AI" })).toHaveAttribute("href", "/");
   });
 
   it("renders the generic student dashboard navigation from the session user id", () => {
@@ -39,7 +39,7 @@ describe("Layout", () => {
     expect(dashboard).toHaveAttribute("href", "/users/ali");
     expect(dashboard).toHaveClass("nav-tab-active");
     expect(dashboard).toHaveAttribute("aria-current", "page");
-    expect(screen.getByRole("link", { name: "Team Project" })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: "ForgeFlow AI" })).toHaveAttribute(
       "href",
       "/users/ali",
     );

@@ -5,8 +5,8 @@ This repository is designed to be cloned and reviewed locally. No public deploym
 ## 1. Clone and prepare
 
 ```bash
-git clone https://github.com/HoosseinRahimi/team-project.git
-cd team-project
+git clone https://github.com/HoosseinRahimi/ForgeFlow-AI-Core.git
+cd ForgeFlow-AI-Core
 make demo-handoff
 ```
 

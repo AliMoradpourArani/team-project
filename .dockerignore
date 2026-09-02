@@ -15,5 +15,3 @@ frontend/coverage
 .env.*
 !.env.example
 *.log
-docs
-.github

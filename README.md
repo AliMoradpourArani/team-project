@@ -1,4 +1,4 @@
-# Team Project
+# ForgeFlow AI
 
 A local-first university team platform that combines project/activity tracking, professor review and submission workflows, GitHub intelligence, and a governed AI project copilot.
 
@@ -184,8 +184,8 @@ AI automation must not bypass the source-authority contract. Applied task change
 Prerequisites: Git, Python 3.11+, Node.js 20+, npm.
 
 ```bash
-git clone https://github.com/HoosseinRahimi/team-project.git
-cd team-project
+git clone https://github.com/HoosseinRahimi/ForgeFlow-AI-Core.git
+cd ForgeFlow-AI-Core
 make setup
 make db-init
 make db-sync
@@ -233,7 +233,7 @@ Copy `.env.example` to a local environment file or export variables through your
 
 ```text
 GITHUB_INTEGRATION_ENABLED=true
-GITHUB_REPOSITORY=HoosseinRahimi/team-project
+GITHUB_REPOSITORY=HoosseinRahimi/ForgeFlow-AI-Core
 GITHUB_CACHE_TTL_SECONDS=60
 GITHUB_API_TIMEOUT_SECONDS=5
 ```
@@ -265,7 +265,7 @@ Automatic progress mutation is off by default.
 ### Governed GitHub writes
 
 ```text
-AI_GITHUB_REPOSITORY=HoosseinRahimi/team-project
+AI_GITHUB_REPOSITORY=HoosseinRahimi/ForgeFlow-AI-Core
 AI_GITHUB_TIMEOUT_SECONDS=15
 ```
 

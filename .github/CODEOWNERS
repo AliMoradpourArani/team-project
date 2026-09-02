@@ -31,6 +31,10 @@
 /frontend/src/components/ProfessorSubmissionPanel.tsx @HoosseinRahimi
 /docker-compose.yml              @HoosseinRahimi
 /Makefile                        @HoosseinRahimi
+/VERSION                         @HoosseinRahimi
+/scripts/release-verify.sh       @HoosseinRahimi
+/scripts/build-release-package.sh @HoosseinRahimi
+/scripts/tag-release.sh          @HoosseinRahimi
 /docs/architecture.md            @HoosseinRahimi
 /docs/authentication.md          @HoosseinRahimi
 /docs/github-integration.md      @HoosseinRahimi
@@ -39,5 +43,8 @@
 /docs/submission-release.md      @HoosseinRahimi
 /docs/member-project-onboarding.md @HoosseinRahimi
 /docs/final-delivery-preflight.md @HoosseinRahimi
+/docs/release-packaging.md       @HoosseinRahimi
+/docs/release-checklist.md       @HoosseinRahimi
+/docs/releases/                  @HoosseinRahimi
 /docs/database-rules.md          @HoosseinRahimi
 /docs/project-contract.md        @HoosseinRahimi

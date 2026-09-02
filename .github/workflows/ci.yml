@@ -18,6 +18,8 @@ jobs:
         run: ./scripts/check-conflict-markers.sh
       - name: Validate professor demo handoff script
         run: bash -n scripts/demo-handoff.sh
+      - name: Validate release packaging contract
+        run: bash scripts/release-verify.sh
 
   backend:
     runs-on: ubuntu-latest

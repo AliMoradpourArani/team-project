@@ -1,6 +1,6 @@
 # Convenience wrappers. Every command here also exists as a documented script.
 
-.PHONY: setup test lint format db-init db-sync db-reset auth-bootstrap project-check delivery-preflight delivery-preflight-report demo-handoff dev check
+.PHONY: setup test lint format db-init db-sync db-reset auth-bootstrap project-check delivery-preflight delivery-preflight-report demo-handoff release-verify release-package release-tag dev check
 
 setup:            ## Create venv, install dependencies, initialize DB with data
 	./scripts/setup.sh
@@ -39,6 +39,15 @@ delivery-preflight-report: ## Print current final-delivery blockers without fail
 
 demo-handoff:     ## Prepare local professor demo state and print review/start instructions
 	bash ./scripts/demo-handoff.sh
+
+release-verify:   ## Validate VERSION, release notes, checklist, and release script syntax
+	bash ./scripts/release-verify.sh
+
+release-package:  ## Build checksum-verified source artifact after strict delivery preflight
+	bash ./scripts/build-release-package.sh
+
+release-tag:      ## Create a guarded annotated local release tag; never pushes automatically
+	bash ./scripts/tag-release.sh
 
 dev:              ## Print the two development server commands
 	@echo "Backend:  .venv/bin/python -m uvicorn backend.app.main:app --reload"

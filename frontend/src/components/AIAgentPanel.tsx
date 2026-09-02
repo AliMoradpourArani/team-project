@@ -71,7 +71,9 @@ export default function AIAgentPanel({ projectId }: AIAgentPanelProps) {
       setSnapshot(null);
       return;
     }
-    getAIAgentSnapshot(activeId).then(setSnapshot).catch(() => setSnapshot(null));
+    getAIAgentSnapshot(activeId)
+      .then(setSnapshot)
+      .catch(() => setSnapshot(null));
   }, [activeId]);
 
   async function startThread() {
@@ -151,7 +153,8 @@ export default function AIAgentPanel({ projectId }: AIAgentPanelProps) {
           <p className="eyebrow">AI project agent</p>
           <h3 id="ai-agent-title">Project intelligence cockpit</h3>
           <p>
-            Persistent context, GitHub evidence, replanning, engineering review, and specialist agents.
+            Persistent context, GitHub evidence, replanning, engineering review, and specialist
+            agents.
           </p>
         </div>
         <button type="button" className="secondary-button" onClick={startThread} disabled={busy}>
@@ -291,12 +294,7 @@ export default function AIAgentPanel({ projectId }: AIAgentPanelProps) {
               {busy ? "Thinking…" : "Send"}
             </button>
           </div>
-          <button
-            type="button"
-            className="ai-agent-delete"
-            onClick={removeThread}
-            disabled={busy}
-          >
+          <button type="button" className="ai-agent-delete" onClick={removeThread} disabled={busy}>
             Delete thread
           </button>
         </>

@@ -1,4 +1,4 @@
-"""Pydantic contracts for the in-app AI project workspace."""
+"""Pydantic contracts for the in-app AI project workspace and persistent agent."""
 
 from __future__ import annotations
 
@@ -65,8 +65,6 @@ class AIWorkspaceRequest(BaseModel):
 
 
 class AIModelOutput(BaseModel):
-    """Provider/local-engine output before server-owned metadata is attached."""
-
     summary: str = Field(min_length=1, max_length=4000)
     progressPercent: int = Field(ge=0, le=100)
     tasks: list[AITaskSuggestion] = Field(default_factory=list, max_length=12)
@@ -87,3 +85,50 @@ class AIStatusResponse(BaseModel):
     mode: Literal["provider", "local"]
     provider: str
     model: str | None = None
+
+
+class AIAgentThreadCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    projectId: str | None = None
+    title: str = Field(default="Project copilot", min_length=1, max_length=120)
+
+    @field_validator("projectId")
+    @classmethod
+    def _valid_project(cls, value: str | None) -> str | None:
+        return validate_slug(value, "project id") if value is not None else None
+
+
+class AIAgentMessageWrite(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    content: str = Field(min_length=1, max_length=4000)
+
+
+class AIAgentMessage(BaseModel):
+    id: int
+    role: Literal["user", "assistant"]
+    content: str
+    createdAt: str
+
+
+class AIAgentThread(BaseModel):
+    id: str
+    projectId: str | None
+    title: str
+    memory: str
+    createdAt: str
+    updatedAt: str
+    messages: list[AIAgentMessage] = Field(default_factory=list)
+
+
+class AIAgentSnapshot(BaseModel):
+    progressPercent: int = Field(ge=0, le=100)
+    overdueTasks: list[ActivityResponse] = Field(default_factory=list)
+    githubSignals: list[str] = Field(default_factory=list, max_length=10)
+    findings: list[AIFinding] = Field(default_factory=list, max_length=20)
+
+
+class AIAgentReply(BaseModel):
+    thread: AIAgentThread
+    reply: AIAgentMessage
+    snapshot: AIAgentSnapshot
+    suggestedTasks: list[AITaskSuggestion] = Field(default_factory=list, max_length=12)

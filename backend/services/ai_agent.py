@@ -10,20 +10,19 @@ from uuid import uuid4
 
 from ..database.connection import connect
 from ..schemas.ai import (
+    AIAgentMessage,
+    AIAgentReplanRequest,
+    AIAgentReplanResponse,
+    AIAgentReply,
+    AIAgentSnapshot,
+    AIAgentThread,
+    AIAgentThreadCreate,
     AIDailyBrief,
-    AIFinding,
     AIGitHubLink,
     AIGitHubLinkWrite,
     AIMemoryItem,
     AIMemoryWrite,
     AIMultiAgentReview,
-    AIAgentMessage,
-    AIAgentReply,
-    AIAgentReplanRequest,
-    AIAgentReplanResponse,
-    AIAgentSnapshot,
-    AIAgentThread,
-    AIAgentThreadCreate,
     AISpecialistResult,
     AITaskSuggestion,
     AIWorkspaceRequest,
@@ -495,17 +494,20 @@ def daily_brief(project_id: str | None, user_id: str) -> AIDailyBrief:
     blockers = [item.title for item in snapshot.findings if item.severity in {"error", "warning"}]
     priorities = [item.title for item in snapshot.overdueTasks[:3]]
     if not priorities:
-        priorities = [task.title for task in _suggested_tasks(
-            AIAgentThread(
-                id="brief",
-                projectId=project_id,
-                title="brief",
-                memory="",
-                createdAt="",
-                updatedAt="",
-            ),
-            snapshot,
-        )[:3]]
+        priorities = [
+            task.title
+            for task in _suggested_tasks(
+                AIAgentThread(
+                    id="brief",
+                    projectId=project_id,
+                    title="brief",
+                    memory="",
+                    createdAt="",
+                    updatedAt="",
+                ),
+                snapshot,
+            )[:3]
+        ]
     subject = project.name if project else "Workspace"
     return AIDailyBrief(
         projectId=project_id,

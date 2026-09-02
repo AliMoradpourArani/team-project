@@ -70,6 +70,7 @@ jobs:
 
   codeql:
     name: codeql (${{ matrix.language }})
+    if: ${{ !github.event.repository.private || vars.ENABLE_CODEQL_ON_PRIVATE == 'true' }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false

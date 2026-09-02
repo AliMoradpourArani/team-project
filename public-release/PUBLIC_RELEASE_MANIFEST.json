@@ -1,0 +1,14 @@
+{
+  "version": "0.13.0",
+  "edition": "community-showcase",
+  "source": "private-upstream",
+  "files": [
+    "README.md",
+    "ARCHITECTURE.md",
+    "FEATURES.md",
+    "SECURITY.md",
+    "RELEASE_NOTES.md",
+    "LICENSE"
+  ],
+  "notes": "Only files explicitly listed above are part of the public showcase bundle. Do not mirror the private repository."
+}

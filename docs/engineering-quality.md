@@ -27,8 +27,16 @@ AI/autonomy integration tests cover repository RAG, prompt-injection defense, go
 - dependency review when GitHub Dependency Graph is available,
 - `pip-audit`,
 - `npm audit`,
-- CodeQL for Python,
-- CodeQL for JavaScript/TypeScript.
+- CodeQL for Python when GitHub code scanning is available,
+- CodeQL for JavaScript/TypeScript when GitHub code scanning is available.
+
+The private upstream skips CodeQL by default because GitHub code-scanning upload may be unavailable for the repository/account configuration. To enable CodeQL on the private upstream after code scanning is enabled in GitHub, set the repository variable:
+
+```text
+ENABLE_CODEQL_ON_PRIVATE=true
+```
+
+Public repositories run the CodeQL matrix without that variable. Dependency and package audits continue regardless of this CodeQL gate.
 
 Dependabot performs scheduled dependency updates.
 

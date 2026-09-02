@@ -1,0 +1,135 @@
+.ai-agent-panel {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  border: 1px solid var(--border-color, #d9dde5);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.55);
+}
+
+.ai-agent-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.ai-agent-header h3,
+.ai-agent-header p {
+  margin-top: 0.25rem;
+  margin-bottom: 0.25rem;
+}
+
+.ai-agent-thread-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin: 1rem 0;
+  overflow-x: auto;
+}
+
+.ai-agent-thread-tabs button {
+  border: 1px solid var(--border-color, #d9dde5);
+  border-radius: 999px;
+  padding: 0.45rem 0.75rem;
+  background: transparent;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.ai-agent-thread-tabs button.active {
+  border-color: currentColor;
+  font-weight: 700;
+}
+
+.ai-agent-messages {
+  display: grid;
+  gap: 0.65rem;
+  max-height: 360px;
+  overflow-y: auto;
+  padding: 0.75rem 0;
+}
+
+.ai-agent-message {
+  max-width: 88%;
+  padding: 0.75rem 0.9rem;
+  border-radius: 14px;
+  background: rgba(127, 127, 127, 0.08);
+}
+
+.ai-agent-message p {
+  margin: 0.25rem 0 0;
+  white-space: pre-wrap;
+}
+
+.ai-agent-user {
+  justify-self: end;
+}
+
+.ai-agent-assistant {
+  justify-self: start;
+}
+
+.ai-agent-snapshot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0.75rem 0;
+}
+
+.ai-agent-snapshot span {
+  padding: 0.35rem 0.55rem;
+  border-radius: 999px;
+  background: rgba(127, 127, 127, 0.1);
+  font-size: 0.85rem;
+}
+
+.ai-agent-suggestions {
+  margin: 0.75rem 0;
+  padding: 0.75rem;
+  border-left: 3px solid currentColor;
+}
+
+.ai-agent-suggestions p {
+  margin: 0.4rem 0 0;
+}
+
+.ai-agent-composer {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.65rem;
+  align-items: end;
+  margin-top: 0.75rem;
+}
+
+.ai-agent-composer textarea {
+  width: 100%;
+  resize: vertical;
+}
+
+.ai-agent-delete {
+  margin-top: 0.65rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.ai-agent-empty {
+  margin: 1rem 0;
+  opacity: 0.75;
+}
+
+@media (max-width: 720px) {
+  .ai-agent-header,
+  .ai-agent-composer {
+    grid-template-columns: 1fr;
+  }
+
+  .ai-agent-header {
+    display: grid;
+  }
+
+  .ai-agent-message {
+    max-width: 100%;
+  }
+}

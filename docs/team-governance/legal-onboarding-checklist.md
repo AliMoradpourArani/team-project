@@ -2,14 +2,17 @@
 
 Use this checklist before granting a person access to the private ForgeFlow Core repository. It is an operational record template and does not replace legal advice.
 
+Current intended governing-law baseline: **laws of the Islamic Republic of Iran**. See `iran-legal-basis.md`.
+
 ## A. Engagement record
 
 - [ ] Full legal name recorded
 - [ ] Contact email recorded
 - [ ] Role/scope documented
 - [ ] Start date recorded
-- [ ] Employment/contractor status reviewed for the applicable jurisdiction
-- [ ] Governing law/jurisdiction confirmed in the agreement
+- [ ] Employment/contractor status reviewed under Iranian law
+- [ ] If the relationship is employment, required Iranian Labour Law employment documentation is completed
+- [ ] Governing law is stated as the laws of the Islamic Republic of Iran
 
 ## B. Agreement package
 
@@ -19,6 +22,8 @@ Use this checklist before granting a person access to the private ForgeFlow Core
 - [ ] Pre-existing IP disclosure completed
 - [ ] Third-party/open-source exceptions documented
 - [ ] Engineering/Security policy acknowledged
+- [ ] Software economic-right allocation is documented
+- [ ] Non-transferable moral rights are not treated as assigned
 - [ ] No promised equity, ownership, partnership, or revenue share exists unless separately documented in writing
 
 ## C. IP chain-of-title record
@@ -37,7 +42,11 @@ For each contributor, keep a private record outside the code repository containi
 
 Do not place signed agreements, identity documents, home addresses, payment data, or other personal records in this Git repository.
 
-## D. Access authorization
+## D. Electronic-signature evidence
+
+For online signing under the Iranian Electronic Commerce Law, retain the final signed data/document and a provider audit trail that can identify the signatory, evidence intent, show date/time, and make later modifications detectable where possible.
+
+## E. Access authorization
 
 - [ ] GitHub username verified
 - [ ] Default repository role set to Write unless a documented exception exists
@@ -47,7 +56,7 @@ Do not place signed agreements, identity documents, home addresses, payment data
 - [ ] MFA enabled where supported/required
 - [ ] Developer understands branch/PR workflow
 
-## E. First contribution checks
+## F. First contribution checks
 
 - [ ] Feature branch used
 - [ ] PR opened to `main`
@@ -57,11 +66,11 @@ Do not place signed agreements, identity documents, home addresses, payment data
 - [ ] Third-party/AI-assisted material reviewed
 - [ ] Pre-existing IP disclosure updated if needed
 
-## F. Offboarding trigger
+## G. Offboarding trigger
 
 Create an offboarding task immediately when the engagement ends or access is no longer needed. Revoke access first, then complete the return/deletion and records steps described in `developer-access-policy.md`.
 
-## G. Future company incorporation
+## H. Future company incorporation
 
 When ForgeFlow is incorporated:
 

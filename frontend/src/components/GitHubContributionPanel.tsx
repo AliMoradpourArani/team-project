@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 
 import { getProfessorGitHubDashboard } from "../api";
+import { useI18n } from "../i18n";
 import type { ProfessorGitHubDashboardData } from "../types";
 import StatusMessage from "./StatusMessage";
 
-function shortDate(value: string | null): string {
+function shortDate(value: string | null, lang: string): string {
   if (!value) return "—";
-  return new Intl.DateTimeFormat(undefined, {
+  return new Intl.DateTimeFormat(lang === "fa" ? "fa-IR" : lang, {
     month: "short",
     day: "numeric",
     hour: "2-digit",
@@ -15,6 +16,7 @@ function shortDate(value: string | null): string {
 }
 
 export default function GitHubContributionPanel() {
+  const { t, lang } = useI18n();
   const [data, setData] = useState<ProfessorGitHubDashboardData | null>(null);
   const [error, setError] = useState("");
 
@@ -29,8 +31,8 @@ export default function GitHubContributionPanel() {
       <section className="dashboard-card github-panel">
         <div className="section-heading compact">
           <div>
-            <p className="eyebrow">GitHub integration</p>
-            <h2>Repository activity</h2>
+            <p className="eyebrow">{t("gh.eyebrow")}</p>
+            <h2>{t("gh.repositoryActivity")}</h2>
           </div>
         </div>
         <StatusMessage error>{error}</StatusMessage>
@@ -41,7 +43,7 @@ export default function GitHubContributionPanel() {
   if (!data) {
     return (
       <section className="dashboard-card github-panel">
-        <StatusMessage>Loading GitHub contribution data…</StatusMessage>
+        <StatusMessage>{t("gh.loading")}</StatusMessage>
       </section>
     );
   }
@@ -51,12 +53,12 @@ export default function GitHubContributionPanel() {
       <section className="dashboard-card github-panel">
         <div className="section-heading compact">
           <div>
-            <p className="eyebrow">GitHub integration</p>
-            <h2>Repository activity</h2>
+            <p className="eyebrow">{t("gh.eyebrow")}</p>
+            <h2>{t("gh.repositoryActivity")}</h2>
           </div>
-          <span className="member-count">offline-safe</span>
+          <span className="member-count">{t("gh.offlineSafe")}</span>
         </div>
-        <StatusMessage>{data.message ?? "GitHub contribution data is unavailable."}</StatusMessage>
+        <StatusMessage>{data.message ?? t("gh.unavailable")}</StatusMessage>
       </section>
     );
   }
@@ -65,30 +67,30 @@ export default function GitHubContributionPanel() {
     <section className="dashboard-card github-panel">
       <div className="section-heading compact">
         <div>
-          <p className="eyebrow">GitHub integration</p>
-          <h2>Repository activity</h2>
+          <p className="eyebrow">{t("gh.eyebrow")}</p>
+          <h2>{t("gh.repositoryActivity")}</h2>
         </div>
         <a className="text-link" href={data.repository.url} target="_blank" rel="noreferrer">
-          Open repository ↗
+          {t("gh.openRepository")}
         </a>
       </div>
 
       <div className="github-repository-strip">
         <div>
-          <span>Repository</span>
+          <span>{t("gh.repository")}</span>
           <strong>{data.repository.fullName}</strong>
         </div>
         <div>
-          <span>Default branch</span>
+          <span>{t("gh.defaultBranch")}</span>
           <strong>{data.repository.defaultBranch}</strong>
         </div>
         <div>
-          <span>Open PRs</span>
+          <span>{t("gh.openPrs")}</span>
           <strong>{data.repository.openPullRequests}</strong>
         </div>
         <div>
-          <span>Last push</span>
-          <strong>{shortDate(data.repository.lastPushedAt)}</strong>
+          <span>{t("gh.lastPush")}</span>
+          <strong>{shortDate(data.repository.lastPushedAt, lang)}</strong>
         </div>
       </div>
 
@@ -107,33 +109,33 @@ export default function GitHubContributionPanel() {
                     @{member.githubUsername}
                   </a>
                 ) : (
-                  <small>GitHub not linked</small>
+                  <small>{t("gh.notLinked")}</small>
                 )}
               </div>
               <span className={`github-link-state ${member.linked ? "linked" : "unlinked"}`}>
-                {member.linked ? "linked" : "not linked"}
+                {member.linked ? t("gh.linked") : t("gh.notLinkedState")}
               </span>
             </div>
             <dl className="github-member-metrics">
               <div>
-                <dt>Commits</dt>
+                <dt>{t("gh.commits")}</dt>
                 <dd>{member.commits}</dd>
               </div>
               <div>
-                <dt>PRs</dt>
+                <dt>{t("gh.prs")}</dt>
                 <dd>{member.pullRequests}</dd>
               </div>
               <div>
-                <dt>Merged</dt>
+                <dt>{t("gh.merged")}</dt>
                 <dd>{member.mergedPullRequests}</dd>
               </div>
               <div>
-                <dt>Open</dt>
+                <dt>{t("gh.open")}</dt>
                 <dd>{member.openPullRequests}</dd>
               </div>
             </dl>
             <small className="github-last-contribution">
-              Latest contribution: {shortDate(member.latestContributionAt)}
+              {t("gh.latestContribution", { date: shortDate(member.latestContributionAt, lang) })}
             </small>
           </article>
         ))}
@@ -141,10 +143,10 @@ export default function GitHubContributionPanel() {
 
       <div className="github-timeline-heading">
         <div>
-          <p className="eyebrow">Contribution timeline</p>
-          <h3>Recent repository work</h3>
+          <p className="eyebrow">{t("gh.contributionTimeline")}</p>
+          <h3>{t("gh.recentRepositoryWork")}</h3>
         </div>
-        <span className="member-count">latest 20</span>
+        <span className="member-count">{t("prof.latest20")}</span>
       </div>
 
       {data.timeline.length ? (
@@ -164,20 +166,15 @@ export default function GitHubContributionPanel() {
                   @{event.githubUsername} · {event.detail}
                 </small>
               </div>
-              <time>{shortDate(event.occurredAt)}</time>
+              <time>{shortDate(event.occurredAt, lang)}</time>
             </a>
           ))}
         </div>
       ) : (
-        <StatusMessage>
-          No linked GitHub contributions found in the recent repository window.
-        </StatusMessage>
+        <StatusMessage>{t("gh.noContributions")}</StatusMessage>
       )}
 
-      <p className="github-footnote">
-        GitHub counts are a repository signal, not a productivity score. Commits shown here are
-        recent commits reachable from the default branch; pull requests are counted separately.
-      </p>
+      <p className="github-footnote">{t("gh.footnote")}</p>
     </section>
   );
 }

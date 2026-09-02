@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 
 import { getProfessorDashboard } from "../api";
+import { useI18n } from "../i18n";
 import type { ProfessorDashboardData } from "../types";
 import GitHubContributionPanel from "./GitHubContributionPanel";
 import StatusMessage from "./StatusMessage";
 
 export default function ProfessorDashboard() {
+  const { t } = useI18n();
   const [data, setData] = useState<ProfessorDashboardData | null>(null);
   const [error, setError] = useState("");
 
@@ -21,7 +23,7 @@ export default function ProfessorDashboard() {
   );
 
   if (error) return <StatusMessage error>{error}</StatusMessage>;
-  if (!data) return <StatusMessage>Loading professor dashboard…</StatusMessage>;
+  if (!data) return <StatusMessage>{t("prof.loading")}</StatusMessage>;
 
   const completionRate = data.totals.activities
     ? Math.round((data.totals.completedActivities / data.totals.activities) * 100)
@@ -31,34 +33,34 @@ export default function ProfessorDashboard() {
     <section className="professor-page">
       <div className="professor-hero">
         <div>
-          <p className="eyebrow">Professor dashboard</p>
+          <p className="eyebrow">{t("prof.eyebrow")}</p>
           <h1>
-            Team
+            {t("prof.team")}
             <br />
-            <em>overview.</em>
+            <em>{t("prof.overview")}</em>
           </h1>
         </div>
         <div className="professor-summary-note">
           <strong>{completionRate}%</strong>
-          <span>team activity completion</span>
+          <span>{t("prof.completionNote")}</span>
         </div>
       </div>
 
       <div className="stats-grid professor-stats">
         <article className="stat-card">
-          <span>Members</span>
+          <span>{t("prof.members")}</span>
           <strong>{data.totals.members}</strong>
         </article>
         <article className="stat-card">
-          <span>Activities</span>
+          <span>{t("prof.activities")}</span>
           <strong>{data.totals.activities}</strong>
         </article>
         <article className="stat-card">
-          <span>Completed</span>
+          <span>{t("prof.completed")}</span>
           <strong>{data.totals.completedActivities}</strong>
         </article>
         <article className="stat-card">
-          <span>Active projects</span>
+          <span>{t("prof.activeProjects")}</span>
           <strong>{data.totals.activeProjects}</strong>
         </article>
       </div>
@@ -66,10 +68,10 @@ export default function ProfessorDashboard() {
       <section className="dashboard-card professor-members">
         <div className="section-heading compact">
           <div>
-            <p className="eyebrow">Team progress</p>
-            <h2>Members</h2>
+            <p className="eyebrow">{t("prof.teamProgress")}</p>
+            <h2>{t("prof.members")}</h2>
           </div>
-          <span className="member-count">read only</span>
+          <span className="member-count">{t("prof.readOnly")}</span>
         </div>
         <div className="professor-member-list">
           {data.members.map((member) => {
@@ -87,25 +89,25 @@ export default function ProfessorDashboard() {
                 <div className="professor-member-main">
                   <strong>{member.user.name}</strong>
                   <small>{member.user.role}</small>
-                  <div className="progress-track" aria-label={`${rate}% complete`}>
+                  <div className="progress-track" aria-label={t("prof.percentComplete", { rate })}>
                     <span style={{ width: `${rate}%` }} />
                   </div>
                 </div>
                 <dl className="member-metrics">
                   <div>
-                    <dt>Activities</dt>
+                    <dt>{t("prof.activities")}</dt>
                     <dd>{member.totalActivities}</dd>
                   </div>
                   <div>
-                    <dt>Done</dt>
+                    <dt>{t("prof.done")}</dt>
                     <dd>{member.completedActivities}</dd>
                   </div>
                   <div>
-                    <dt>Active projects</dt>
+                    <dt>{t("prof.activeProjects")}</dt>
                     <dd>{member.activeProjects}</dd>
                   </div>
                   <div>
-                    <dt>Last activity</dt>
+                    <dt>{t("prof.lastActivity")}</dt>
                     <dd>{member.latestActivityDate ?? "—"}</dd>
                   </div>
                 </dl>
@@ -121,10 +123,10 @@ export default function ProfessorDashboard() {
       <section className="dashboard-card professor-recent">
         <div className="section-heading compact">
           <div>
-            <p className="eyebrow">Across the team</p>
-            <h2>Recent activity</h2>
+            <p className="eyebrow">{t("prof.acrossTeam")}</p>
+            <h2>{t("prof.recentActivity")}</h2>
           </div>
-          <span className="member-count">latest 20</span>
+          <span className="member-count">{t("prof.latest20")}</span>
         </div>
         {data.recentActivities.length ? (
           <div className="professor-activity-list">
@@ -135,13 +137,15 @@ export default function ProfessorDashboard() {
                   <strong>{activity.title}</strong>
                   <small>{names.get(activity.userId) ?? activity.userId}</small>
                 </div>
-                <span className={`pill ${activity.status}`}>{activity.status}</span>
+                <span className={`pill ${activity.status}`}>
+                  {t(`status.${activity.status}`)}
+                </span>
                 <time>{activity.date}</time>
               </article>
             ))}
           </div>
         ) : (
-          <StatusMessage>No activities recorded yet.</StatusMessage>
+          <StatusMessage>{t("timeline.noActivities")}</StatusMessage>
         )}
       </section>
     </section>

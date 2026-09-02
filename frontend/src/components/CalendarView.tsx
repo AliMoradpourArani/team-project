@@ -1,20 +1,32 @@
 import { useMemo, useState } from "react";
 
+import { useI18n } from "../i18n";
 import type { Activity } from "../types";
 
 interface Props {
   activities: Activity[];
 }
 
-function monthLabel(value: string): string {
+const WEEKDAY_KEYS = [
+  "weekday.sun",
+  "weekday.mon",
+  "weekday.tue",
+  "weekday.wed",
+  "weekday.thu",
+  "weekday.fri",
+  "weekday.sat",
+] as const;
+
+function monthLabel(value: string, lang: string): string {
   const [year, month] = value.split("-").map(Number);
-  return new Date(year, month - 1, 1).toLocaleDateString(undefined, {
+  return new Date(year, month - 1, 1).toLocaleDateString(lang === "fa" ? "fa-IR" : lang, {
     month: "long",
     year: "numeric",
   });
 }
 
 export default function CalendarView({ activities }: Props) {
+  const { t, lang } = useI18n();
   const initialMonth = activities.at(-1)?.date.slice(0, 7) ?? new Date().toISOString().slice(0, 7);
   const [month, setMonth] = useState(initialMonth);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
@@ -44,21 +56,21 @@ export default function CalendarView({ activities }: Props) {
     <section className="dashboard-card calendar-card">
       <div className="section-heading compact">
         <div>
-          <p className="eyebrow">Calendar</p>
-          <h2>{monthLabel(month)}</h2>
+          <p className="eyebrow">{t("calendar.eyebrow")}</p>
+          <h2>{monthLabel(month, lang)}</h2>
         </div>
         <div className="calendar-nav">
-          <button type="button" onClick={() => moveMonth(-1)} aria-label="Previous month">
+          <button type="button" onClick={() => moveMonth(-1)} aria-label={t("calendar.prevMonth")}>
             ←
           </button>
-          <button type="button" onClick={() => moveMonth(1)} aria-label="Next month">
+          <button type="button" onClick={() => moveMonth(1)} aria-label={t("calendar.nextMonth")}>
             →
           </button>
         </div>
       </div>
       <div className="calendar-weekdays">
-        {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
-          <span key={day}>{day}</span>
+        {WEEKDAY_KEYS.map((dayKey) => (
+          <span key={dayKey}>{t(dayKey)}</span>
         ))}
       </div>
       <div className="calendar-grid">
@@ -74,7 +86,7 @@ export default function CalendarView({ activities }: Props) {
               type="button"
               className={`calendar-day ${selectedDate === date ? "selected" : ""}`}
               key={date}
-              aria-label={`${date}, ${count} ${count === 1 ? "activity" : "activities"}`}
+              aria-label={`${date}, ${count} ${count === 1 ? t("calendar.activity") : t("calendar.activities")}`}
               onClick={() => setSelectedDate(date)}
             >
               <span>{day}</span>
@@ -94,7 +106,7 @@ export default function CalendarView({ activities }: Props) {
               </p>
             ))
           ) : (
-            <p>No activities.</p>
+            <p>{t("calendar.noActivities")}</p>
           )}
         </div>
       ) : null}

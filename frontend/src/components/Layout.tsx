@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
 
+import { useI18n } from "../i18n";
+import LanguageSwitcher from "../i18n/LanguageSwitcher";
 import type { AuthSession } from "../types";
 
 interface Props {
@@ -10,9 +12,10 @@ interface Props {
 }
 
 export default function Layout({ children, session, onLogout, currentPath = "/" }: Props) {
+  const { t } = useI18n();
   const tabs = [
-    { href: "/", label: "Home" },
-    { href: "/ali-workspace", label: "Ali-Workspace" },
+    { href: "/", label: t("nav.home") },
+    { href: "/ali-workspace", label: t("nav.aliWorkspace") },
   ];
   const normalizedPath = currentPath.replace(/\/+$/, "") || "/";
 
@@ -38,18 +41,21 @@ export default function Layout({ children, session, onLogout, currentPath = "/" 
             );
           })}
         </nav>
-        {session ? (
-          <div className="header-session">
-            <span className="header-label">
-              {session.displayName} · {session.role}
-            </span>
-            <button className="header-logout" type="button" onClick={onLogout}>
-              Sign out
-            </button>
-          </div>
-        ) : (
-          <span className="header-label">Protected local workspace</span>
-        )}
+        <div className="header-tools">
+          <LanguageSwitcher />
+          {session ? (
+            <div className="header-session">
+              <span className="header-label">
+                {session.displayName} · {session.role}
+              </span>
+              <button className="header-logout" type="button" onClick={onLogout}>
+                {t("header.signOut")}
+              </button>
+            </div>
+          ) : (
+            <span className="header-label">{t("header.protectedWorkspace")}</span>
+          )}
+        </div>
       </header>
       <main className="page-content">{children}</main>
     </div>

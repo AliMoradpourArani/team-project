@@ -22,9 +22,21 @@ describe("Layout", () => {
     expect(tab).toHaveAttribute("aria-current", "page");
   });
 
+  it("marks the Ali-Workspace tab active with a trailing slash", () => {
+    render(<Layout currentPath="/ali-workspace/">Workspace content</Layout>);
+
+    expect(screen.getByRole("link", { name: "Ali-Workspace" })).toHaveClass("nav-tab-active");
+  });
+
   it("does not mark Home active on other pages", () => {
     render(<Layout currentPath="/ali-workspace">Workspace content</Layout>);
 
     expect(screen.getByRole("link", { name: "Home" })).not.toHaveClass("nav-tab-active");
+  });
+
+  it("does not mark Ali-Workspace active on unrelated nested paths", () => {
+    render(<Layout currentPath="/ali-workspace-other">Content</Layout>);
+
+    expect(screen.getByRole("link", { name: "Ali-Workspace" })).not.toHaveClass("nav-tab-active");
   });
 });

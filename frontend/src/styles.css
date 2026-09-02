@@ -534,3 +534,113 @@ h2 {
     gap: 6px;
   }
 }
+/* ---- Header language tools ---- */
+.header-tools {
+  align-items: center;
+  display: flex;
+  gap: 16px;
+}
+
+/* ---- Language switcher ---- */
+.language-switcher {
+  position: relative;
+}
+.language-trigger {
+  align-items: center;
+  background: transparent;
+  border: 1px solid #d4d4c8;
+  border-radius: 999px;
+  color: #2c3a33;
+  cursor: pointer;
+  display: flex;
+  font-family: "DM Mono", monospace;
+  font-size: 0.74rem;
+  gap: 6px;
+  padding: 6px 12px;
+  transition: border-color 0.2s ease, color 0.2s ease;
+}
+.language-trigger:hover {
+  border-color: #4f806b;
+  color: #4f806b;
+}
+.language-caret {
+  font-size: 0.6rem;
+  transition: transform 0.2s ease;
+}
+.language-caret.open {
+  transform: rotate(180deg);
+}
+.language-menu {
+  background: #ffffff;
+  border: 1px solid #d4d4c8;
+  border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(24, 34, 30, 0.14);
+  inset-inline-end: 0;
+  list-style: none;
+  margin: 8px 0 0;
+  min-width: 190px;
+  opacity: 0;
+  padding: 6px;
+  position: absolute;
+  top: 100%;
+  transform: translateY(-8px);
+  transition: opacity 0.22s ease, transform 0.22s ease, visibility 0.22s;
+  visibility: hidden;
+  z-index: 60;
+}
+.language-menu.open {
+  opacity: 1;
+  transform: translateY(0);
+  visibility: visible;
+}
+.language-option {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 8px;
+  color: #2c3a33;
+  cursor: pointer;
+  display: flex;
+  font-family: inherit;
+  font-size: 0.86rem;
+  gap: 8px;
+  padding: 9px 10px;
+  text-align: start;
+  width: 100%;
+}
+.language-option:hover {
+  background: #f3f0e8;
+}
+.language-option.active {
+  color: #4f806b;
+  font-weight: 600;
+}
+.language-name {
+  color: #66736c;
+  font-family: "DM Mono", monospace;
+  font-size: 0.68rem;
+  margin-inline-start: auto;
+  text-transform: uppercase;
+}
+.language-check {
+  color: #4f806b;
+}
+
+/* ---- RTL (Persian) support ---- */
+[dir="rtl"] {
+  font-family: Vazirmatn, "Segoe UI", Tahoma, sans-serif;
+}
+[dir="rtl"] .nav-tab {
+  letter-spacing: 0;
+  text-transform: none;
+}
+[dir="rtl"] .calendar-nav button:first-child {
+  order: 2;
+}
+[dir="rtl"] .calendar-nav button:last-child {
+  order: 1;
+}
+[dir="rtl"] .progress-track span {
+  float: right;
+}
+

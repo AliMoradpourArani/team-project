@@ -11,6 +11,7 @@ import ProfessorDashboard from "./components/ProfessorDashboard";
 import StatusMessage from "./components/StatusMessage";
 import TimelineView from "./components/TimelineView";
 import type { Activity, AuthSession, Project, User } from "./types";
+import { useI18n } from "./i18n";
 
 function useNavigation(): [string, (path: string, replace?: boolean) => void] {
   const [pathname, setPathname] = useState(window.location.pathname);
@@ -50,6 +51,7 @@ interface TeamState {
 }
 
 function UserPage({ userId, readOnly }: { userId: string; readOnly: boolean }) {
+  const { t } = useI18n();
   const [state, setState] = useState<TeamState>({ users: [], activities: [], projects: [] });
   const [error, setError] = useState("");
   const [editing, setEditing] = useState<Activity | null>(null);
@@ -74,23 +76,23 @@ function UserPage({ userId, readOnly }: { userId: string; readOnly: boolean }) {
   const projects = state.projects.filter((project) => project.userId === userId);
 
   async function removeActivity(activity: Activity) {
-    if (readOnly || !window.confirm(`Delete "${activity.title}"?`)) return;
+    if (readOnly || !window.confirm(t("app.deleteConfirm", { title: activity.title }))) return;
     try {
       await deleteActivity(activity.id);
       if (editing?.id === activity.id) setEditing(null);
       await loadData();
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "Could not delete activity.");
+      setError(requestError instanceof Error ? requestError.message : t("app.deleteError"));
     }
   }
 
   if (error) return <StatusMessage error>{error}</StatusMessage>;
-  if (state.users.length === 0) return <StatusMessage>Loading user dashboard…</StatusMessage>;
+  if (state.users.length === 0) return <StatusMessage>{t("app.loadingUserDashboard")}</StatusMessage>;
   if (!user) {
     return (
       <div className="empty-state">
         <p className="eyebrow">404</p>
-        <h1>User not found</h1>
+        <h1>{t("app.userNotFound")}</h1>
       </div>
     );
   }
@@ -99,14 +101,14 @@ function UserPage({ userId, readOnly }: { userId: string; readOnly: boolean }) {
     <section className="user-page">
       {readOnly ? (
         <a className="back-link" href="/professor" data-link>
-          ← Professor dashboard
+          {t("app.backToProfessor")}
         </a>
       ) : null}
       <div className="profile-header dashboard-profile">
         <span className="profile-avatar">{user.name.charAt(0)}</span>
         <div>
           <p className="eyebrow">
-            {readOnly ? "Professor · read-only member view" : "Member dashboard"}
+            {readOnly ? t("app.professorReadOnlyView") : t("app.memberDashboard")}
           </p>
           <h1>{user.name}</h1>
           <p className="role-label">{user.role}</p>
@@ -137,8 +139,8 @@ function UserPage({ userId, readOnly }: { userId: string; readOnly: boolean }) {
       <section className="dashboard-card projects-card">
         <div className="section-heading compact">
           <div>
-            <p className="eyebrow">Projects</p>
-            <h2>Connected work</h2>
+            <p className="eyebrow">{t("app.projects")}</p>
+            <h2>{t("app.connectedWork")}</h2>
           </div>
           <span className="member-count">{projects.length}</span>
         </div>
@@ -150,13 +152,13 @@ function UserPage({ userId, readOnly }: { userId: string; readOnly: boolean }) {
                 <div>
                   <h3>{project.name}</h3>
                   <p>{project.description}</p>
-                  <small>{project.technology.join(" · ") || "No technology listed"}</small>
+                  <small>{project.technology.join(" · ") || t("app.noTechnology")}</small>
                 </div>
               </article>
             ))}
           </div>
         ) : (
-          <StatusMessage>No projects recorded yet.</StatusMessage>
+          <StatusMessage>{t("app.noProjectsYet")}</StatusMessage>
         )}
       </section>
     </section>
@@ -164,6 +166,7 @@ function UserPage({ userId, readOnly }: { userId: string; readOnly: boolean }) {
 }
 
 export default function App() {
+  const { t } = useI18n();
   const [pathname, navigate] = useNavigation();
   const [session, setSession] = useState<AuthSession | null | undefined>(undefined);
 
@@ -192,7 +195,7 @@ export default function App() {
   if (session === undefined) {
     return (
       <Layout currentPath={pathname}>
-        <StatusMessage>Checking session…</StatusMessage>
+        <StatusMessage>{t("app.checkingSession")}</StatusMessage>
       </Layout>
     );
   }
@@ -219,16 +222,14 @@ export default function App() {
 
   if (session.role === "student") {
     if (!session.userId) {
-      content = (
-        <StatusMessage error>Student account is not linked to a tracked user.</StatusMessage>
-      );
+      content = <StatusMessage error>{t("app.studentNotLinked")}</StatusMessage>;
     } else if (aliWorkspaceMatch && session.userId !== "ali") {
       content = (
         <div className="empty-state">
           <p className="eyebrow">403</p>
-          <h1>Not your workspace</h1>
+          <h1>{t("app.notYourWorkspace")}</h1>
           <a className="text-link" href={`/users/${session.userId}`} data-link>
-            Back to your dashboard
+            {t("app.backToYourDashboard")}
           </a>
         </div>
       );

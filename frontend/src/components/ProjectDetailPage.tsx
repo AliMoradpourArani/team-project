@@ -8,6 +8,7 @@ import ProjectOnboardingPanel from "./ProjectOnboardingPanel";
 import ProjectReviewPanel from "./ProjectReviewPanel";
 import ProjectSubmissionPanel from "./ProjectSubmissionPanel";
 import StatusMessage from "./StatusMessage";
+import { useI18n } from "../i18n";
 
 interface Props {
   projectId: string;
@@ -20,6 +21,7 @@ export default function ProjectDetailPage({ projectId, backHref, role }: Props) 
   const [result, setResult] = useState<ProjectRunResult | null>(null);
   const [running, setRunning] = useState(false);
   const [error, setError] = useState("");
+  const { t } = useI18n();
 
   const loadDetail = useCallback(async () => {
     setDetail(await getProjectDetail(projectId));
@@ -40,32 +42,32 @@ export default function ProjectDetailPage({ projectId, backHref, role }: Props) 
       setResult(nextResult);
       await loadDetail();
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "Could not run project.");
+      setError(requestError instanceof Error ? requestError.message : t("pp.runError"));
     } finally {
       setRunning(false);
     }
   }
 
   if (error && !detail) return <StatusMessage error>{error}</StatusMessage>;
-  if (!detail) return <StatusMessage>Loading project details…</StatusMessage>;
+  if (!detail) return <StatusMessage>{t("pd.loading")}</StatusMessage>;
 
   const { project, integration } = detail;
 
   return (
     <section className="project-detail-page">
       <a className="back-link" href={backHref} data-link>
-        ← Back
+        {t("pd.back")}
       </a>
 
       <div className="project-detail-hero">
         <div>
-          <p className="eyebrow">Member project</p>
+          <p className="eyebrow">{t("pd.eyebrow")}</p>
           <h1>{project.name}</h1>
           <p>{project.description}</p>
           <div className="project-detail-meta">
-            <span>Owner: {project.userId}</span>
-            <span>Status: {project.status}</span>
-            <span>{project.technology.join(" · ") || "No technology listed"}</span>
+            <span>{t("pd.owner", { userId: project.userId })}</span>
+            <span>{t("pd.status", { status: project.status })}</span>
+            <span>{project.technology.join(" · ") || t("app.noTechnology")}</span>
           </div>
         </div>
         <span className={`runner-badge runner-${integration.integrationStatus}`}>
@@ -79,9 +81,12 @@ export default function ProjectDetailPage({ projectId, backHref, role }: Props) 
         <section className="dashboard-card">
           <div className="section-heading compact">
             <div>
-              <p className="eyebrow">Integration health</p>
+              <p className="eyebrow">{t("pd.healthEyebrow")}</p>
               <h2>
-                {detail.healthPassed}/{detail.healthTotal} checks passing
+                {t("pd.checksPassing", {
+                  passed: detail.healthPassed,
+                  total: detail.healthTotal,
+                })}
               </h2>
             </div>
           </div>
@@ -103,35 +108,35 @@ export default function ProjectDetailPage({ projectId, backHref, role }: Props) 
         <section className="dashboard-card">
           <div className="section-heading compact">
             <div>
-              <p className="eyebrow">Demo</p>
-              <h2>Typed contract</h2>
+              <p className="eyebrow">{t("pd.demo")}</p>
+              <h2>{t("pd.typedContract")}</h2>
             </div>
           </div>
           <dl className="project-contract-list">
             <div>
-              <dt>Type</dt>
-              <dd>{integration.projectType ?? "Not configured"}</dd>
+              <dt>{t("pd.contractType")}</dt>
+              <dd>{integration.projectType ?? t("pd.notConfigured")}</dd>
             </div>
             <div>
-              <dt>Runner</dt>
-              <dd>{integration.runner ?? "Not configured"}</dd>
+              <dt>{t("pd.contractRunner")}</dt>
+              <dd>{integration.runner ?? t("pd.notConfigured")}</dd>
             </div>
             <div>
-              <dt>Mode</dt>
-              <dd>{integration.demoMode ?? "Not configured"}</dd>
+              <dt>{t("pd.contractMode")}</dt>
+              <dd>{integration.demoMode ?? t("pd.notConfigured")}</dd>
             </div>
             <div>
-              <dt>Entry point</dt>
-              <dd>{integration.entryPoint ?? "Not configured"}</dd>
+              <dt>{t("pd.contractEntry")}</dt>
+              <dd>{integration.entryPoint ?? t("pd.notConfigured")}</dd>
             </div>
             <div>
-              <dt>Repository path</dt>
-              <dd>{integration.repositoryPath ?? "Not configured"}</dd>
+              <dt>{t("pd.contractRepo")}</dt>
+              <dd>{integration.repositoryPath ?? t("pd.notConfigured")}</dd>
             </div>
           </dl>
           {integration.reason ? <p className="runner-reason">{integration.reason}</p> : null}
           {integration.demoMode === "preview" ? (
-            <p className="runner-safety-note">Preview-only demo. No project process is started.</p>
+            <p className="runner-safety-note">{t("pd.previewOnlyNote")}</p>
           ) : (
             <button
               className="primary-button runner-button"
@@ -139,7 +144,11 @@ export default function ProjectDetailPage({ projectId, backHref, role }: Props) 
               disabled={!integration.runnable || running}
               onClick={() => void execute()}
             >
-              {running ? "Running…" : integration.runnerEnabled ? "Run demo" : "Runner disabled"}
+              {running
+                ? t("pp.running")
+                : integration.runnerEnabled
+                  ? t("pp.runDemo")
+                  : t("pp.runnerDisabled")}
             </button>
           )}
         </section>
@@ -155,15 +164,19 @@ export default function ProjectDetailPage({ projectId, backHref, role }: Props) 
         <section className="dashboard-card">
           <div className="section-heading compact">
             <div>
-              <p className="eyebrow">Latest result</p>
-              <h2>{result.timedOut ? "Timed out" : `Exit ${result.exitCode}`}</h2>
+              <p className="eyebrow">{t("pd.latestResult")}</p>
+              <h2>
+                {result.timedOut
+                  ? t("pp.timedOut")
+                  : t("pp.exit", { code: result.exitCode ?? "—" })}
+              </h2>
             </div>
             <span>{result.durationMs} ms</span>
           </div>
           <div className="runner-result" aria-live="polite">
             {result.stdout ? <pre>{result.stdout}</pre> : null}
             {result.stderr ? <pre className="runner-stderr">{result.stderr}</pre> : null}
-            {!result.stdout && !result.stderr ? <p>No output.</p> : null}
+            {!result.stdout && !result.stderr ? <p>{t("pp.noOutput")}</p> : null}
           </div>
         </section>
       ) : null}
@@ -171,22 +184,22 @@ export default function ProjectDetailPage({ projectId, backHref, role }: Props) 
       <section className="dashboard-card project-readme-card">
         <div className="section-heading compact">
           <div>
-            <p className="eyebrow">Documentation</p>
-            <h2>Project README</h2>
+            <p className="eyebrow">{t("pd.documentation")}</p>
+            <h2>{t("pd.readmeTitle")}</h2>
           </div>
         </div>
         {detail.readme ? (
           <pre className="project-readme">{detail.readme}</pre>
         ) : (
-          <StatusMessage>No valid README.md is available for this project yet.</StatusMessage>
+          <StatusMessage>{t("pd.noReadme")}</StatusMessage>
         )}
       </section>
 
       <section className="dashboard-card">
         <div className="section-heading compact">
           <div>
-            <p className="eyebrow">Runtime history</p>
-            <h2>Recent executed demo runs</h2>
+            <p className="eyebrow">{t("pd.runtimeHistory")}</p>
+            <h2>{t("pd.recentRuns")}</h2>
           </div>
           <span className="member-count">{detail.recentRuns.length}</span>
         </div>
@@ -195,10 +208,12 @@ export default function ProjectDetailPage({ projectId, backHref, role }: Props) 
             {detail.recentRuns.map((run) => (
               <article className="project-run-history-item" key={run.id}>
                 <div className="runner-result-meta">
-                  <strong>{run.timedOut ? "Timed out" : `Exit ${run.exitCode}`}</strong>
+                  <strong>
+                    {run.timedOut ? t("pp.timedOut") : t("pp.exit", { code: run.exitCode ?? "—" })}
+                  </strong>
                   <span>{run.durationMs} ms</span>
                   <span>{run.createdAt}</span>
-                  {run.outputTruncated ? <span>preview truncated</span> : null}
+                  {run.outputTruncated ? <span>{t("pd.previewTruncated")}</span> : null}
                 </div>
                 {run.stdoutPreview ? <pre>{run.stdoutPreview}</pre> : null}
                 {run.stderrPreview ? (
@@ -208,7 +223,7 @@ export default function ProjectDetailPage({ projectId, backHref, role }: Props) 
             ))}
           </div>
         ) : (
-          <StatusMessage>No recorded executed demo runs yet.</StatusMessage>
+          <StatusMessage>{t("pd.noRuns")}</StatusMessage>
         )}
       </section>
     </section>

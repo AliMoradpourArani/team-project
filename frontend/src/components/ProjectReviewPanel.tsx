@@ -4,6 +4,7 @@ import { deleteProjectReview, getProjectReview, saveProjectReview } from "../api
 import "../project-review.css";
 import type { AuthRole, ProjectReview, ProjectReviewInput, ProjectReviewStatus } from "../types";
 import StatusMessage from "./StatusMessage";
+import { useI18n } from "../i18n";
 
 interface Props {
   projectId: string;
@@ -20,12 +21,6 @@ const EMPTY_REVIEW: ProjectReviewInput = {
   feedback: "",
 };
 
-const STATUS_LABELS: Record<ProjectReviewStatus, string> = {
-  "in-review": "In review",
-  "changes-requested": "Changes requested",
-  approved: "Approved",
-};
-
 export default function ProjectReviewPanel({ projectId, role }: Props) {
   const [review, setReview] = useState<ProjectReview | null>(null);
   const [form, setForm] = useState<ProjectReviewInput>(EMPTY_REVIEW);
@@ -33,6 +28,13 @@ export default function ProjectReviewPanel({ projectId, role }: Props) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  const { t } = useI18n();
+  const statusLabel = (status: ProjectReviewStatus) =>
+    status === "in-review"
+      ? t("rv.inReview")
+      : status === "changes-requested"
+        ? t("rv.changesRequested")
+        : t("rv.approved");
 
   useEffect(() => {
     setLoading(true);
@@ -77,16 +79,16 @@ export default function ProjectReviewPanel({ projectId, role }: Props) {
       const saved = await saveProjectReview(projectId, form);
       setReview(saved);
       setForm(saved);
-      setMessage("Review saved.");
+      setMessage(t("rv.saved"));
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "Could not save review.");
+      setError(requestError instanceof Error ? requestError.message : t("rv.saveError"));
     } finally {
       setSaving(false);
     }
   }
 
   async function resetReview() {
-    if (!review || !window.confirm("Reset this project review?")) return;
+    if (!review || !window.confirm(t("rv.resetConfirm"))) return;
     setSaving(true);
     setError("");
     setMessage("");
@@ -94,23 +96,23 @@ export default function ProjectReviewPanel({ projectId, role }: Props) {
       await deleteProjectReview(projectId);
       setReview(null);
       setForm(EMPTY_REVIEW);
-      setMessage("Review reset to pending.");
+      setMessage(t("rv.resetToPending"));
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "Could not reset review.");
+      setError(requestError instanceof Error ? requestError.message : t("rv.resetError"));
     } finally {
       setSaving(false);
     }
   }
 
-  if (loading) return <StatusMessage>Loading professor review…</StatusMessage>;
+  if (loading) return <StatusMessage>{t("rv.loading")}</StatusMessage>;
 
   if (role === "student") {
     return (
       <section className="dashboard-card project-review-card">
         <div className="section-heading compact">
           <div>
-            <p className="eyebrow">Professor review</p>
-            <h2>{review ? STATUS_LABELS[review.status] : "Pending review"}</h2>
+            <p className="eyebrow">{t("rv.professorEyebrow")}</p>
+            <h2>{review ? statusLabel(review.status) : t("rv.pending")}</h2>
           </div>
           {review ? <strong className="review-total">{review.totalScore}/100</strong> : null}
         </div>
@@ -119,13 +121,13 @@ export default function ProjectReviewPanel({ projectId, role }: Props) {
           <>
             <ReviewScores review={review} />
             <div className="review-feedback">
-              <strong>Feedback</strong>
-              <p>{review.feedback || "No written feedback yet."}</p>
-              <small>Updated {review.updatedAt}</small>
+              <strong>{t("rv.feedback")}</strong>
+              <p>{review.feedback || t("rv.noFeedback")}</p>
+              <small>{t("rv.updatedAt", { date: review.updatedAt })}</small>
             </div>
           </>
         ) : (
-          <StatusMessage>Your professor has not reviewed this project yet.</StatusMessage>
+          <StatusMessage>{t("rv.notReviewedYet")}</StatusMessage>
         )}
       </section>
     );
@@ -135,22 +137,19 @@ export default function ProjectReviewPanel({ projectId, role }: Props) {
     <section className="dashboard-card project-review-card">
       <div className="section-heading compact">
         <div>
-          <p className="eyebrow">Professor evaluation</p>
-          <h2>{review ? "Update rubric" : "Start review"}</h2>
+          <p className="eyebrow">{t("rv.evaluationEyebrow")}</p>
+          <h2>{review ? t("rv.updateRubric") : t("rv.startReview")}</h2>
         </div>
         <strong className="review-total">{draftTotal}/100</strong>
       </div>
 
-      <p className="runner-safety-note">
-        Evaluation is runtime-only. Saving this form does not modify student Git data, activities,
-        or project source.
-      </p>
+      <p className="runner-safety-note">{t("rv.evaluationNote")}</p>
 
       {error ? <StatusMessage error>{error}</StatusMessage> : null}
       {message ? <StatusMessage>{message}</StatusMessage> : null}
 
       <label className="review-status-field">
-        <span>Review status</span>
+        <span>{t("rv.status")}</span>
         <select
           value={form.status}
           onChange={(event) =>
@@ -160,39 +159,39 @@ export default function ProjectReviewPanel({ projectId, role }: Props) {
             }))
           }
         >
-          <option value="in-review">In review</option>
-          <option value="changes-requested">Changes requested</option>
-          <option value="approved">Approved</option>
+          <option value="in-review">{t("rv.inReview")}</option>
+          <option value="changes-requested">{t("rv.changesRequested")}</option>
+          <option value="approved">{t("rv.approved")}</option>
         </select>
       </label>
 
       <div className="review-score-editor">
         <ScoreInput
-          label="Functionality"
+          label={t("rv.functionality")}
           max={30}
           value={form.functionalityScore}
           onChange={(value) => setScore("functionalityScore", value)}
         />
         <ScoreInput
-          label="Code quality"
+          label={t("rv.codeQuality")}
           max={20}
           value={form.codeQualityScore}
           onChange={(value) => setScore("codeQualityScore", value)}
         />
         <ScoreInput
-          label="Documentation"
+          label={t("rv.documentation")}
           max={15}
           value={form.documentationScore}
           onChange={(value) => setScore("documentationScore", value)}
         />
         <ScoreInput
-          label="Integration"
+          label={t("rv.integration")}
           max={20}
           value={form.integrationScore}
           onChange={(value) => setScore("integrationScore", value)}
         />
         <ScoreInput
-          label="Contribution"
+          label={t("rv.contribution")}
           max={15}
           value={form.contributionScore}
           onChange={(value) => setScore("contributionScore", value)}
@@ -200,12 +199,12 @@ export default function ProjectReviewPanel({ projectId, role }: Props) {
       </div>
 
       <label className="review-feedback-field">
-        <span>Feedback</span>
+        <span>{t("rv.feedback")}</span>
         <textarea
           rows={5}
           maxLength={4000}
           value={form.feedback}
-          placeholder="Explain strengths, requested changes, and next steps."
+          placeholder={t("rv.feedbackPlaceholder")}
           onChange={(event) => setForm((current) => ({ ...current, feedback: event.target.value }))}
         />
       </label>
@@ -217,7 +216,7 @@ export default function ProjectReviewPanel({ projectId, role }: Props) {
           disabled={saving}
           onClick={() => void save()}
         >
-          {saving ? "Saving…" : "Save review"}
+          {saving ? t("form.saving") : t("rv.saveReview")}
         </button>
         {review ? (
           <button
@@ -226,7 +225,7 @@ export default function ProjectReviewPanel({ projectId, role }: Props) {
             disabled={saving}
             onClick={() => void resetReview()}
           >
-            Reset review
+            {t("rv.resetReview")}
           </button>
         ) : null}
       </div>
@@ -264,12 +263,14 @@ function ScoreInput({
 }
 
 function ReviewScores({ review }: { review: ProjectReview }) {
+  const { t } = useI18n();
+
   const rows = [
-    ["Functionality", review.functionalityScore, 30],
-    ["Code quality", review.codeQualityScore, 20],
-    ["Documentation", review.documentationScore, 15],
-    ["Integration", review.integrationScore, 20],
-    ["Contribution", review.contributionScore, 15],
+    [t("rv.functionality"), review.functionalityScore, 30],
+    [t("rv.codeQuality"), review.codeQualityScore, 20],
+    [t("rv.documentation"), review.documentationScore, 15],
+    [t("rv.integration"), review.integrationScore, 20],
+    [t("rv.contribution"), review.contributionScore, 15],
   ] as const;
 
   return (

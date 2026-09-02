@@ -35,7 +35,7 @@ export default function Layout({ children, session, onLogout, currentPath = "/" 
           ForgeFlow AI
         </a>
         {tabs.length > 0 ? (
-          <nav className="site-nav" aria-label="Main navigation">
+          <nav className="site-nav" aria-label={t("nav.mainNavigation")}>
             {tabs.map((tab) => {
               const isActive = normalizedPath === tab.href;
               return (

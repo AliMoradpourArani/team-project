@@ -29,12 +29,14 @@ import type {
   AIRepoIndexResult,
   AIWeeklyBrief,
 } from "../ai-agent-types";
+import { useI18n } from "../i18n";
 
 interface AIAgentPanelProps {
   projectId: string | null;
 }
 
 export default function AIAgentPanel({ projectId }: AIAgentPanelProps) {
+  const { t } = useI18n();
   const [threads, setThreads] = useState<AIAgentThread[]>([]);
   const [activeId, setActiveId] = useState<string>("");
   const [message, setMessage] = useState("");
@@ -109,9 +111,7 @@ export default function AIAgentPanel({ projectId }: AIAgentPanelProps) {
       setLastReply(null);
       setReplan(null);
     } catch (requestError) {
-      setError(
-        requestError instanceof Error ? requestError.message : "Could not create AI thread.",
-      );
+      setError(requestError instanceof Error ? requestError.message : t("ag.createError"));
     } finally {
       setBusy(false);
     }
@@ -130,7 +130,7 @@ export default function AIAgentPanel({ projectId }: AIAgentPanelProps) {
       );
       setMessage("");
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "AI agent request failed.");
+      setError(requestError instanceof Error ? requestError.message : t("ag.requestError"));
     } finally {
       setBusy(false);
     }
@@ -146,7 +146,7 @@ export default function AIAgentPanel({ projectId }: AIAgentPanelProps) {
       setSnapshot(response.snapshot);
       await loadProjectIntelligence();
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "Replanning failed.");
+      setError(requestError instanceof Error ? requestError.message : t("ag.replanError"));
     } finally {
       setBusy(false);
     }
@@ -160,9 +160,7 @@ export default function AIAgentPanel({ projectId }: AIAgentPanelProps) {
       setRepoIndex(result);
       await loadProjectIntelligence();
     } catch (requestError) {
-      setError(
-        requestError instanceof Error ? requestError.message : "Repository indexing failed.",
-      );
+      setError(requestError instanceof Error ? requestError.message : t("ag.indexError"));
     } finally {
       setBusy(false);
     }
@@ -176,10 +174,10 @@ export default function AIAgentPanel({ projectId }: AIAgentPanelProps) {
       await refreshAINotifications(projectId);
       await loadProjectIntelligence();
       if (result.changes.length === 0) {
-        setError("No GitHub evidence required a task status change.");
+        setError(t("ag.noStatusChange"));
       }
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "Progress sync failed.");
+      setError(requestError instanceof Error ? requestError.message : t("ag.syncError"));
     } finally {
       setBusy(false);
     }
@@ -206,28 +204,25 @@ export default function AIAgentPanel({ projectId }: AIAgentPanelProps) {
     <section className="ai-agent-panel" aria-labelledby="ai-agent-title">
       <div className="ai-agent-header">
         <div>
-          <p className="eyebrow">AI project operating system</p>
-          <h3 id="ai-agent-title">Project intelligence cockpit</h3>
-          <p>
-            Persistent context, repository RAG, GitHub evidence, governed actions, progress sync,
-            debugging, health scoring, and specialist agents.
-          </p>
+          <p className="eyebrow">{t("ag.eyebrow")}</p>
+          <h3 id="ai-agent-title">{t("ag.cockpit")}</h3>
+          <p>{t("ag.description")}</p>
         </div>
         <button type="button" className="secondary-button" onClick={startThread} disabled={busy}>
-          New thread
+          {t("ag.newThread")}
         </button>
       </div>
 
       {health ? (
         <div className="ai-agent-brief">
-          <strong>Project health {health.overall}/100</strong>
+          <strong>{t("ag.health", { score: health.overall })}</strong>
           <div className="ai-agent-snapshot">
-            <span>Delivery {health.delivery}</span>
-            <span>Code {health.code}</span>
-            <span>Security {health.security}</span>
-            <span>Tests {health.tests}</span>
-            <span>Schedule {health.schedule}</span>
-            <span>Docs {health.documentation}</span>
+            <span>{t("ag.delivery", { score: health.delivery })}</span>
+            <span>{t("ag.code", { score: health.code })}</span>
+            <span>{t("ag.security", { score: health.security })}</span>
+            <span>{t("ag.tests", { score: health.tests })}</span>
+            <span>{t("ag.schedule", { score: health.schedule })}</span>
+            <span>{t("ag.docs", { score: health.documentation })}</span>
           </div>
           {health.reasons[0] ? <p>{health.reasons[0]}</p> : null}
         </div>
@@ -237,32 +232,32 @@ export default function AIAgentPanel({ projectId }: AIAgentPanelProps) {
         <div className="ai-agent-brief">
           <strong>{brief.headline}</strong>
           <div className="ai-agent-snapshot">
-            <span>{brief.overdueCount} overdue</span>
-            <span>{brief.githubSignalCount} GitHub signals</span>
-            <span>{brief.blockers.length} blockers</span>
+            <span>{t("ag.overdue", { count: brief.overdueCount })}</span>
+            <span>{t("ag.githubSignals", { count: brief.githubSignalCount })}</span>
+            <span>{t("ag.blockers", { count: brief.blockers.length })}</span>
           </div>
           {brief.priorities.length > 0 ? (
-            <p>Today: {brief.priorities.slice(0, 3).join(" · ")}</p>
+            <p>{t("ag.today", { items: brief.priorities.slice(0, 3).join(" · ") })}</p>
           ) : null}
         </div>
       ) : null}
 
       {weekly ? (
         <div className="ai-agent-brief">
-          <strong>Weekly intelligence</strong>
+          <strong>{t("ag.weeklyIntel")}</strong>
           <p>{weekly.headline}</p>
           <div className="ai-agent-snapshot">
-            <span>{weekly.completedTasks} completed</span>
-            <span>{weekly.inProgressTasks} in progress</span>
-            <span>{weekly.overdueTasks} overdue</span>
-            <span>{weekly.githubSignals} GitHub signals</span>
+            <span>{t("ag.completed", { count: weekly.completedTasks })}</span>
+            <span>{t("ag.inProgress", { count: weekly.inProgressTasks })}</span>
+            <span>{t("ag.overdue", { count: weekly.overdueTasks })}</span>
+            <span>{t("ag.githubSignals", { count: weekly.githubSignals })}</span>
           </div>
         </div>
       ) : null}
 
       <div className="ai-agent-actions">
         <button type="button" className="secondary-button" onClick={buildRepoIndex} disabled={busy}>
-          Index repository
+          {t("ag.indexRepo")}
         </button>
         <button
           type="button"
@@ -270,18 +265,18 @@ export default function AIAgentPanel({ projectId }: AIAgentPanelProps) {
           onClick={synchronizeProgress}
           disabled={busy}
         >
-          Sync GitHub progress
+          {t("ag.syncProgress")}
         </button>
       </div>
 
       {repoIndex ? (
         <p className="ai-agent-provider">
-          Repository index: {repoIndex.filesIndexed} files · {repoIndex.chunksIndexed} chunks
+          {t("ag.repoIndex", { files: repoIndex.filesIndexed, chunks: repoIndex.chunksIndexed })}
         </p>
       ) : null}
 
       {threads.length > 0 ? (
-        <div className="ai-agent-thread-tabs" role="tablist" aria-label="AI threads">
+        <div className="ai-agent-thread-tabs" role="tablist" aria-label={t("ag.threads")}>
           {threads.map((thread) => (
             <button
               type="button"
@@ -300,9 +295,7 @@ export default function AIAgentPanel({ projectId }: AIAgentPanelProps) {
           ))}
         </div>
       ) : (
-        <div className="ai-agent-empty">
-          No persistent thread yet. Start one to give the copilot memory across visits.
-        </div>
+        <div className="ai-agent-empty">{t("ag.noThread")}</div>
       )}
 
       {activeThread ? (
@@ -314,7 +307,7 @@ export default function AIAgentPanel({ projectId }: AIAgentPanelProps) {
               disabled={busy}
               onClick={() => runReplan(false)}
             >
-              Preview replan
+              {t("ag.previewReplan")}
             </button>
             <button
               type="button"
@@ -322,19 +315,17 @@ export default function AIAgentPanel({ projectId }: AIAgentPanelProps) {
               disabled={busy}
               onClick={() => runReplan(true)}
             >
-              Apply replan tasks
+              {t("ag.applyReplan")}
             </button>
           </div>
 
           <div className="ai-agent-messages">
             {activeThread.messages.length === 0 ? (
-              <p className="ai-agent-empty">
-                Ask for a roadmap, blocker check, code review, debug pass, or next milestone.
-              </p>
+              <p className="ai-agent-empty">{t("ag.emptyMessages")}</p>
             ) : null}
             {activeThread.messages.map((item) => (
               <article className={`ai-agent-message ai-agent-${item.role}`} key={item.id}>
-                <strong>{item.role === "assistant" ? "Copilot" : "You"}</strong>
+                <strong>{item.role === "assistant" ? t("ag.copilot") : t("ag.you")}</strong>
                 <p>{item.content}</p>
               </article>
             ))}
@@ -342,7 +333,7 @@ export default function AIAgentPanel({ projectId }: AIAgentPanelProps) {
 
           {lastReply ? (
             <p className="ai-agent-provider">
-              Response engine: {lastReply.provider}
+              {t("ag.responseEngine", { provider: lastReply.provider })}
               {lastReply.model ? ` · ${lastReply.model}` : ""}
             </p>
           ) : null}
@@ -358,7 +349,7 @@ export default function AIAgentPanel({ projectId }: AIAgentPanelProps) {
 
           {lastReply?.suggestedTasks.length ? (
             <div className="ai-agent-suggestions">
-              <strong>Replanning suggestions</strong>
+              <strong>{t("ag.replanSuggestions")}</strong>
               {lastReply.suggestedTasks.map((task) => (
                 <p key={`${task.date}-${task.title}`}>
                   {task.date} · {task.title}
@@ -376,7 +367,7 @@ export default function AIAgentPanel({ projectId }: AIAgentPanelProps) {
                 </p>
               ))}
               {replan.appliedActivities.length > 0 ? (
-                <p>{replan.appliedActivities.length} task(s) added to tracked work.</p>
+                <p>{t("ag.addedToTracked", { count: replan.appliedActivities.length })}</p>
               ) : null}
             </div>
           ) : null}
@@ -387,7 +378,7 @@ export default function AIAgentPanel({ projectId }: AIAgentPanelProps) {
               maxLength={4000}
               value={message}
               onChange={(event) => setMessage(event.target.value)}
-              placeholder="Replan my week, review the implementation, debug blockers…"
+              placeholder={t("ag.placeholder")}
             />
             <button
               type="button"
@@ -395,28 +386,28 @@ export default function AIAgentPanel({ projectId }: AIAgentPanelProps) {
               disabled={busy || !message.trim()}
               onClick={sendMessage}
             >
-              {busy ? "Thinking…" : "Send"}
+              {busy ? t("ag.thinking") : t("ag.send")}
             </button>
           </div>
           <button type="button" className="ai-agent-delete" onClick={removeThread} disabled={busy}>
-            Delete thread
+            {t("ag.deleteThread")}
           </button>
         </>
       ) : null}
 
       {orchestration ? (
         <div className="ai-agent-review">
-          <strong>Multi-agent coordinator</strong>
+          <strong>{t("ag.coordinator")}</strong>
           <p>{orchestration.executiveSummary}</p>
           {orchestration.nextActions.slice(0, 4).map((action) => (
-            <p key={action}>Next: {action}</p>
+            <p key={action}>{t("ag.next", { action })}</p>
           ))}
         </div>
       ) : null}
 
       {review ? (
         <div className="ai-agent-review">
-          <strong>7-agent review</strong>
+          <strong>{t("ag.review")}</strong>
           <p>{review.executiveSummary}</p>
           <div className="ai-agent-specialists">
             {review.results.map((result) => (

@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 
 import { getProfessorReviewQueue } from "../api";
+import { useI18n } from "../i18n";
 import "../project-review.css";
 import type { ProfessorReviewQueueData } from "../types";
 import StatusMessage from "./StatusMessage";
 
 export default function ProfessorReviewQueue() {
+  const { t } = useI18n();
   const [data, setData] = useState<ProfessorReviewQueueData | null>(null);
   const [error, setError] = useState("");
 
@@ -16,33 +18,33 @@ export default function ProfessorReviewQueue() {
   }, []);
 
   if (error) return <StatusMessage error>{error}</StatusMessage>;
-  if (!data) return <StatusMessage>Loading project review queue…</StatusMessage>;
+  if (!data) return <StatusMessage>{t("rq.loading")}</StatusMessage>;
 
   return (
     <section className="dashboard-card professor-review-queue">
       <div className="section-heading compact">
         <div>
-          <p className="eyebrow">Evaluation</p>
-          <h2>Project review queue</h2>
+          <p className="eyebrow">{t("rq.eyebrow")}</p>
+          <h2>{t("rq.title")}</h2>
         </div>
-        <span className="member-count">{data.totalProjects} projects</span>
+        <span className="member-count">{t("rq.projectsCount", { count: data.totalProjects })}</span>
       </div>
 
       <div className="review-queue-stats">
         <div>
-          <span>Pending</span>
+          <span>{t("rq.pending")}</span>
           <strong>{data.pending}</strong>
         </div>
         <div>
-          <span>In review</span>
+          <span>{t("rq.inReview")}</span>
           <strong>{data.inReview}</strong>
         </div>
         <div>
-          <span>Changes</span>
+          <span>{t("rq.changes")}</span>
           <strong>{data.changesRequested}</strong>
         </div>
         <div>
-          <span>Approved</span>
+          <span>{t("rq.approved")}</span>
           <strong>{data.approved}</strong>
         </div>
       </div>

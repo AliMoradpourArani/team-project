@@ -8,6 +8,8 @@ import DashboardStats from "./components/DashboardStats";
 import Layout from "./components/Layout";
 import LoginPage from "./components/LoginPage";
 import ProfessorDashboard from "./components/ProfessorDashboard";
+import ProjectDetailPage from "./components/ProjectDetailPage";
+import ProjectPanel from "./components/ProjectPanel";
 import StatusMessage from "./components/StatusMessage";
 import TimelineView from "./components/TimelineView";
 import type { Activity, AuthSession, Project, User } from "./types";
@@ -136,31 +138,7 @@ function UserPage({ userId, readOnly }: { userId: string; readOnly: boolean }) {
         onDelete={readOnly ? undefined : removeActivity}
       />
 
-      <section className="dashboard-card projects-card">
-        <div className="section-heading compact">
-          <div>
-            <p className="eyebrow">{t("app.projects")}</p>
-            <h2>{t("app.connectedWork")}</h2>
-          </div>
-          <span className="member-count">{projects.length}</span>
-        </div>
-        {projects.length > 0 ? (
-          <div className="project-list">
-            {projects.map((project) => (
-              <article className="project-item" key={project.id}>
-                <span className="project-mark">↗</span>
-                <div>
-                  <h3>{project.name}</h3>
-                  <p>{project.description}</p>
-                  <small>{project.technology.join(" · ") || t("app.noTechnology")}</small>
-                </div>
-              </article>
-            ))}
-          </div>
-        ) : (
-          <StatusMessage>{t("app.noProjectsYet")}</StatusMessage>
-        )}
-      </section>
+      <ProjectPanel projects={projects} />
     </section>
   );
 }
@@ -174,7 +152,7 @@ export default function App() {
     getMe()
       .then((current) => {
         setSession(current);
-        if (current.role === "student" && current.userId) {
+        if (current.role === "student" && current.userId && window.location.pathname === "/") {
           navigate(`/users/${current.userId}`, true);
         } else if (current.role === "professor" && window.location.pathname === "/") {
           navigate("/professor", true);
@@ -217,13 +195,23 @@ export default function App() {
   }
 
   const userMatch = pathname.match(/^\/users\/([^/]+)\/?$/);
-  const aliWorkspaceMatch = pathname.match(/^\/ali-workspace\/?$/);
+  const projectMatch = pathname.match(/^\/projects\/([^/]+)\/?$/);
   let content: ReactNode;
 
-  if (session.role === "student") {
+  if (projectMatch) {
+    content = (
+      <ProjectDetailPage
+        projectId={projectMatch[1]}
+        role={session.role}
+        backHref={
+          session.role === "student" && session.userId ? `/users/${session.userId}` : "/professor"
+        }
+      />
+    );
+  } else if (session.role === "student") {
     if (!session.userId) {
       content = <StatusMessage error>{t("app.studentNotLinked")}</StatusMessage>;
-    } else if (aliWorkspaceMatch && session.userId !== "ali") {
+    } else if (userMatch && userMatch[1] !== session.userId) {
       content = (
         <div className="empty-state">
           <p className="eyebrow">403</p>
@@ -238,8 +226,6 @@ export default function App() {
     }
   } else if (userMatch) {
     content = <UserPage userId={userMatch[1]} readOnly />;
-  } else if (aliWorkspaceMatch) {
-    content = <UserPage userId="ali" readOnly />;
   } else {
     content = <ProfessorDashboard />;
   }

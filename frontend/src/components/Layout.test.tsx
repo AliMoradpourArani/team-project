@@ -1,42 +1,60 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
+import type { AuthSession } from "../types";
 import Layout from "./Layout";
 
+const studentSession: AuthSession = {
+  username: "ali",
+  displayName: "Ali",
+  role: "student",
+  userId: "ali",
+  csrfToken: "csrf-student",
+};
+
+const professorSession: AuthSession = {
+  username: "professor",
+  displayName: "Professor",
+  role: "professor",
+  userId: null,
+  csrfToken: "csrf-professor",
+};
+
 describe("Layout", () => {
-  it("renders navigation tabs", () => {
+  it("does not render a user-specific navigation item before authentication", () => {
     render(<Layout currentPath="/">Home content</Layout>);
 
-    expect(screen.getByRole("link", { name: "Home" })).toHaveAttribute("href", "/");
-    expect(screen.getByRole("link", { name: "Ali-Workspace" })).toHaveAttribute(
+    expect(screen.queryByRole("link", { name: "Ali-Workspace" })).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Team Project" })).toHaveAttribute("href", "/");
+  });
+
+  it("renders the generic student dashboard navigation from the session user id", () => {
+    render(
+      <Layout session={studentSession} currentPath="/users/ali">
+        Student content
+      </Layout>,
+    );
+
+    const dashboard = screen.getByRole("link", { name: "My dashboard" });
+    expect(dashboard).toHaveAttribute("href", "/users/ali");
+    expect(dashboard).toHaveClass("nav-tab-active");
+    expect(dashboard).toHaveAttribute("aria-current", "page");
+    expect(screen.getByRole("link", { name: "Team Project" })).toHaveAttribute(
       "href",
-      "/ali-workspace",
+      "/users/ali",
     );
   });
 
-  it("marks the Ali-Workspace tab active on its path", () => {
-    render(<Layout currentPath="/ali-workspace">Workspace content</Layout>);
+  it("renders professor navigation without student-specific routes", () => {
+    render(
+      <Layout session={professorSession} currentPath="/professor">
+        Professor content
+      </Layout>,
+    );
 
-    const tab = screen.getByRole("link", { name: "Ali-Workspace" });
-    expect(tab).toHaveClass("nav-tab-active");
-    expect(tab).toHaveAttribute("aria-current", "page");
-  });
-
-  it("marks the Ali-Workspace tab active with a trailing slash", () => {
-    render(<Layout currentPath="/ali-workspace/">Workspace content</Layout>);
-
-    expect(screen.getByRole("link", { name: "Ali-Workspace" })).toHaveClass("nav-tab-active");
-  });
-
-  it("does not mark Home active on other pages", () => {
-    render(<Layout currentPath="/ali-workspace">Workspace content</Layout>);
-
-    expect(screen.getByRole("link", { name: "Home" })).not.toHaveClass("nav-tab-active");
-  });
-
-  it("does not mark Ali-Workspace active on unrelated nested paths", () => {
-    render(<Layout currentPath="/ali-workspace-other">Content</Layout>);
-
-    expect(screen.getByRole("link", { name: "Ali-Workspace" })).not.toHaveClass("nav-tab-active");
+    const dashboard = screen.getByRole("link", { name: "Team dashboard" });
+    expect(dashboard).toHaveAttribute("href", "/professor");
+    expect(dashboard).toHaveClass("nav-tab-active");
+    expect(screen.queryByText("Ali-Workspace")).not.toBeInTheDocument();
   });
 });

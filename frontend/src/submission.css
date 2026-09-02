@@ -1,0 +1,342 @@
+.submission-card,
+.professor-submission-card {
+  display: grid;
+  gap: 22px;
+}
+
+.submission-state {
+  border: 1px solid #d4d4c8;
+  border-radius: 999px;
+  font-family: "DM Mono", monospace;
+  font-size: 0.72rem;
+  padding: 7px 10px;
+  text-transform: uppercase;
+}
+
+.submission-state.open {
+  background: #e7f2eb;
+  color: #2f6d50;
+}
+
+.submission-state.closed {
+  background: #f2e9e3;
+  color: #8a4b3d;
+}
+
+.submission-meta {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  margin: 0;
+}
+
+.submission-meta div,
+.submission-summary-grid article {
+  background: #f7f5ef;
+  border: 1px solid #dfded3;
+  border-radius: 14px;
+  padding: 14px;
+}
+
+.submission-meta dt,
+.submission-summary-grid span,
+.submission-settings-form span,
+.release-form span,
+.submission-digest span {
+  color: #66736c;
+  display: block;
+  font-family: "DM Mono", monospace;
+  font-size: 0.7rem;
+  margin-bottom: 5px;
+  text-transform: uppercase;
+}
+
+.submission-meta dd {
+  margin: 0;
+}
+
+.submission-digest {
+  background: #18221e;
+  border-radius: 14px;
+  color: #f3f0e8;
+  padding: 15px;
+}
+
+.submission-digest span {
+  color: #aeb9b3;
+}
+
+.submission-digest code {
+  display: block;
+  font-family: "DM Mono", monospace;
+  font-size: 0.74rem;
+  overflow-wrap: anywhere;
+}
+
+.submission-actions {
+  align-items: flex-start;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.submission-actions small,
+.submission-readonly,
+.submission-empty {
+  color: #66736c;
+}
+
+.submission-summary-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.submission-summary-grid strong {
+  display: block;
+  font-size: 1.7rem;
+}
+
+.submission-settings-form,
+.release-form {
+  align-items: end;
+  display: grid;
+  gap: 14px;
+  grid-template-columns: 1fr 1.3fr auto;
+}
+
+.submission-settings-form label:not(.submission-toggle),
+.release-form label {
+  display: grid;
+  gap: 6px;
+}
+
+.submission-settings-form input[type="datetime-local"],
+.release-form input[type="text"] {
+  background: #fffdf8;
+  border: 1px solid #d4d4c8;
+  border-radius: 10px;
+  color: #18221e;
+  min-height: 42px;
+  padding: 8px 10px;
+}
+
+.submission-toggle {
+  align-items: center;
+  display: flex;
+  gap: 9px;
+  min-height: 42px;
+}
+
+.submission-toggle span {
+  margin: 0;
+}
+
+.professor-submission-list {
+  border: 1px solid #dfded3;
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.professor-submission-row {
+  align-items: center;
+  border-bottom: 1px solid #dfded3;
+  display: grid;
+  gap: 14px;
+  grid-template-columns: 1.5fr 0.8fr 1fr auto;
+  padding: 14px 16px;
+}
+
+.professor-submission-row:last-child {
+  border-bottom: 0;
+}
+
+.professor-submission-row:hover {
+  background: #f7f5ef;
+}
+
+.professor-submission-row div {
+  display: grid;
+}
+
+.professor-submission-row small,
+.professor-submission-row > span:not(.card-arrow) {
+  color: #66736c;
+  font-size: 0.82rem;
+}
+
+.delivery-preflight {
+  border: 1px solid #dfded3;
+  border-radius: 16px;
+  display: grid;
+  gap: 16px;
+  padding: 18px;
+}
+
+.delivery-preflight.ready {
+  background: #f2f8f3;
+}
+
+.delivery-preflight.blocked {
+  background: #fbf5f1;
+}
+
+.delivery-preflight-meta {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.delivery-preflight-meta span {
+  color: #66736c;
+}
+
+.delivery-preflight-meta code,
+.delivery-project small,
+.delivery-preflight-gates small {
+  font-family: "DM Mono", monospace;
+  font-size: 0.74rem;
+}
+
+.delivery-preflight-gates,
+.delivery-project-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.delivery-preflight-gates article {
+  border: 1px solid #dfded3;
+  border-radius: 12px;
+  display: grid;
+  gap: 4px;
+  padding: 12px 14px;
+}
+
+.delivery-preflight-gates article.passed {
+  background: #e7f2eb;
+}
+
+.delivery-preflight-gates article.blocked {
+  background: #f2e9e3;
+}
+
+.delivery-preflight-gates article span,
+.delivery-preflight-gates article small,
+.delivery-project small {
+  color: #66736c;
+}
+
+.delivery-project-grid {
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+}
+
+.delivery-project {
+  border: 1px solid #dfded3;
+  border-radius: 12px;
+  display: grid;
+  gap: 5px;
+  padding: 13px 14px;
+}
+
+.delivery-project.ready {
+  background: #e7f2eb;
+}
+
+.delivery-project.blocked {
+  background: #fffdf8;
+}
+
+.delivery-project > div {
+  display: grid;
+}
+
+.delivery-project > span {
+  font-family: "DM Mono", monospace;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+}
+
+.release-readiness {
+  border-radius: 14px;
+  display: grid;
+  gap: 4px;
+  padding: 15px 16px;
+}
+
+.release-readiness.ready {
+  background: #e7f2eb;
+  color: #2f6d50;
+}
+
+.release-readiness.blocked {
+  background: #f2e9e3;
+  color: #7c4b3e;
+}
+
+.frozen-release-list {
+  border-top: 1px solid #dfded3;
+  display: grid;
+  gap: 10px;
+  padding-top: 20px;
+}
+
+.frozen-release-row {
+  align-items: center;
+  background: #f7f5ef;
+  border-radius: 12px;
+  display: flex;
+  gap: 14px;
+  justify-content: space-between;
+  padding: 12px 14px;
+}
+
+.frozen-release-row > div:first-child {
+  display: grid;
+}
+
+.frozen-release-row small {
+  color: #66736c;
+}
+
+.frozen-release-row code {
+  font-family: "DM Mono", monospace;
+  font-size: 0.75rem;
+}
+
+.frozen-release-actions {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+}
+
+.frozen-release-actions .secondary-button {
+  white-space: nowrap;
+}
+
+@media (max-width: 760px) {
+  .submission-summary-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .submission-settings-form,
+  .release-form {
+    align-items: stretch;
+    grid-template-columns: 1fr;
+  }
+
+  .professor-submission-row {
+    grid-template-columns: 1fr auto;
+  }
+
+  .professor-submission-row > span:not(.card-arrow) {
+    grid-column: 1 / -1;
+  }
+
+  .delivery-preflight-meta,
+  .frozen-release-row,
+  .frozen-release-actions {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

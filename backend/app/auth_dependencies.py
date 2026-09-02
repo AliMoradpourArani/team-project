@@ -48,7 +48,7 @@ def require_student(principal: CurrentPrincipal) -> auth.Principal:
 StudentPrincipal = Annotated[auth.Principal, Depends(require_student)]
 
 
-def require_csrf(request: Request, principal: CurrentPrincipal) -> auth.Principal:
+def _verify_csrf(request: Request, principal: auth.Principal) -> auth.Principal:
     supplied = request.headers.get("X-CSRF-Token", "")
     if not supplied or not hmac.compare_digest(supplied, principal.csrf_token):
         raise HTTPException(
@@ -58,4 +58,15 @@ def require_csrf(request: Request, principal: CurrentPrincipal) -> auth.Principa
     return principal
 
 
+def require_csrf(request: Request, principal: CurrentPrincipal) -> auth.Principal:
+    return _verify_csrf(request, principal)
+
+
 CsrfPrincipal = Annotated[auth.Principal, Depends(require_csrf)]
+
+
+def require_professor_csrf(request: Request, principal: ProfessorPrincipal) -> auth.Principal:
+    return _verify_csrf(request, principal)
+
+
+ProfessorCsrfPrincipal = Annotated[auth.Principal, Depends(require_professor_csrf)]

@@ -17,6 +17,13 @@
 - [ ] New architecture decisions have an ADR when needed
 - [ ] Feature branch is up to date with `main` (`git merge main`)
 
+### Member project integration (when this PR adds/changes `projects/<owner>/...`)
+
+- [ ] `data/projects/<project_id>.json` matches the project owner/id
+- [ ] `project.json`, README, repository path, typed runner, and entry point are included
+- [ ] `make project-check PROJECT_ID=<project_id>` reports `READY`
+- [ ] No member-specific Core route/component was added
+
 ## Risk and rollback
 
 **Risk:** Low / Medium / High

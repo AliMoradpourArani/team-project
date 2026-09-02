@@ -16,6 +16,12 @@ jobs:
       - uses: actions/checkout@v7
       - name: Search for unresolved conflict markers
         run: ./scripts/check-conflict-markers.sh
+      - name: Validate professor demo handoff script
+        run: bash -n scripts/demo-handoff.sh
+      - name: Validate release packaging contract
+        run: bash scripts/release-verify.sh
+      - name: Validate academic submission contract
+        run: bash scripts/academic-submission-verify.sh
 
   backend:
     runs-on: ubuntu-latest
@@ -34,10 +40,16 @@ jobs:
         run: python -m py_compile .github/scripts/ai_review.py
       - name: Run backend tests with coverage
         run: python -m pytest --cov=backend --cov-report=term-missing --cov-report=xml --cov-fail-under=70 -q
+      - name: Validate member project onboarding contracts
+        run: python -m backend.project_check
       - name: Fresh database initialization and data sync
         run: |
           python -m backend.database.init_db --seed
           python -m backend.database.sync_data
+        env:
+          DATABASE_PATH: /tmp/ci-app.db
+      - name: Smoke test final delivery preflight
+        run: python -m backend.delivery_preflight --report-only
         env:
           DATABASE_PATH: /tmp/ci-app.db
 

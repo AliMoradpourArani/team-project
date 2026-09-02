@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { useI18n } from "../i18n";
 import type { Activity } from "../types";
@@ -30,9 +30,25 @@ export default function CalendarView({ activities }: Props) {
   const initialMonth = activities.at(-1)?.date.slice(0, 7) ?? new Date().toISOString().slice(0, 7);
   const [month, setMonth] = useState(initialMonth);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const knownActivityDates = useRef(
+    new Map(activities.map((activity) => [activity.id, activity.date])),
+  );
   const [year, monthNumber] = month.split("-").map(Number);
   const daysInMonth = new Date(year, monthNumber, 0).getDate();
   const firstDay = new Date(year, monthNumber - 1, 1).getDay();
+
+  useEffect(() => {
+    const changedActivity = [...activities]
+      .reverse()
+      .find((activity) => knownActivityDates.current.get(activity.id) !== activity.date);
+    knownActivityDates.current = new Map(
+      activities.map((activity) => [activity.id, activity.date]),
+    );
+    if (changedActivity) {
+      setMonth(changedActivity.date.slice(0, 7));
+      setSelectedDate(changedActivity.date);
+    }
+  }, [activities]);
 
   const byDate = useMemo(() => {
     const map = new Map<string, Activity[]>();

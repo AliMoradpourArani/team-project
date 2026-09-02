@@ -26,11 +26,19 @@ def test_initialize_database_creates_schema_from_scratch(tmp_path):
         "004_add_activity_status",
         "005_create_auth",
         "006_add_user_github_username",
+        "007_create_project_run_history",
+        "008_create_project_reviews",
+        "009_create_submissions",
     ]
     with connect(database_path) as connection:
-        assert row_count(connection, "schema_migrations") == 6
+        assert row_count(connection, "schema_migrations") == 9
         assert row_count(connection, "auth_accounts") == 0
         assert row_count(connection, "auth_sessions") == 0
+        assert row_count(connection, "project_run_history") == 0
+        assert row_count(connection, "project_reviews") == 0
+        assert row_count(connection, "submission_settings") == 1
+        assert row_count(connection, "project_submissions") == 0
+        assert row_count(connection, "submission_releases") == 0
         columns = {row[1] for row in connection.execute("PRAGMA table_info(users)")}
         assert "github_username" in columns
 
@@ -122,19 +130,19 @@ def test_duplicate_migration_prefix_is_rejected(tmp_path):
     from backend.database.init_db import MIGRATIONS_ROOT
     from backend.database.source_files import REPOSITORY_ROOT
 
-    first = MIGRATIONS_ROOT / "007_first.sql"
-    second = MIGRATIONS_ROOT / "007_second.sql"
+    first = MIGRATIONS_ROOT / "010_first.sql"
+    second = MIGRATIONS_ROOT / "010_second.sql"
     first.write_text("CREATE TABLE first_probe (id TEXT);", encoding="utf-8")
     second.write_text("CREATE TABLE second_probe (id TEXT);", encoding="utf-8")
     try:
-        with pytest.raises(RuntimeError, match="Duplicate migration prefix '007'"):
+        with pytest.raises(RuntimeError, match="Duplicate migration prefix '010'"):
             initialize_database(tmp_path / "fresh.db")
         with connect(tmp_path / "fresh.db") as connection:
             assert row_count(connection, "schema_migrations") == 0
     finally:
         first.unlink()
         second.unlink()
-    assert not list(REPOSITORY_ROOT.glob("backend/database/migrations/007_*.sql"))
+    assert not list(REPOSITORY_ROOT.glob("backend/database/migrations/010_*.sql"))
 
 
 def test_sync_deletes_rows_removed_from_source_files(tmp_path, monkeypatch):
@@ -155,6 +163,11 @@ def test_sync_deletes_rows_removed_from_source_files(tmp_path, monkeypatch):
         '"project_id": null}]}',
         encoding="utf-8",
     )
+    (data_root / "projects" / "solo-project.json").write_text(
+        '{"id": "solo-project", "owner_id": "solo", "name": "Solo", '
+        '"description": "Project", "technology": ["python"], "status": "active"}',
+        encoding="utf-8",
+    )
     monkeypatch.setattr(source_files, "DATA_ROOT", data_root)
 
     database_path = tmp_path / "fresh.db"
@@ -163,9 +176,12 @@ def test_sync_deletes_rows_removed_from_source_files(tmp_path, monkeypatch):
         sync_source_data(connection)
         assert row_count(connection, "users") == 1
         assert row_count(connection, "activities") == 1
+        assert row_count(connection, "projects") == 1
 
     (user_dir / "2026-01-01.json").unlink()
+    (data_root / "projects" / "solo-project.json").unlink()
     with connect(database_path) as connection:
         sync_source_data(connection)
         assert row_count(connection, "activities") == 0
+        assert row_count(connection, "projects") == 0
         assert row_count(connection, "users") == 1

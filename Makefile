@@ -1,6 +1,6 @@
 # Convenience wrappers. Every command here also exists as a documented script.
 
-.PHONY: setup test lint format db-init db-sync db-reset auth-bootstrap dev check
+.PHONY: setup test lint format db-init db-sync db-reset auth-bootstrap project-check delivery-preflight delivery-preflight-report demo-handoff release-verify release-package release-tag academic-submission-verify academic-submission academic-freeze-verify dev check
 
 setup:            ## Create venv, install dependencies, initialize DB with data
 	./scripts/setup.sh
@@ -27,6 +27,36 @@ db-reset:         ## Delete the local dev database (safe, fixed path)
 
 auth-bootstrap:   ## Interactively create/rotate a student or professor login
 	.venv/bin/python -m backend.auth.bootstrap
+
+project-check:     ## Validate onboarding gates; set PROJECT_ID=<id> to require one project to be ready
+	.venv/bin/python -m backend.project_check $(if $(PROJECT_ID),--project-id $(PROJECT_ID),)
+
+delivery-preflight: ## Strict final-delivery gate; exits nonzero until the release candidate is ready
+	.venv/bin/python -m backend.delivery_preflight
+
+delivery-preflight-report: ## Print current final-delivery blockers without failing
+	.venv/bin/python -m backend.delivery_preflight --report-only
+
+demo-handoff:     ## Prepare local professor demo state and print review/start instructions
+	bash ./scripts/demo-handoff.sh
+
+release-verify:   ## Validate VERSION, release notes, checklist, and release script syntax
+	bash ./scripts/release-verify.sh
+
+release-package:  ## Build checksum-verified source artifact after strict delivery preflight
+	bash ./scripts/build-release-package.sh
+
+release-tag:      ## Create a guarded annotated local release tag; requires verified Phase 14 academic bundle
+	bash ./scripts/tag-release.sh
+
+academic-submission-verify: ## Validate academic bundle/freeze contract without requiring final runtime readiness
+	bash ./scripts/academic-submission-verify.sh
+
+academic-submission: ## Build final university handoff bundle after strict preflight on synced main
+	bash ./scripts/build-academic-submission.sh
+
+academic-freeze-verify: ## Verify final academic bundle, checksums, commit binding, and freeze state before tagging
+	bash ./scripts/academic-freeze-verify.sh
 
 dev:              ## Print the two development server commands
 	@echo "Backend:  .venv/bin/python -m uvicorn backend.app.main:app --reload"

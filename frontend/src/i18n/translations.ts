@@ -14,6 +14,8 @@ export const LANGUAGES: {
 const en = {
   "nav.home": "Home",
   "nav.aliWorkspace": "Ali-Workspace",
+  "nav.teamDashboard": "Team dashboard",
+  "nav.myDashboard": "My dashboard",
   "header.signOut": "Sign out",
   "header.protectedWorkspace": "Protected local workspace",
   "header.language": "Language",
@@ -145,6 +147,8 @@ export type TranslationKey = keyof typeof en;
 const fa: Partial<Record<TranslationKey, string>> = {
   "nav.home": "خانه",
   "nav.aliWorkspace": "فضای کاری علی",
+  "nav.teamDashboard": "داشبورد تیم",
+  "nav.myDashboard": "داشبورد من",
   "header.signOut": "خروج از حساب",
   "header.protectedWorkspace": "فضای کاری محلی محافظت‌شده",
   "header.language": "زبان",
@@ -275,6 +279,8 @@ const fa: Partial<Record<TranslationKey, string>> = {
 const de: Partial<Record<TranslationKey, string>> = {
   "nav.home": "Start",
   "nav.aliWorkspace": "Ali-Arbeitsbereich",
+  "nav.teamDashboard": "Team-Dashboard",
+  "nav.myDashboard": "Mein Dashboard",
   "header.signOut": "Abmelden",
   "header.protectedWorkspace": "Geschützter lokaler Arbeitsbereich",
   "header.language": "Sprache",

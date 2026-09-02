@@ -1,5 +1,6 @@
 export type ActivityStatus = "planned" | "in-progress" | "completed";
 export type AuthRole = "student" | "professor";
+export type ProjectReviewStatus = "in-review" | "changes-requested" | "approved";
 
 export interface User {
   id: string;
@@ -32,6 +33,231 @@ export interface Project {
   description: string;
   technology: string[];
   status: string;
+}
+
+export interface ProjectIntegration {
+  projectId: string;
+  userId: string;
+  name: string;
+  integrationStatus: "ready" | "not-integrated" | "invalid";
+  runnerEnabled: boolean;
+  runnable: boolean;
+  previewable?: boolean;
+  demoMode?: "execute" | "preview" | null;
+  projectType: string | null;
+  runner: string | null;
+  entryPoint: string | null;
+  repositoryPath: string | null;
+  reason: string | null;
+}
+
+export interface ProjectHealthCheck {
+  key: string;
+  label: string;
+  passed: boolean;
+  detail: string;
+}
+
+export interface ProjectOnboardingGate {
+  key: string;
+  label: string;
+  passed: boolean;
+  blocking: boolean;
+  detail: string;
+  remediation: string;
+}
+
+export interface ProjectContractOption {
+  projectType: "cli" | "static-web" | "api";
+  runner: "python-script-v1" | "static-site-v1" | "openapi-json-v1";
+  demoMode: "execute" | "preview";
+  entryPointExample: string;
+}
+
+export interface ProjectOnboarding {
+  projectId: string;
+  userId: string;
+  name: string;
+  status: "ready" | "pending" | "invalid";
+  readyForSubmission: boolean;
+  completedGates: number;
+  totalGates: number;
+  expectedMetadataPath: string;
+  expectedRepositoryPath: string;
+  localCheckCommand: string;
+  nextAction: string;
+  gates: ProjectOnboardingGate[];
+  supportedContracts: ProjectContractOption[];
+}
+
+export interface ProjectPreview {
+  kind: "static-html" | "openapi-json";
+  content: string;
+  summary: string;
+  truncated: boolean;
+}
+
+export interface ProjectRunHistoryItem {
+  id: number;
+  projectId: string;
+  runner: string;
+  exitCode: number | null;
+  timedOut: boolean;
+  durationMs: number;
+  stdoutPreview: string;
+  stderrPreview: string;
+  outputTruncated: boolean;
+  createdAt: string;
+}
+
+export interface ProjectDetail {
+  project: Project;
+  integration: ProjectIntegration;
+  health: ProjectHealthCheck[];
+  healthPassed: number;
+  healthTotal: number;
+  readme: string | null;
+  preview?: ProjectPreview | null;
+  recentRuns: ProjectRunHistoryItem[];
+}
+
+export interface ProjectRunResult {
+  projectId: string;
+  runner: string;
+  exitCode: number | null;
+  timedOut: boolean;
+  durationMs: number;
+  stdout: string;
+  stderr: string;
+  outputTruncated: boolean;
+}
+
+export interface ProjectReviewInput {
+  status: ProjectReviewStatus;
+  functionalityScore: number;
+  codeQualityScore: number;
+  documentationScore: number;
+  integrationScore: number;
+  contributionScore: number;
+  feedback: string;
+}
+
+export interface ProjectReview extends ProjectReviewInput {
+  projectId: string;
+  reviewerUsername: string;
+  totalScore: number;
+  updatedAt: string;
+}
+
+export interface ProfessorReviewQueueItem {
+  project: Project;
+  review: ProjectReview | null;
+}
+
+export interface ProfessorReviewQueueData {
+  totalProjects: number;
+  pending: number;
+  inReview: number;
+  changesRequested: number;
+  approved: number;
+  items: ProfessorReviewQueueItem[];
+}
+
+export interface SubmissionSettings {
+  isOpen: boolean;
+  deadlineAt: string | null;
+  acceptingSubmissions: boolean;
+  updatedByUsername: string | null;
+  updatedAt: string;
+}
+
+export interface SubmissionSettingsInput {
+  isOpen: boolean;
+  deadlineAt: string | null;
+}
+
+export interface ProjectSubmission {
+  id: number;
+  projectId: string;
+  userId: string;
+  submittedByUsername: string;
+  version: number;
+  snapshotDigest: string;
+  sourceFileCount: number;
+  sourceTotalBytes: number;
+  reviewStatus: string | null;
+  reviewTotalScore: number | null;
+  submittedAt: string;
+}
+
+export interface ProjectSubmissionStatus {
+  settings: SubmissionSettings;
+  latestSubmission: ProjectSubmission | null;
+  historyCount: number;
+  canSubmit: boolean;
+  blockedReason: string | null;
+}
+
+export interface ProfessorSubmissionItem {
+  project: Project;
+  latestSubmission: ProjectSubmission | null;
+  review: ProjectReview | null;
+}
+
+export interface ProfessorSubmissionDashboardData {
+  settings: SubmissionSettings;
+  totalProjects: number;
+  submittedProjects: number;
+  pendingProjects: number;
+  approvedProjects: number;
+  releaseReady: boolean;
+  releaseBlockedReason: string | null;
+  items: ProfessorSubmissionItem[];
+}
+
+export interface DeliveryPreflightGate {
+  key: string;
+  label: string;
+  passed: boolean;
+  blocking: boolean;
+  detail: string;
+  remediation: string;
+}
+
+export interface ProjectDeliveryPreflight {
+  project: Project;
+  status: "ready" | "blocked";
+  latestSubmissionVersion: number | null;
+  reviewStatus: string | null;
+  reviewAfterSubmission: boolean;
+  gates: DeliveryPreflightGate[];
+}
+
+export interface DeliveryPreflightData {
+  status: "ready" | "blocked";
+  releaseCandidateReady: boolean;
+  totalProjects: number;
+  readyProjects: number;
+  blockingProjects: number;
+  blockerCount: number;
+  generatedAt: string;
+  localCheckCommand: string;
+  summary: string;
+  globalGates: DeliveryPreflightGate[];
+  projects: ProjectDeliveryPreflight[];
+}
+
+export interface SubmissionReleaseSummary {
+  id: number;
+  label: string;
+  manifestDigest: string;
+  projectCount: number;
+  createdByUsername: string;
+  createdAt: string;
+}
+
+export interface SubmissionReleaseDetail extends SubmissionReleaseSummary {
+  manifest: Record<string, unknown>;
 }
 
 export interface AuthSession {

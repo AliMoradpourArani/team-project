@@ -44,6 +44,20 @@ def login(client: TestClient, username: str, password: str) -> str:
     return response.json()["csrfToken"]
 
 
+def review_payload(**overrides):
+    payload = {
+        "status": "in-review",
+        "functionalityScore": 24,
+        "codeQualityScore": 17,
+        "documentationScore": 12,
+        "integrationScore": 18,
+        "contributionScore": 13,
+        "feedback": "Strong integration. Tighten error-state documentation.",
+    }
+    payload.update(overrides)
+    return payload
+
+
 def test_health_remains_public(client):
     assert client.get("/api/health").json() == {"status": "ok"}
     assert client.get("/health").json() == {"status": "ok"}
@@ -56,6 +70,7 @@ def test_protected_api_requires_authentication(client):
         "/api/projects",
         "/api/professor/dashboard",
         "/api/professor/github",
+        "/api/professor/reviews",
     ]:
         assert client.get(path).status_code == 401
 
@@ -140,7 +155,7 @@ def test_student_activity_crud_requires_csrf_and_ownership(client):
     assert all(item["id"] != activity_id for item in client.get("/api/activities").json())
 
 
-def test_professor_sees_team_dashboard_and_github_panel_but_cannot_write(client):
+def test_professor_sees_team_dashboard_and_github_panel_but_cannot_write_shared_data(client):
     csrf = login(client, "professor", PROFESSOR_PASSWORD)
 
     users = client.get("/api/users")
@@ -172,10 +187,80 @@ def test_professor_sees_team_dashboard_and_github_panel_but_cannot_write(client)
     assert blocked.status_code == 403
 
 
+def test_professor_review_crud_and_student_feedback_visibility(client):
+    professor_csrf = login(client, "professor", PROFESSOR_PASSWORD)
+
+    queue = client.get("/api/professor/reviews")
+    assert queue.status_code == 200
+    assert queue.json()["totalProjects"] == 3
+    assert queue.json()["pending"] == 3
+
+    assert client.get("/api/projects/team-foundation/review").json() is None
+    assert client.put("/api/projects/team-foundation/review", json=review_payload()).status_code == 403
+
+    saved = client.put(
+        "/api/projects/team-foundation/review",
+        json=review_payload(),
+        headers={"X-CSRF-Token": professor_csrf},
+    )
+    assert saved.status_code == 200
+    assert saved.json()["projectId"] == "team-foundation"
+    assert saved.json()["reviewerUsername"] == "professor"
+    assert saved.json()["totalScore"] == 84
+    assert saved.json()["status"] == "in-review"
+
+    queue = client.get("/api/professor/reviews").json()
+    assert queue["pending"] == 2
+    assert queue["inReview"] == 1
+
+    updated = client.put(
+        "/api/projects/team-foundation/review",
+        json=review_payload(status="approved", functionalityScore=30, feedback="Approved."),
+        headers={"X-CSRF-Token": professor_csrf},
+    )
+    assert updated.status_code == 200
+    assert updated.json()["status"] == "approved"
+    assert updated.json()["totalScore"] == 90
+
+    student_csrf = login(client, "hossein", STUDENT_PASSWORD)
+    student_view = client.get("/api/projects/team-foundation/review")
+    assert student_view.status_code == 200
+    assert student_view.json()["status"] == "approved"
+    assert student_view.json()["feedback"] == "Approved."
+    assert client.get("/api/professor/reviews").status_code == 403
+    assert (
+        client.put(
+            "/api/projects/team-foundation/review",
+            json=review_payload(),
+            headers={"X-CSRF-Token": student_csrf},
+        ).status_code
+        == 403
+    )
+
+    professor_csrf = login(client, "professor", PROFESSOR_PASSWORD)
+    deleted = client.delete(
+        "/api/projects/team-foundation/review",
+        headers={"X-CSRF-Token": professor_csrf},
+    )
+    assert deleted.status_code == 204
+    assert client.get("/api/projects/team-foundation/review").json() is None
+
+
+def test_review_validation_enforces_rubric_bounds(client):
+    csrf = login(client, "professor", PROFESSOR_PASSWORD)
+    response = client.put(
+        "/api/projects/team-foundation/review",
+        json=review_payload(functionalityScore=31),
+        headers={"X-CSRF-Token": csrf},
+    )
+    assert response.status_code == 422
+
+
 def test_student_cannot_open_professor_dashboards(client):
     login(client, "hossein", STUDENT_PASSWORD)
     assert client.get("/api/professor/dashboard").status_code == 403
     assert client.get("/api/professor/github").status_code == 403
+    assert client.get("/api/professor/reviews").status_code == 403
 
 
 def test_logout_revokes_session(client):

@@ -631,55 +631,67 @@ h2 {
   color: #4f806b;
 }
 
-/* ---- Pinar Persian font (local family) ---- */
+/* ---- Sahel Persian font (open-source, OFL-licensed) ---- */
 @font-face {
-  font-family: "Pinar";
-  src: url("./fonts/Pinar-Light.ttf") format("truetype");
+  font-family: "Sahel";
+  src:
+    url("./fonts/Sahel-Light.woff2") format("woff2"),
+    url("./fonts/Sahel-Light.woff") format("woff");
   font-weight: 300;
   font-style: normal;
   font-display: swap;
 }
 @font-face {
-  font-family: "Pinar";
-  src: url("./fonts/Pinar-Regular.ttf") format("truetype");
+  font-family: "Sahel";
+  src:
+    url("./fonts/Sahel.woff2") format("woff2"),
+    url("./fonts/Sahel.woff") format("woff");
   font-weight: 400;
   font-style: normal;
   font-display: swap;
 }
 @font-face {
-  font-family: "Pinar";
-  src: url("./fonts/Pinar-Medium.ttf") format("truetype");
+  font-family: "Sahel";
+  src:
+    url("./fonts/Sahel-SemiBold.woff2") format("woff2"),
+    url("./fonts/Sahel-SemiBold.woff") format("woff");
   font-weight: 500;
   font-style: normal;
   font-display: swap;
 }
 @font-face {
-  font-family: "Pinar";
-  src: url("./fonts/Pinar-SemiBold.ttf") format("truetype");
+  font-family: "Sahel";
+  src:
+    url("./fonts/Sahel-SemiBold.woff2") format("woff2"),
+    url("./fonts/Sahel-SemiBold.woff") format("woff");
   font-weight: 600;
   font-style: normal;
   font-display: swap;
 }
 @font-face {
-  font-family: "Pinar";
-  src: url("./fonts/Pinar-Bold.ttf") format("truetype");
+  font-family: "Sahel";
+  src:
+    url("./fonts/Sahel-Bold.woff2") format("woff2"),
+    url("./fonts/Sahel-Bold.woff") format("woff");
   font-weight: 700;
   font-style: normal;
   font-display: swap;
 }
 @font-face {
-  font-family: "Pinar";
-  src: url("./fonts/Pinar-ExtraBold.ttf") format("truetype");
+  font-family: "Sahel";
+  src:
+    url("./fonts/Sahel-Black.woff2") format("woff2"),
+    url("./fonts/Sahel-Black.woff") format("woff");
   font-weight: 800;
   font-style: normal;
   font-display: swap;
 }
 
-/* ---- Persian (RTL) typography: Pinar family ---- */
+/* ---- Persian (RTL) typography: Sahel family ---- */
 [dir="rtl"] {
-  font-family: "Pinar", Vazirmatn, Tahoma, sans-serif;
+  font-family: "Sahel", Tahoma, sans-serif;
 }
-/* Small uppercase labels also use Pinar in Persian instead of the mono/sans accents */
+/* Small uppercase labels also use Sahel in Persian instead of the mono/sans accents */
 [dir="rtl"] .header-label,
 [dir="rtl"] .member-count,
 [dir="rtl"] time,
@@ -687,11 +699,11 @@ h2 {
 [dir="rtl"] .language-trigger,
 [dir="rtl"] .language-name,
 [dir="rtl"] .eyebrow {
-  font-family: "Pinar", Tahoma, sans-serif;
+  font-family: "Sahel", Tahoma, sans-serif;
   letter-spacing: 0;
   text-transform: none;
 }
-/* Different Pinar weights: headings (titr) use ExtraBold/Bold, emphasis SemiBold */
+/* Different Sahel weights: headings (titr) use Black/Bold, emphasis SemiBold */
 [dir="rtl"] h1 {
   font-weight: 800;
 }

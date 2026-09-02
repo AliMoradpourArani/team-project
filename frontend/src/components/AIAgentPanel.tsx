@@ -88,7 +88,9 @@ export default function AIAgentPanel({ projectId }: AIAgentPanelProps) {
         <div>
           <p className="eyebrow">Persistent agent</p>
           <h3 id="ai-agent-title">Project memory & chat</h3>
-          <p>Keep context between sessions and replan from tracked work, health checks, and GitHub.</p>
+          <p>
+            Keep context between sessions and replan from tracked work, health checks, and GitHub.
+          </p>
         </div>
         <button type="button" className="secondary-button" onClick={startThread} disabled={busy}>
           New thread

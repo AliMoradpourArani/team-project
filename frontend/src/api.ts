@@ -91,7 +91,8 @@ export const getUsers = (): Promise<User[]> => getCollection<User>("users");
 export const getActivities = (): Promise<Activity[]> => getCollection<Activity>("activities");
 export const getProjects = (): Promise<Project[]> => getCollection<Project>("projects");
 export const getAIStatus = (): Promise<AIStatus> => request<AIStatus>("/api/ai/status");
-export const getAIThreads = (): Promise<AIAgentThread[]> => request<AIAgentThread[]>("/api/ai/threads");
+export const getAIThreads = (): Promise<AIAgentThread[]> =>
+  request<AIAgentThread[]>("/api/ai/threads");
 export const getProjectIntegrations = (): Promise<ProjectIntegration[]> =>
   request<ProjectIntegration[]>("/api/projects/integrations");
 export const getProjectOnboardingList = (): Promise<ProjectOnboarding[]> =>

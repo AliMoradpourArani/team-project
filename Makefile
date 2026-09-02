@@ -1,6 +1,6 @@
 # Convenience wrappers. Every command here also exists as a documented script.
 
-.PHONY: setup test lint format db-init db-sync db-reset auth-bootstrap dev check
+.PHONY: setup test lint format db-init db-sync db-reset auth-bootstrap project-check dev check
 
 setup:            ## Create venv, install dependencies, initialize DB with data
 	./scripts/setup.sh
@@ -27,6 +27,9 @@ db-reset:         ## Delete the local dev database (safe, fixed path)
 
 auth-bootstrap:   ## Interactively create/rotate a student or professor login
 	.venv/bin/python -m backend.auth.bootstrap
+
+project-check:     ## Validate onboarding gates; set PROJECT_ID=<id> to require one project to be ready
+	.venv/bin/python -m backend.project_check $(if $(PROJECT_ID),--project-id $(PROJECT_ID),)
 
 dev:              ## Print the two development server commands
 	@echo "Backend:  .venv/bin/python -m uvicorn backend.app.main:app --reload"

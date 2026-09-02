@@ -9,6 +9,7 @@ import type {
   Project,
   ProjectDetail,
   ProjectIntegration,
+  ProjectOnboarding,
   ProjectReview,
   ProjectReviewInput,
   ProjectRunResult,
@@ -86,8 +87,12 @@ export const getActivities = (): Promise<Activity[]> => getCollection<Activity>(
 export const getProjects = (): Promise<Project[]> => getCollection<Project>("projects");
 export const getProjectIntegrations = (): Promise<ProjectIntegration[]> =>
   request<ProjectIntegration[]>("/api/projects/integrations");
+export const getProjectOnboardingList = (): Promise<ProjectOnboarding[]> =>
+  request<ProjectOnboarding[]>("/api/projects/onboarding");
 export const getProjectDetail = (projectId: string): Promise<ProjectDetail> =>
   request<ProjectDetail>(`/api/projects/${projectId}/detail`);
+export const getProjectOnboarding = (projectId: string): Promise<ProjectOnboarding> =>
+  request<ProjectOnboarding>(`/api/projects/${projectId}/onboarding`);
 export const getProjectReview = (projectId: string): Promise<ProjectReview | null> =>
   request<ProjectReview | null>(`/api/projects/${projectId}/review`);
 export const getProjectSubmissionStatus = (projectId: string): Promise<ProjectSubmissionStatus> =>

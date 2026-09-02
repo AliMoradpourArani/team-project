@@ -19,6 +19,41 @@ projects/<user_id>/<project-directory>/
 
 The `id` must also exist in `data/projects/<id>.json`, and the authoritative `owner_id` must match.
 
+## Phase 10 onboarding gate
+
+Before opening a PR, run the exact readiness check for your tracked project:
+
+```bash
+make project-check PROJECT_ID=<project_id>
+```
+
+Example:
+
+```bash
+make project-check PROJECT_ID=team-foundation
+```
+
+A single-project check exits nonzero until all six blocking gates pass. It prints the failed gate and the concrete remediation.
+
+The six gates are:
+
+1. tracked project metadata
+2. valid typed `project.json`
+3. owner mapping
+4. repository/entry-point path containment
+5. supported demo contract
+6. readable `README.md`
+
+Repository-wide CI also runs:
+
+```bash
+python -m backend.project_check
+```
+
+In repository-wide mode, a project that has not been integrated yet is `pending` and does not fail CI. An attempted but malformed integration is `invalid` and does fail CI. Once every team member has a real project, the Tech Lead can use `python -m backend.project_check --strict` to require every tracked project to be ready.
+
+The generic project page shows the same gate model and remediation as the CLI. There is one source of readiness truth for student, professor, local checks, and CI.
+
 ## Supported Phase 7 demo contracts
 
 ### 1. Controlled Python CLI execution
@@ -88,9 +123,10 @@ Before opening a PR, verify:
 - [ ] entry point exists inside the project directory
 - [ ] no secrets or credentials are committed
 - [ ] no free-form `run`, `build`, `command`, or shell fields are added to the manifest
+- [ ] `make project-check PROJECT_ID=<project_id>` reports `READY`
 - [ ] local tests pass
 - [ ] PR CI/security checks are green
 
-After merge, the project detail page at `/projects/<project_id>` shows health checks, README, the typed demo contract, safe preview when applicable, and runtime history for executed demos.
+After merge, the project detail page at `/projects/<project_id>` shows onboarding gates, health checks, README, the typed demo contract, safe preview when applicable, and runtime history for executed demos.
 
-The local Python runner is opt-in and is **not** a sandbox for hostile code. Static/OpenAPI preview contracts intentionally do not start project processes.
+The local Python runner is opt-in and is **not** a sandbox for hostile code. Static/OpenAPI preview contracts intentionally do not start project processes. Phase 9 performs separate frozen-source safety checks when a student submits a project.

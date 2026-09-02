@@ -4,6 +4,7 @@ import { getProjectDetail, runProject } from "../api";
 import "../project-runner.css";
 import type { AuthRole, ProjectDetail, ProjectRunResult } from "../types";
 import ProjectDemoPreview from "./ProjectDemoPreview";
+import ProjectOnboardingPanel from "./ProjectOnboardingPanel";
 import ProjectReviewPanel from "./ProjectReviewPanel";
 import ProjectSubmissionPanel from "./ProjectSubmissionPanel";
 import StatusMessage from "./StatusMessage";
@@ -144,6 +145,7 @@ export default function ProjectDetailPage({ projectId, backHref, role }: Props) 
         </section>
       </div>
 
+      <ProjectOnboardingPanel projectId={projectId} role={role} />
       <ProjectReviewPanel projectId={projectId} role={role} />
       <ProjectSubmissionPanel projectId={projectId} role={role} />
 

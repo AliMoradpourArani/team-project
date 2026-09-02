@@ -9,8 +9,16 @@ vi.mock("../api", () => ({
   runProject: vi.fn(),
 }));
 
+vi.mock("./ProjectOnboardingPanel", () => ({
+  default: () => <div>Project onboarding panel</div>,
+}));
+
 vi.mock("./ProjectReviewPanel", () => ({
   default: () => <div>Professor review panel</div>,
+}));
+
+vi.mock("./ProjectSubmissionPanel", () => ({
+  default: () => <div>Project submission panel</div>,
 }));
 
 const getDetail = vi.mocked(getProjectDetail);
@@ -82,7 +90,9 @@ describe("ProjectDetailPage", () => {
     ).toBeInTheDocument();
     expect(screen.getByText("1/1 checks passing")).toBeInTheDocument();
     expect(screen.getByText("Manifest is valid.")).toBeInTheDocument();
+    expect(screen.getByText("Project onboarding panel")).toBeInTheDocument();
     expect(screen.getByText("Professor review panel")).toBeInTheDocument();
+    expect(screen.getByText("Project submission panel")).toBeInTheDocument();
     expect(screen.getByText(/Demo documentation/)).toBeInTheDocument();
     expect(screen.getByText("history-ok")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "← Back" })).toHaveAttribute("href", "/users/hossein");

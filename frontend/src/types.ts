@@ -58,6 +58,38 @@ export interface ProjectHealthCheck {
   detail: string;
 }
 
+export interface ProjectOnboardingGate {
+  key: string;
+  label: string;
+  passed: boolean;
+  blocking: boolean;
+  detail: string;
+  remediation: string;
+}
+
+export interface ProjectContractOption {
+  projectType: "cli" | "static-web" | "api";
+  runner: "python-script-v1" | "static-site-v1" | "openapi-json-v1";
+  demoMode: "execute" | "preview";
+  entryPointExample: string;
+}
+
+export interface ProjectOnboarding {
+  projectId: string;
+  userId: string;
+  name: string;
+  status: "ready" | "pending" | "invalid";
+  readyForSubmission: boolean;
+  completedGates: number;
+  totalGates: number;
+  expectedMetadataPath: string;
+  expectedRepositoryPath: string;
+  localCheckCommand: string;
+  nextAction: string;
+  gates: ProjectOnboardingGate[];
+  supportedContracts: ProjectContractOption[];
+}
+
 export interface ProjectPreview {
   kind: "static-html" | "openapi-json";
   content: string;

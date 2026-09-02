@@ -1,8 +1,9 @@
-"""Project routes with role-based visibility, reviews, submissions, and controlled execution."""
+"""Project routes with role-based visibility, onboarding, reviews, submissions, and controlled execution."""
 
 from fastapi import APIRouter, HTTPException, Response, status
 
 from ...schemas.api import ProjectResponse
+from ...schemas.project_onboarding import ProjectOnboardingResponse
 from ...schemas.project_review import ProjectReviewInput, ProjectReviewResponse
 from ...schemas.project_runner import (
     ProjectDetailResponse,
@@ -10,7 +11,13 @@ from ...schemas.project_runner import (
     ProjectRunResponse,
 )
 from ...schemas.submission import ProjectSubmissionResponse, ProjectSubmissionStatusResponse
-from ...services import project_reviews, project_runner, queries, submissions
+from ...services import (
+    project_onboarding,
+    project_reviews,
+    project_runner,
+    queries,
+    submissions,
+)
 from ..auth_dependencies import CsrfPrincipal, CurrentPrincipal, ProfessorCsrfPrincipal
 
 router = APIRouter(prefix="/api/projects", tags=["projects"])
@@ -41,11 +48,30 @@ def list_project_integrations(principal: CurrentPrincipal) -> list[ProjectIntegr
     return project_runner.list_integrations(_visible_projects(principal))
 
 
+@router.get("/onboarding", response_model=list[ProjectOnboardingResponse])
+def list_project_onboarding(principal: CurrentPrincipal) -> list[ProjectOnboardingResponse]:
+    try:
+        return project_onboarding.list_onboarding(_visible_projects(principal))
+    except project_runner.ProjectRunnerError as error:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(error)) from error
+
+
 @router.get("/{project_id}/detail", response_model=ProjectDetailResponse)
 def get_project_detail(project_id: str, principal: CurrentPrincipal) -> ProjectDetailResponse:
     project = _project_for_principal(project_id, principal)
     try:
         return project_runner.project_detail(project)
+    except project_runner.ProjectRunnerError as error:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(error)) from error
+
+
+@router.get("/{project_id}/onboarding", response_model=ProjectOnboardingResponse)
+def get_project_onboarding(
+    project_id: str, principal: CurrentPrincipal
+) -> ProjectOnboardingResponse:
+    project = _project_for_principal(project_id, principal)
+    try:
+        return project_onboarding.get_onboarding(project)
     except project_runner.ProjectRunnerError as error:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(error)) from error
 
@@ -79,8 +105,22 @@ def delete_project_review(project_id: str, principal: ProfessorCsrfPrincipal) ->
 def get_project_submission(
     project_id: str, principal: CurrentPrincipal
 ) -> ProjectSubmissionStatusResponse:
-    _project_for_principal(project_id, principal)
-    return submissions.get_project_status(project_id)
+    project = _project_for_principal(project_id, principal)
+    submission_status = submissions.get_project_status(project_id)
+    if not submission_status.canSubmit:
+        return submission_status
+    try:
+        onboarding = project_onboarding.get_onboarding(project)
+    except project_runner.ProjectRunnerError as error:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(error)) from error
+    if onboarding.readyForSubmission:
+        return submission_status
+    return submission_status.model_copy(
+        update={
+            "canSubmit": False,
+            "blockedReason": "Project onboarding gates must pass before submission.",
+        }
+    )
 
 
 @router.post("/{project_id}/submit", response_model=ProjectSubmissionResponse)

@@ -34,6 +34,8 @@ jobs:
         run: python -m py_compile .github/scripts/ai_review.py
       - name: Run backend tests with coverage
         run: python -m pytest --cov=backend --cov-report=term-missing --cov-report=xml --cov-fail-under=70 -q
+      - name: Validate member project onboarding contracts
+        run: python -m backend.project_check
       - name: Fresh database initialization and data sync
         run: |
           python -m backend.database.init_db --seed

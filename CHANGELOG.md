@@ -6,6 +6,15 @@ All notable project changes are recorded here. The project follows a lightweight
 
 ### Added
 
+- Phase 10 shared Member Project Onboarding & Integration Gates model for API, UI, local CLI, and CI
+- six blocking readiness gates for tracked metadata, manifest, owner mapping, paths, typed demo contract, and README
+- authenticated onboarding endpoints for visible project lists and per-project readiness
+- `make project-check PROJECT_ID=<id>` local teammate pre-PR validation with actionable remediation and nonzero exit until ready
+- repository-wide `python -m backend.project_check` CI validation that allows pending placeholders but rejects invalid attempted integrations
+- optional `--strict` project check for the final team-wide readiness freeze
+- generic frontend onboarding panel on every project detail page with expected paths, gate status, remediation, supported contracts, and the exact local command
+- `docs/member-project-onboarding.md` documenting teammate handoff, readiness states, CI behavior, and the Phase 9 boundary
+- Phase 10 backend/frontend tests covering ready, pending, invalid, ownership, and submission-readiness alignment
 - Phase 9 immutable, versioned project submissions with canonical SHA-256 snapshot fingerprints
 - professor-controlled submission window with optional timezone-aware deadline
 - student-owned frozen source snapshots with per-file SHA-256, bounded Base64 content, integration health, and review-at-submit metadata
@@ -21,7 +30,7 @@ All notable project changes are recorded here. The project follows a lightweight
 - professor review states: in-review, changes-requested, and approved; missing review means pending
 - professor project review queue with status counts and direct project links
 - project-level professor review create/update/reset endpoints protected by professor role + CSRF
-- student read-only visibility into feedback and rubric for their own projects
+- student read-only visibility into feedback and rubric for their own project
 - frontend review editor, read-only feedback panel, queue UI, unit tests, and Playwright review flow
 - `docs/project-review-evaluation.md` documenting the runtime-only evaluation boundary
 - Phase 7 typed CLI, static-web, and OpenAPI demo contracts
@@ -60,7 +69,10 @@ All notable project changes are recorded here. The project follows a lightweight
 
 ### Changed
 
-- API version is now `0.9.0`
+- API version is now `0.10.0`
+- Phase 9 submission status now reports `canSubmit=false` until Phase 10 onboarding gates are ready, while the actual submission mutation still revalidates server-side
+- project detail pages now show the same readiness model and remediation used by local project checks and CI
+- CODEOWNERS now protects onboarding schemas/services/CLI/UI/docs alongside existing runner, review, and submission boundaries
 - professor access remains read-only for shared student data; Phase 9 adds writes only to separate runtime submission settings and immutable release manifests
 - project detail pages now surface immutable submission state beside integration, demo, and professor review information
 - CODEOWNERS now protects submission/release backend services and frontend controls as high-risk Core paths

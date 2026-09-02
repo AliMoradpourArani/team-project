@@ -414,4 +414,3 @@ export const translations: Record<Language, Record<TranslationKey, string>> = {
   fa: { ...en, ...fa } as Record<TranslationKey, string>,
   de: { ...en, ...de } as Record<TranslationKey, string>,
 };
-

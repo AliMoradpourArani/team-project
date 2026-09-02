@@ -61,8 +61,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
 
   const setLang = useCallback((next: Language) => setLangState(next), []);
   const t = useCallback(
-    (key: TranslationKey, params?: Record<string, string | number>) =>
-      translate(lang, key, params),
+    (key: TranslationKey, params?: Record<string, string | number>) => translate(lang, key, params),
     [lang],
   );
 

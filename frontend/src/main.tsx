@@ -22,4 +22,3 @@ createRoot(rootElement).render(
     </ErrorBoundary>
   </StrictMode>,
 );
-

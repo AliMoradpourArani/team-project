@@ -89,7 +89,8 @@ function UserPage({ userId, readOnly }: { userId: string; readOnly: boolean }) {
   }
 
   if (error) return <StatusMessage error>{error}</StatusMessage>;
-  if (state.users.length === 0) return <StatusMessage>{t("app.loadingUserDashboard")}</StatusMessage>;
+  if (state.users.length === 0)
+    return <StatusMessage>{t("app.loadingUserDashboard")}</StatusMessage>;
   if (!user) {
     return (
       <div className="empty-state">

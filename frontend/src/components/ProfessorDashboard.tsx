@@ -141,9 +141,7 @@ export default function ProfessorDashboard() {
                   <strong>{activity.title}</strong>
                   <small>{names.get(activity.userId) ?? activity.userId}</small>
                 </div>
-                <span className={`pill ${activity.status}`}>
-                  {t(`status.${activity.status}`)}
-                </span>
+                <span className={`pill ${activity.status}`}>{t(`status.${activity.status}`)}</span>
                 <time>{activity.date}</time>
               </article>
             ))}

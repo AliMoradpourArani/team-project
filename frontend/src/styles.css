@@ -557,7 +557,9 @@ h2 {
   font-size: 0.74rem;
   gap: 6px;
   padding: 6px 12px;
-  transition: border-color 0.2s ease, color 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    color 0.2s ease;
 }
 .language-trigger:hover {
   border-color: #4f806b;
@@ -584,7 +586,10 @@ h2 {
   position: absolute;
   top: 100%;
   transform: translateY(-8px);
-  transition: opacity 0.22s ease, transform 0.22s ease, visibility 0.22s;
+  transition:
+    opacity 0.22s ease,
+    transform 0.22s ease,
+    visibility 0.22s;
   visibility: hidden;
   z-index: 60;
 }
@@ -643,4 +648,3 @@ h2 {
 [dir="rtl"] .progress-track span {
   float: right;
 }
-

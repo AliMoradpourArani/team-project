@@ -27,9 +27,7 @@ export default function TimelineView({ activities, onEdit, onDelete }: Props) {
         </div>
         <span className="member-count">{activities.length}</span>
       </div>
-      {groups.size === 0 ? (
-        <p className="status-message">{t("timeline.noActivities")}</p>
-      ) : null}
+      {groups.size === 0 ? <p className="status-message">{t("timeline.noActivities")}</p> : null}
       <div className="timeline-list">
         {[...groups.entries()].map(([date, items]) => (
           <section className="timeline-group" key={date}>

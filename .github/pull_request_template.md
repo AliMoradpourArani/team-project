@@ -12,10 +12,20 @@
 - [ ] Frontend lint/type/unit/build pass when applicable
 - [ ] E2E behavior is covered or not applicable
 - [ ] Fresh database init/sync still works when data/database code changed
-- [ ] No secrets, generated databases, or unrelated files are included
+- [ ] No secrets, generated databases, personal data, or unrelated files are included
 - [ ] Documentation/contracts were updated if behavior changed
 - [ ] New architecture decisions have an ADR when needed
 - [ ] Feature branch is up to date with `main` (`git merge main`)
+
+## Contribution and IP checks
+
+- [ ] I have completed the required ForgeFlow onboarding/agreement before receiving private Core access
+- [ ] I created this contribution for the authorized ForgeFlow engagement, or I have documented any pre-existing material used
+- [ ] I did not add third-party code, models, datasets, fonts, assets, or dependencies without a compatible licence and project approval
+- [ ] I did not copy confidential code or materials from another employer, client, university, or private repository
+- [ ] Any AI-assisted code has been reviewed for provenance, licence risk, secrets, correctness, and security
+
+> These PR checkboxes are an engineering control and record only. They do not replace the signed Developer/IP/Confidentiality Agreement.
 
 ### Member project integration (when this PR adds/changes `projects/<owner>/...`)
 

@@ -1,3 +1,4 @@
+import type { AIAgentReply, AIAgentThread } from "./ai-agent-types";
 import type {
   Activity,
   ActivityInput,
@@ -90,6 +91,7 @@ export const getUsers = (): Promise<User[]> => getCollection<User>("users");
 export const getActivities = (): Promise<Activity[]> => getCollection<Activity>("activities");
 export const getProjects = (): Promise<Project[]> => getCollection<Project>("projects");
 export const getAIStatus = (): Promise<AIStatus> => request<AIStatus>("/api/ai/status");
+export const getAIThreads = (): Promise<AIAgentThread[]> => request<AIAgentThread[]>("/api/ai/threads");
 export const getProjectIntegrations = (): Promise<ProjectIntegration[]> =>
   request<ProjectIntegration[]>("/api/projects/integrations");
 export const getProjectOnboardingList = (): Promise<ProjectOnboarding[]> =>
@@ -122,6 +124,24 @@ export async function runAIWorkspace(payload: AIWorkspaceInput): Promise<AIWorks
     method: "POST",
     body: JSON.stringify(payload),
   });
+}
+
+export async function createAIThread(projectId: string | null): Promise<AIAgentThread> {
+  return request<AIAgentThread>("/api/ai/threads", {
+    method: "POST",
+    body: JSON.stringify({ projectId, title: "Project copilot" }),
+  });
+}
+
+export async function postAIMessage(threadId: string, content: string): Promise<AIAgentReply> {
+  return request<AIAgentReply>(`/api/ai/threads/${threadId}/messages`, {
+    method: "POST",
+    body: JSON.stringify({ content }),
+  });
+}
+
+export async function deleteAIThread(threadId: string): Promise<void> {
+  await request<void>(`/api/ai/threads/${threadId}`, { method: "DELETE" });
 }
 
 export async function runProject(projectId: string): Promise<ProjectRunResult> {

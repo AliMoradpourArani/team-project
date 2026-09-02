@@ -5,12 +5,19 @@ import type {
   ProfessorDashboardData,
   ProfessorGitHubDashboardData,
   ProfessorReviewQueueData,
+  ProfessorSubmissionDashboardData,
   Project,
   ProjectDetail,
   ProjectIntegration,
   ProjectReview,
   ProjectReviewInput,
   ProjectRunResult,
+  ProjectSubmission,
+  ProjectSubmissionStatus,
+  SubmissionReleaseDetail,
+  SubmissionReleaseSummary,
+  SubmissionSettings,
+  SubmissionSettingsInput,
   User,
 } from "./types";
 
@@ -83,12 +90,20 @@ export const getProjectDetail = (projectId: string): Promise<ProjectDetail> =>
   request<ProjectDetail>(`/api/projects/${projectId}/detail`);
 export const getProjectReview = (projectId: string): Promise<ProjectReview | null> =>
   request<ProjectReview | null>(`/api/projects/${projectId}/review`);
+export const getProjectSubmissionStatus = (projectId: string): Promise<ProjectSubmissionStatus> =>
+  request<ProjectSubmissionStatus>(`/api/projects/${projectId}/submission`);
 export const getProfessorDashboard = (): Promise<ProfessorDashboardData> =>
   request<ProfessorDashboardData>("/api/professor/dashboard");
 export const getProfessorGitHubDashboard = (): Promise<ProfessorGitHubDashboardData> =>
   request<ProfessorGitHubDashboardData>("/api/professor/github");
 export const getProfessorReviewQueue = (): Promise<ProfessorReviewQueueData> =>
   request<ProfessorReviewQueueData>("/api/professor/reviews");
+export const getProfessorSubmissionDashboard = (): Promise<ProfessorSubmissionDashboardData> =>
+  request<ProfessorSubmissionDashboardData>("/api/professor/submissions");
+export const getSubmissionReleases = (): Promise<SubmissionReleaseSummary[]> =>
+  request<SubmissionReleaseSummary[]>("/api/professor/releases");
+export const getSubmissionRelease = (releaseId: number): Promise<SubmissionReleaseDetail> =>
+  request<SubmissionReleaseDetail>(`/api/professor/releases/${releaseId}`);
 
 export async function runProject(projectId: string): Promise<ProjectRunResult> {
   return request<ProjectRunResult>(`/api/projects/${projectId}/run`, { method: "POST" });
@@ -106,6 +121,26 @@ export async function saveProjectReview(
 
 export async function deleteProjectReview(projectId: string): Promise<void> {
   await request<void>(`/api/projects/${projectId}/review`, { method: "DELETE" });
+}
+
+export async function submitProject(projectId: string): Promise<ProjectSubmission> {
+  return request<ProjectSubmission>(`/api/projects/${projectId}/submit`, { method: "POST" });
+}
+
+export async function saveSubmissionSettings(
+  payload: SubmissionSettingsInput,
+): Promise<SubmissionSettings> {
+  return request<SubmissionSettings>("/api/professor/submission-settings", {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function createSubmissionRelease(label: string): Promise<SubmissionReleaseDetail> {
+  return request<SubmissionReleaseDetail>("/api/professor/releases", {
+    method: "POST",
+    body: JSON.stringify({ label }),
+  });
 }
 
 export async function createActivity(payload: ActivityInput): Promise<Activity> {

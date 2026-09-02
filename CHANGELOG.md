@@ -6,6 +6,15 @@ All notable project changes are recorded here. The project follows a lightweight
 
 ### Added
 
+- Phase 9 immutable, versioned project submissions with canonical SHA-256 snapshot fingerprints
+- professor-controlled submission window with optional timezone-aware deadline
+- student-owned frozen source snapshots with per-file SHA-256, bounded Base64 content, integration health, and review-at-submit metadata
+- professor Submission & Release control center with submitted/pending/approved readiness counts
+- immutable team release manifests pinning project submission versions/digests and approved review state
+- runtime-only `submission_settings`, `project_submissions`, and `submission_releases` state via append-only migration 009
+- snapshot safety limits plus rejection of symlinks and likely secret files such as `.env`, private keys, `.pem`, `.key`, `.p12`, and `.pfx`
+- Phase 9 backend/frontend tests and Playwright frozen-submission delivery flow
+- `docs/submission-release.md` documenting immutable delivery, authorization, safety bounds, and release gates
 - Phase 8 professor Project Review & Evaluation workflow
 - runtime-only `project_reviews` SQLite state with append-only migration 008
 - fixed 100-point rubric for functionality, code quality, documentation, integration, and contribution
@@ -51,6 +60,10 @@ All notable project changes are recorded here. The project follows a lightweight
 
 ### Changed
 
+- API version is now `0.9.0`
+- professor access remains read-only for shared student data; Phase 9 adds writes only to separate runtime submission settings and immutable release manifests
+- project detail pages now surface immutable submission state beside integration, demo, and professor review information
+- CODEOWNERS now protects submission/release backend services and frontend controls as high-risk Core paths
 - professor access remains read-only for shared student data, while Phase 8 permits writes only to separate runtime evaluation state
 - project detail pages now surface professor evaluation in the same generic route for every member project
 - project cards now link to generic data-driven detail pages instead of requiring Core changes per member project
@@ -66,7 +79,7 @@ All notable project changes are recorded here. The project follows a lightweight
 - protected API collections require authentication and filter by role
 - professor access is explicitly read-only for shared application data
 - CORS allows credentials only for configured explicit origins
-- CODEOWNERS covers authentication, professor dashboard, GitHub integration, project runner, and project evaluation paths
+- CODEOWNERS covers authentication, professor dashboard, GitHub integration, project runner, project evaluation, and submission/release paths
 
 ## 0.2.5 - 2026-09-01
 

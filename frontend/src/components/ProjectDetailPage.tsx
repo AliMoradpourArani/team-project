@@ -5,6 +5,7 @@ import "../project-runner.css";
 import type { AuthRole, ProjectDetail, ProjectRunResult } from "../types";
 import ProjectDemoPreview from "./ProjectDemoPreview";
 import ProjectReviewPanel from "./ProjectReviewPanel";
+import ProjectSubmissionPanel from "./ProjectSubmissionPanel";
 import StatusMessage from "./StatusMessage";
 
 interface Props {
@@ -144,6 +145,7 @@ export default function ProjectDetailPage({ projectId, backHref, role }: Props) 
       </div>
 
       <ProjectReviewPanel projectId={projectId} role={role} />
+      <ProjectSubmissionPanel projectId={projectId} role={role} />
 
       {detail.preview ? <ProjectDemoPreview preview={detail.preview} /> : null}
 

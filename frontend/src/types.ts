@@ -131,6 +131,71 @@ export interface ProfessorReviewQueueData {
   items: ProfessorReviewQueueItem[];
 }
 
+export interface SubmissionSettings {
+  isOpen: boolean;
+  deadlineAt: string | null;
+  acceptingSubmissions: boolean;
+  updatedByUsername: string | null;
+  updatedAt: string;
+}
+
+export interface SubmissionSettingsInput {
+  isOpen: boolean;
+  deadlineAt: string | null;
+}
+
+export interface ProjectSubmission {
+  id: number;
+  projectId: string;
+  userId: string;
+  submittedByUsername: string;
+  version: number;
+  snapshotDigest: string;
+  sourceFileCount: number;
+  sourceTotalBytes: number;
+  reviewStatus: string | null;
+  reviewTotalScore: number | null;
+  submittedAt: string;
+}
+
+export interface ProjectSubmissionStatus {
+  settings: SubmissionSettings;
+  latestSubmission: ProjectSubmission | null;
+  historyCount: number;
+  canSubmit: boolean;
+  blockedReason: string | null;
+}
+
+export interface ProfessorSubmissionItem {
+  project: Project;
+  latestSubmission: ProjectSubmission | null;
+  review: ProjectReview | null;
+}
+
+export interface ProfessorSubmissionDashboardData {
+  settings: SubmissionSettings;
+  totalProjects: number;
+  submittedProjects: number;
+  pendingProjects: number;
+  approvedProjects: number;
+  releaseReady: boolean;
+  releaseBlockedReason: string | null;
+  items: ProfessorSubmissionItem[];
+}
+
+export interface SubmissionReleaseSummary {
+  id: number;
+  label: string;
+  manifestDigest: string;
+  projectCount: number;
+  createdByUsername: string;
+  createdAt: string;
+}
+
+export interface SubmissionReleaseDetail extends SubmissionReleaseSummary {
+  manifest: Record<string, unknown>;
+}
+
 export interface AuthSession {
   username: string;
   displayName: string;

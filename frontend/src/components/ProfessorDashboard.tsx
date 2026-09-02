@@ -4,6 +4,7 @@ import { getProfessorDashboard } from "../api";
 import type { ProfessorDashboardData } from "../types";
 import GitHubContributionPanel from "./GitHubContributionPanel";
 import ProfessorReviewQueue from "./ProfessorReviewQueue";
+import ProfessorSubmissionPanel from "./ProfessorSubmissionPanel";
 import StatusMessage from "./StatusMessage";
 
 export default function ProfessorDashboard() {
@@ -119,6 +120,7 @@ export default function ProfessorDashboard() {
 
       <GitHubContributionPanel />
       <ProfessorReviewQueue />
+      <ProfessorSubmissionPanel />
 
       <section className="dashboard-card professor-recent">
         <div className="section-heading compact">

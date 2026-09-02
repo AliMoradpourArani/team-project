@@ -1,4 +1,4 @@
-"""Project routes with role-based visibility, reviews, and controlled local execution."""
+"""Project routes with role-based visibility, reviews, submissions, and controlled execution."""
 
 from fastapi import APIRouter, HTTPException, Response, status
 
@@ -9,7 +9,8 @@ from ...schemas.project_runner import (
     ProjectIntegrationResponse,
     ProjectRunResponse,
 )
-from ...services import project_reviews, project_runner, queries
+from ...schemas.submission import ProjectSubmissionResponse, ProjectSubmissionStatusResponse
+from ...services import project_reviews, project_runner, queries, submissions
 from ..auth_dependencies import CsrfPrincipal, CurrentPrincipal, ProfessorCsrfPrincipal
 
 router = APIRouter(prefix="/api/projects", tags=["projects"])
@@ -72,6 +73,28 @@ def delete_project_review(project_id: str, principal: ProfessorCsrfPrincipal) ->
     _project_for_principal(project_id, principal)
     project_reviews.delete_review(project_id)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.get("/{project_id}/submission", response_model=ProjectSubmissionStatusResponse)
+def get_project_submission(
+    project_id: str, principal: CurrentPrincipal
+) -> ProjectSubmissionStatusResponse:
+    _project_for_principal(project_id, principal)
+    return submissions.get_project_status(project_id)
+
+
+@router.post("/{project_id}/submit", response_model=ProjectSubmissionResponse)
+def submit_project(project_id: str, principal: CsrfPrincipal) -> ProjectSubmissionResponse:
+    if principal.role != "student" or principal.user_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only students can create project submissions.",
+        )
+    project = _project_for_principal(project_id, principal)
+    try:
+        return submissions.submit_project(project, principal.account_id)
+    except submissions.SubmissionConflict as error:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(error)) from error
 
 
 @router.post("/{project_id}/run", response_model=ProjectRunResponse)

@@ -10,6 +10,7 @@
 /backend/services/github_integration.py @HoosseinRahimi
 /backend/services/project_runner.py @HoosseinRahimi
 /backend/services/project_reviews.py @HoosseinRahimi
+/backend/services/submissions.py @HoosseinRahimi
 /backend/database/               @HoosseinRahimi
 /backend/schemas/                @HoosseinRahimi
 /backend/requirements*.txt       @HoosseinRahimi
@@ -20,6 +21,8 @@
 /frontend/src/types.ts           @HoosseinRahimi
 /frontend/src/components/ProjectReviewPanel.tsx @HoosseinRahimi
 /frontend/src/components/ProfessorReviewQueue.tsx @HoosseinRahimi
+/frontend/src/components/ProjectSubmissionPanel.tsx @HoosseinRahimi
+/frontend/src/components/ProfessorSubmissionPanel.tsx @HoosseinRahimi
 /docker-compose.yml              @HoosseinRahimi
 /Makefile                        @HoosseinRahimi
 /docs/architecture.md            @HoosseinRahimi
@@ -27,5 +30,6 @@
 /docs/github-integration.md      @HoosseinRahimi
 /docs/project-runner.md          @HoosseinRahimi
 /docs/project-review-evaluation.md @HoosseinRahimi
+/docs/submission-release.md      @HoosseinRahimi
 /docs/database-rules.md          @HoosseinRahimi
 /docs/project-contract.md        @HoosseinRahimi

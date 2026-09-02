@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { createAIThread, deleteAIThread, getAIThreads, postAIMessage } from "../api";
 import "../ai-agent.css";
@@ -21,15 +21,17 @@ export default function AIAgentPanel({ projectId }: AIAgentPanelProps) {
     [activeId, threads],
   );
 
-  async function refresh() {
+  const refresh = useCallback(async () => {
     const next = await getAIThreads();
     setThreads(next);
-    if (!next.some((thread) => thread.id === activeId)) setActiveId(next[0]?.id ?? "");
-  }
+    setActiveId((current) =>
+      next.some((thread) => thread.id === current) ? current : (next[0]?.id ?? ""),
+    );
+  }, []);
 
   useEffect(() => {
     refresh().catch(() => setThreads([]));
-  }, []);
+  }, [refresh]);
 
   async function startThread() {
     setBusy(true);
@@ -40,7 +42,9 @@ export default function AIAgentPanel({ projectId }: AIAgentPanelProps) {
       setActiveId(thread.id);
       setLastReply(null);
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "Could not create AI thread.");
+      setError(
+        requestError instanceof Error ? requestError.message : "Could not create AI thread.",
+      );
     } finally {
       setBusy(false);
     }
@@ -119,7 +123,9 @@ export default function AIAgentPanel({ projectId }: AIAgentPanelProps) {
         <>
           <div className="ai-agent-messages">
             {activeThread.messages.length === 0 ? (
-              <p className="ai-agent-empty">Ask for a replan, blocker check, review, or next milestone.</p>
+              <p className="ai-agent-empty">
+                Ask for a replan, blocker check, review, or next milestone.
+              </p>
             ) : null}
             {activeThread.messages.map((item) => (
               <article className={`ai-agent-message ai-agent-${item.role}`} key={item.id}>

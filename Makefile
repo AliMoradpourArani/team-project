@@ -1,6 +1,6 @@
 # Convenience wrappers. Every command here also exists as a documented script.
 
-.PHONY: setup test lint format db-init db-sync db-reset auth-bootstrap project-check delivery-preflight delivery-preflight-report demo-handoff release-verify release-package release-tag dev check
+.PHONY: setup test lint format db-init db-sync db-reset auth-bootstrap project-check delivery-preflight delivery-preflight-report demo-handoff release-verify release-package release-tag academic-submission-verify academic-submission academic-freeze-verify dev check
 
 setup:            ## Create venv, install dependencies, initialize DB with data
 	./scripts/setup.sh
@@ -46,8 +46,17 @@ release-verify:   ## Validate VERSION, release notes, checklist, and release scr
 release-package:  ## Build checksum-verified source artifact after strict delivery preflight
 	bash ./scripts/build-release-package.sh
 
-release-tag:      ## Create a guarded annotated local release tag; never pushes automatically
+release-tag:      ## Create a guarded annotated local release tag; requires verified Phase 14 academic bundle
 	bash ./scripts/tag-release.sh
+
+academic-submission-verify: ## Validate academic bundle/freeze contract without requiring final runtime readiness
+	bash ./scripts/academic-submission-verify.sh
+
+academic-submission: ## Build final university handoff bundle after strict preflight on synced main
+	bash ./scripts/build-academic-submission.sh
+
+academic-freeze-verify: ## Verify final academic bundle, checksums, commit binding, and freeze state before tagging
+	bash ./scripts/academic-freeze-verify.sh
 
 dev:              ## Print the two development server commands
 	@echo "Backend:  .venv/bin/python -m uvicorn backend.app.main:app --reload"

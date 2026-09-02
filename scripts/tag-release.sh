@@ -56,12 +56,15 @@ PY
 [[ "${MANIFEST_VALUES[2]}" == "$HEAD_SHA" ]] || fail "release package was built from a different commit"
 [[ "${MANIFEST_VALUES[3]}" == "$EXPECTED_SHA" ]] || fail "release manifest checksum does not match archive"
 
+./scripts/academic-freeze-verify.sh
+
 git tag -a "$TAG" -m "Team Project ${TAG}"
 
 cat <<EOF
 Created local annotated tag ${TAG} at ${HEAD_SHA}.
 
 The tag has NOT been pushed automatically.
+The Phase 14 academic bundle and freeze checks passed for this exact commit.
 Review the package and release checklist, then publish deliberately with:
   git push origin ${TAG}
 

@@ -20,6 +20,8 @@ jobs:
         run: bash -n scripts/demo-handoff.sh
       - name: Validate release packaging contract
         run: bash scripts/release-verify.sh
+      - name: Validate academic submission contract
+        run: bash scripts/academic-submission-verify.sh
 
   backend:
     runs-on: ubuntu-latest

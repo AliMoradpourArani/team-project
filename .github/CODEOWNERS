@@ -35,6 +35,9 @@
 /scripts/release-verify.sh       @HoosseinRahimi
 /scripts/build-release-package.sh @HoosseinRahimi
 /scripts/tag-release.sh          @HoosseinRahimi
+/scripts/academic-submission-verify.sh @HoosseinRahimi
+/scripts/build-academic-submission.sh @HoosseinRahimi
+/scripts/academic-freeze-verify.sh @HoosseinRahimi
 /docs/architecture.md            @HoosseinRahimi
 /docs/authentication.md          @HoosseinRahimi
 /docs/github-integration.md      @HoosseinRahimi
@@ -45,6 +48,8 @@
 /docs/final-delivery-preflight.md @HoosseinRahimi
 /docs/release-packaging.md       @HoosseinRahimi
 /docs/release-checklist.md       @HoosseinRahimi
+/docs/academic-submission.md     @HoosseinRahimi
+/docs/repository-freeze.md       @HoosseinRahimi
 /docs/releases/                  @HoosseinRahimi
 /docs/database-rules.md          @HoosseinRahimi
 /docs/project-contract.md        @HoosseinRahimi

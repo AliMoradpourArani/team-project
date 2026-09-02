@@ -28,7 +28,7 @@ export default function Layout({ children, session, onLogout, currentPath = "/" 
     <div className="app-shell">
       <header className="site-header">
         <a className="brand" href={homeHref} data-link>
-          Team Project
+          ForgeFlow AI
         </a>
         {tabs.length > 0 ? (
           <nav className="site-nav" aria-label="Main navigation">

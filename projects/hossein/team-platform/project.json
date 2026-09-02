@@ -1,8 +1,8 @@
 {
   "id": "team-foundation",
-  "name": "Team Project Foundation",
+  "name": "ForgeFlow AI Foundation",
   "owner_id": "hossein",
-  "description": "Runnable demonstration for the shared team platform project.",
+  "description": "Runnable demonstration for the ForgeFlow AI platform.",
   "technology": ["python"],
   "project_type": "cli",
   "runner": "python-script-v1",

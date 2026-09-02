@@ -1,4 +1,4 @@
-"""HTTP entry point for the team project API."""
+"""HTTP entry point for the ForgeFlow AI API."""
 
 from __future__ import annotations
 
@@ -40,7 +40,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="Team Project API",
+    title="ForgeFlow AI API",
     version="0.13.0",
     description=(
         "Authenticated team activity, governed AI planning and repository intelligence, typed member-project "

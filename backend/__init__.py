@@ -1,1 +1,1 @@
-"""Team project backend package."""
+"""ForgeFlow AI backend package."""

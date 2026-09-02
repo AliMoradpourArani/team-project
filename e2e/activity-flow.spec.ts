@@ -58,7 +58,7 @@ test("professor reviews a project and the student sees feedback read-only", asyn
   await signIn(page, "professor", professorPassword);
   await expect(page.getByRole("heading", { name: "Project review queue" })).toBeVisible();
 
-  await page.locator(".review-queue-row").filter({ hasText: "Team Project Foundation" }).click();
+  await page.locator(".review-queue-row").filter({ hasText: "ForgeFlow AI Foundation" }).click();
   await expect(page.getByRole("heading", { name: /Start review|Update rubric/ })).toBeVisible();
 
   await page.getByLabel("Review status").selectOption("approved");
@@ -102,7 +102,7 @@ test("student freezes an integrated project and professor sees final preflight b
   await expect(page.getByRole("heading", { name: "Final delivery control" })).toBeVisible();
   const teamProject = page
     .locator(".professor-submission-row")
-    .filter({ hasText: "Team Project Foundation" });
+    .filter({ hasText: "ForgeFlow AI Foundation" });
   await expect(teamProject).toContainText(/v\d+/);
   await expect(
     page.getByRole("heading", { name: /BLOCKED: \d+ final-delivery gate/ }),

@@ -33,7 +33,7 @@ Never guess another member's GitHub account from a name or email.
 
 ```text
 GITHUB_INTEGRATION_ENABLED=true
-GITHUB_REPOSITORY=HoosseinRahimi/team-project
+GITHUB_REPOSITORY=HoosseinRahimi/ForgeFlow-AI-Core
 GITHUB_CACHE_TTL_SECONDS=60
 GITHUB_API_TIMEOUT_SECONDS=5
 ```
@@ -59,7 +59,7 @@ propose -> approve -> execute
 These write operations use separate server-only configuration:
 
 ```text
-AI_GITHUB_REPOSITORY=HoosseinRahimi/team-project
+AI_GITHUB_REPOSITORY=HoosseinRahimi/ForgeFlow-AI-Core
 AI_GITHUB_TIMEOUT_SECONDS=15
 AI_GITHUB_TOKEN=<server-only token>
 ```

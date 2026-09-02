@@ -4,7 +4,7 @@ The main application is packaged as one production service: React is built durin
 
 ## Railway service
 
-Connect the private `HoosseinRahimi/team-project` repository and deploy from the repository root. Railway detects the root `Dockerfile` automatically.
+Connect the private `HoosseinRahimi/ForgeFlow-AI-Core` repository and deploy from the repository root. Railway detects the root `Dockerfile` automatically.
 
 Recommended service settings:
 
@@ -33,7 +33,7 @@ Set these in Railway Variables:
 AUTH_COOKIE_SECURE=true
 CORS_ORIGINS=
 GITHUB_INTEGRATION_ENABLED=true
-GITHUB_REPOSITORY=HoosseinRahimi/team-project
+GITHUB_REPOSITORY=HoosseinRahimi/ForgeFlow-AI-Core
 AI_AUTOMATION_ENABLED=true
 AI_AUTOMATION_APPLY_PROGRESS=false
 PROJECT_RUNNER_ENABLED=false
@@ -54,7 +54,7 @@ AI_GITHUB_TOKEN=
 For governed GitHub write actions also set:
 
 ```text
-AI_GITHUB_REPOSITORY=HoosseinRahimi/team-project
+AI_GITHUB_REPOSITORY=HoosseinRahimi/ForgeFlow-AI-Core
 ```
 
 ## AI provider configuration

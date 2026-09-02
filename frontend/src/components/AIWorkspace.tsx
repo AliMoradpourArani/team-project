@@ -41,7 +41,9 @@ export default function AIWorkspace({ projects, onTasksApplied }: AIWorkspacePro
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    getAIStatus().then(setStatus).catch(() => setStatus(null));
+    getAIStatus()
+      .then(setStatus)
+      .catch(() => setStatus(null));
   }, []);
 
   useEffect(() => {
@@ -83,8 +85,8 @@ export default function AIWorkspace({ projects, onTasksApplied }: AIWorkspacePro
           <p className="eyebrow">Project copilot</p>
           <h2 id="ai-workspace-title">AI workspace</h2>
           <p className="ai-workspace-intro">
-            Plan work, create roadmaps, measure progress, inspect failures, and review what has already
-            been built.
+            Plan work, create roadmaps, measure progress, inspect failures, and review what has
+            already been built.
           </p>
         </div>
         <span className={`ai-mode-badge ai-mode-${status?.mode ?? "local"}`}>

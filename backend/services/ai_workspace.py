@@ -66,13 +66,20 @@ def _project_findings(project: ProjectResponse | None) -> list[AIFinding]:
             )
     for run in detail.recentRuns[:3]:
         if run.timedOut or (run.exitCode is not None and run.exitCode != 0):
-            detail_text = run.stderrPreview.strip() or run.stdoutPreview.strip() or "The project run failed without output."
+            detail_text = (
+                run.stderrPreview.strip()
+                or run.stdoutPreview.strip()
+                or "The project run failed without output."
+            )
             findings.append(
                 AIFinding(
                     severity="error",
                     title="Recent project run failed",
                     detail=detail_text[:2000],
-                    recommendation="Reproduce the failure locally, address the first actionable error, and run the project again.",
+                    recommendation=(
+                        "Reproduce the failure locally, address the first actionable error, "
+                        "and run the project again."
+                    ),
                 )
             )
     if not findings:
@@ -80,18 +87,28 @@ def _project_findings(project: ProjectResponse | None) -> list[AIFinding]:
             AIFinding(
                 severity="info",
                 title="No current project errors detected",
-                detail="The tracked integration checks and recent run history do not show a blocking error.",
-                recommendation="Keep tests, documentation, and milestone tasks current as the implementation changes.",
+                detail=(
+                    "The tracked integration checks and recent run history do not show a blocking error."
+                ),
+                recommendation=(
+                    "Keep tests, documentation, and milestone tasks current as the implementation changes."
+                ),
             )
         )
     return findings
 
 
-def _local_output(payload: AIWorkspaceRequest, user_id: str, project: ProjectResponse | None) -> AIModelOutput:
+def _local_output(
+    payload: AIWorkspaceRequest,
+    user_id: str,
+    project: ProjectResponse | None,
+) -> AIModelOutput:
     current_progress = _progress(user_id, payload.projectId)
     today = date.today()
     subject = project.name if project else "your workspace"
-    goal = payload.goal.strip() or (project.description if project else "move the current work toward completion")
+    goal = payload.goal.strip() or (
+        project.description if project else "move the current work toward completion"
+    )
 
     task_templates = [
         f"Define the next measurable outcome for {subject}",
@@ -131,13 +148,19 @@ def _local_output(payload: AIWorkspaceRequest, user_id: str, project: ProjectRes
             )
         )
 
-    findings = _project_findings(project) if payload.action in {"debug", "review", "progress"} else []
+    findings = (
+        _project_findings(project)
+        if payload.action in {"debug", "review", "progress"}
+        else []
+    )
     action_summary = {
         "plan": f"Created an actionable plan for {subject} based on the current workspace state.",
         "roadmap": f"Created a four-stage roadmap for {subject} with dated milestones.",
         "progress": f"Tracked progress for {subject} from existing activities and project health.",
         "debug": f"Inspected tracked health checks and recent run failures for {subject}.",
-        "review": f"Reviewed {subject} for unfinished work, integration issues, and recent execution errors.",
+        "review": (
+            f"Reviewed {subject} for unfinished work, integration issues, and recent execution errors."
+        ),
     }
     return AIModelOutput(
         summary=action_summary[payload.action],
@@ -148,12 +171,20 @@ def _local_output(payload: AIWorkspaceRequest, user_id: str, project: ProjectRes
     )
 
 
-def _provider_output(payload: AIWorkspaceRequest, user_id: str, project: ProjectResponse | None) -> tuple[AIModelOutput, str, str | None]:
+def _provider_output(
+    payload: AIWorkspaceRequest,
+    user_id: str,
+    project: ProjectResponse | None,
+) -> tuple[AIModelOutput, str, str | None]:
     api_key = os.getenv("AI_API_KEY", "").strip()
     base_url = os.getenv("AI_BASE_URL", "https://api.openai.com/v1").rstrip("/")
     model = os.getenv("AI_MODEL", "gpt-5-mini").strip() or "gpt-5-mini"
     if not api_key:
-        return _local_output(payload, user_id, project), "local", "AI_API_KEY is not configured; using the local planning engine."
+        return (
+            _local_output(payload, user_id, project),
+            "local",
+            "AI_API_KEY is not configured; using the local planning engine.",
+        )
 
     context = {
         "user_id": user_id,
@@ -165,23 +196,49 @@ def _provider_output(payload: AIWorkspaceRequest, user_id: str, project: Project
         "activities": [
             item.model_dump()
             for item in queries.list_activities()
-            if item.userId == user_id and (payload.projectId is None or item.projectId == payload.projectId)
+            if item.userId == user_id
+            and (payload.projectId is None or item.projectId == payload.projectId)
         ][-30:],
         "diagnostics": [item.model_dump() for item in _project_findings(project)],
     }
     schema_hint = {
         "summary": "string",
         "progressPercent": "integer 0-100",
-        "tasks": [{"title": "string", "date": "YYYY-MM-DD", "rationale": "string", "projectId": payload.projectId}],
-        "roadmap": [{"title": "string", "objective": "string", "targetDate": "YYYY-MM-DD", "tasks": ["string"]}],
-        "findings": [{"severity": "info|warning|error", "title": "string", "detail": "string", "recommendation": "string"}],
+        "tasks": [
+            {
+                "title": "string",
+                "date": "YYYY-MM-DD",
+                "rationale": "string",
+                "projectId": payload.projectId,
+            }
+        ],
+        "roadmap": [
+            {
+                "title": "string",
+                "objective": "string",
+                "targetDate": "YYYY-MM-DD",
+                "tasks": ["string"],
+            }
+        ],
+        "findings": [
+            {
+                "severity": "info|warning|error",
+                "title": "string",
+                "detail": "string",
+                "recommendation": "string",
+            }
+        ],
     }
     body = {
         "model": model,
         "messages": [
             {
                 "role": "system",
-                "content": "You are the project copilot inside a team workspace. Return only valid JSON matching the requested shape. Be concrete, concise, and grounded only in supplied project data.",
+                "content": (
+                    "You are the project copilot inside a team workspace. Return only valid JSON "
+                    "matching the requested shape. Be concrete, concise, and grounded only in supplied "
+                    "project data."
+                ),
             },
             {
                 "role": "user",
@@ -197,18 +254,32 @@ def _provider_output(payload: AIWorkspaceRequest, user_id: str, project: Project
         method="POST",
     )
     try:
-        with request.urlopen(req, timeout=float(os.getenv("AI_TIMEOUT_SECONDS", "20"))) as response:
+        with request.urlopen(
+            req,
+            timeout=float(os.getenv("AI_TIMEOUT_SECONDS", "20")),
+        ) as response:
             response_body = json.loads(response.read().decode("utf-8"))
         content = response_body["choices"][0]["message"]["content"]
-        return AIModelOutput.model_validate(json.loads(content)), "provider", None
-    except (error.URLError, TimeoutError, KeyError, ValueError, json.JSONDecodeError) as exc:
+        provider_output = AIModelOutput.model_validate(json.loads(content))
+        return provider_output, "provider", None
+    except (error.URLError, TimeoutError, KeyError, ValueError) as exc:
         fallback = _local_output(payload, user_id, project)
-        return fallback, "local", f"AI provider failed ({type(exc).__name__}); using the local planning engine."
+        return (
+            fallback,
+            "local",
+            f"AI provider failed ({type(exc).__name__}); using the local planning engine.",
+        )
 
 
 def run_workspace(payload: AIWorkspaceRequest, user_id: str) -> AIWorkspaceResponse:
     project = _project(payload.projectId, user_id)
     output, provider, provider_message = _provider_output(payload, user_id, project)
+
+    normalized_tasks = [
+        task.model_copy(update={"projectId": payload.projectId}) for task in output.tasks
+    ]
+    output = output.model_copy(update={"tasks": normalized_tasks})
+
     applied = []
     if payload.applyTasks and payload.action in {"plan", "roadmap", "progress"}:
         for task in output.tasks:
@@ -219,7 +290,7 @@ def run_workspace(payload: AIWorkspaceRequest, user_id: str) -> AIWorkspaceRespo
                         date=task.date,
                         title=task.title,
                         status="planned",
-                        projectId=task.projectId,
+                        projectId=payload.projectId,
                     )
                 )
             )

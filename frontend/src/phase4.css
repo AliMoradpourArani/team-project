@@ -1,4 +1,4 @@
-.github-panel {
+﻿.github-panel {
   margin-bottom: 20px;
 }
 
@@ -26,7 +26,7 @@
 .github-event-kind,
 .github-last-contribution,
 .github-footnote {
-  font-family: "DM Mono", monospace;
+  font-family: inherit;
 }
 
 .github-repository-strip span {
@@ -71,7 +71,7 @@
 
 .github-member-heading a {
   color: #4f806b;
-  font-family: "DM Mono", monospace;
+  font-family: inherit;
   font-size: 0.7rem;
   margin-top: 3px;
 }

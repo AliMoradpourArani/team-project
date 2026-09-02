@@ -1,4 +1,4 @@
-.header-session {
+﻿.header-session {
   align-items: center;
   display: flex;
   gap: 14px;
@@ -8,7 +8,7 @@
   background: transparent;
   border: 1px solid #c8c8bc;
   color: #66736c;
-  font-family: "DM Mono", monospace;
+  font-family: inherit;
   font-size: 0.68rem;
   padding: 8px 11px;
   text-transform: uppercase;
@@ -45,7 +45,7 @@
 .login-card label {
   color: #66736c;
   display: block;
-  font-family: "DM Mono", monospace;
+  font-family: inherit;
   font-size: 0.72rem;
   margin-bottom: 15px;
   text-transform: uppercase;
@@ -101,7 +101,7 @@
 
 .professor-summary-note span {
   color: #66736c;
-  font-family: "DM Mono", monospace;
+  font-family: inherit;
   font-size: 0.7rem;
   text-transform: uppercase;
 }
@@ -161,7 +161,7 @@
 
 .member-metrics dt {
   color: #66736c;
-  font-family: "DM Mono", monospace;
+  font-family: inherit;
   font-size: 0.62rem;
   text-transform: uppercase;
 }

@@ -1,4 +1,4 @@
-.submission-card,
+﻿.submission-card,
 .professor-submission-card {
   display: grid;
   gap: 22px;
@@ -7,7 +7,7 @@
 .submission-state {
   border: 1px solid #d4d4c8;
   border-radius: 999px;
-  font-family: "DM Mono", monospace;
+  font-family: inherit;
   font-size: 0.72rem;
   padding: 7px 10px;
   text-transform: uppercase;
@@ -45,7 +45,7 @@
 .submission-digest span {
   color: #66736c;
   display: block;
-  font-family: "DM Mono", monospace;
+  font-family: inherit;
   font-size: 0.7rem;
   margin-bottom: 5px;
   text-transform: uppercase;
@@ -68,7 +68,7 @@
 
 .submission-digest code {
   display: block;
-  font-family: "DM Mono", monospace;
+  font-family: inherit;
   font-size: 0.74rem;
   overflow-wrap: anywhere;
 }
@@ -195,7 +195,7 @@
 .delivery-preflight-meta code,
 .delivery-project small,
 .delivery-preflight-gates small {
-  font-family: "DM Mono", monospace;
+  font-family: inherit;
   font-size: 0.74rem;
 }
 
@@ -252,7 +252,7 @@
 }
 
 .delivery-project > span {
-  font-family: "DM Mono", monospace;
+  font-family: inherit;
   font-size: 0.72rem;
   text-transform: uppercase;
 }
@@ -300,7 +300,7 @@
 }
 
 .frozen-release-row code {
-  font-family: "DM Mono", monospace;
+  font-family: inherit;
   font-size: 0.75rem;
 }
 

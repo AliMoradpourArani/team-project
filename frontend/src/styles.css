@@ -1,9 +1,9 @@
-@import url("https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap");
+﻿@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap");
 
 :root {
   color: #18221e;
   background: #f3f0e8;
-  font-family: "Space Grotesk", sans-serif;
+  font-family: "Inter", "Segoe UI", Arial, Helvetica, sans-serif;
   font-synthesis: none;
   line-height: 1.5;
 }
@@ -51,7 +51,7 @@ a {
 }
 .nav-tab {
   color: #66736c;
-  font-family: "DM Mono", monospace;
+  font-family: inherit;
   font-size: 0.76rem;
   text-transform: uppercase;
   text-decoration: none;
@@ -69,7 +69,7 @@ a {
 .member-count,
 time {
   color: #66736c;
-  font-family: "DM Mono", monospace;
+  font-family: inherit;
   font-size: 0.72rem;
   text-transform: uppercase;
 }
@@ -84,7 +84,7 @@ time {
 }
 .eyebrow {
   color: #d05b3b;
-  font-family: "DM Mono", monospace;
+  font-family: inherit;
   font-size: 0.72rem;
   letter-spacing: 0.08em;
   margin: 0 0 18px;
@@ -192,7 +192,7 @@ h2 {
 .back-link,
 .text-link {
   color: #4f806b;
-  font-family: "DM Mono", monospace;
+  font-family: inherit;
   font-size: 0.76rem;
   text-transform: uppercase;
 }
@@ -252,7 +252,7 @@ h2 {
 }
 .pill {
   border-radius: 999px;
-  font-family: "DM Mono", monospace;
+  font-family: inherit;
   font-size: 0.65rem;
   padding: 5px 9px;
   text-transform: uppercase;
@@ -292,7 +292,7 @@ h2 {
 .stat-card span {
   color: #66736c;
   display: block;
-  font-family: "DM Mono", monospace;
+  font-family: inherit;
   font-size: 0.7rem;
   text-transform: uppercase;
 }
@@ -319,7 +319,7 @@ h2 {
 }
 .form-grid label {
   color: #66736c;
-  font-family: "DM Mono", monospace;
+  font-family: inherit;
   font-size: 0.72rem;
   text-transform: uppercase;
 }
@@ -347,7 +347,7 @@ h2 {
 .calendar-nav button,
 .item-actions button {
   border: 0;
-  font-family: "DM Mono", monospace;
+  font-family: inherit;
   font-size: 0.72rem;
   text-transform: uppercase;
 }
@@ -385,7 +385,7 @@ h2 {
 }
 .calendar-weekdays span {
   color: #66736c;
-  font-family: "DM Mono", monospace;
+  font-family: inherit;
   font-size: 0.62rem;
   padding: 6px;
   text-align: center;
@@ -408,7 +408,7 @@ h2 {
 }
 .calendar-day strong {
   color: #d05b3b;
-  font-family: "DM Mono", monospace;
+  font-family: inherit;
   font-size: 0.62rem;
 }
 .calendar-day.selected {
@@ -553,7 +553,7 @@ h2 {
   color: #2c3a33;
   cursor: pointer;
   display: flex;
-  font-family: "DM Mono", monospace;
+  font-family: inherit;
   font-size: 0.74rem;
   gap: 6px;
   padding: 6px 12px;
@@ -622,7 +622,7 @@ h2 {
 }
 .language-name {
   color: #66736c;
-  font-family: "DM Mono", monospace;
+  font-family: inherit;
   font-size: 0.68rem;
   margin-inline-start: auto;
   text-transform: uppercase;
@@ -631,9 +631,88 @@ h2 {
   color: #4f806b;
 }
 
-/* ---- RTL (Persian) support ---- */
+/* ---- Pinar Persian font (local family) ---- */
+@font-face {
+  font-family: "Pinar";
+  src: url("./fonts/Pinar-Light.ttf") format("truetype");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Pinar";
+  src: url("./fonts/Pinar-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Pinar";
+  src: url("./fonts/Pinar-Medium.ttf") format("truetype");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Pinar";
+  src: url("./fonts/Pinar-SemiBold.ttf") format("truetype");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Pinar";
+  src: url("./fonts/Pinar-Bold.ttf") format("truetype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Pinar";
+  src: url("./fonts/Pinar-ExtraBold.ttf") format("truetype");
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ---- Persian (RTL) typography: Pinar family ---- */
 [dir="rtl"] {
-  font-family: Vazirmatn, "Segoe UI", Tahoma, sans-serif;
+  font-family: "Pinar", Vazirmatn, Tahoma, sans-serif;
+}
+/* Small uppercase labels also use Pinar in Persian instead of the mono/sans accents */
+[dir="rtl"] .header-label,
+[dir="rtl"] .member-count,
+[dir="rtl"] time,
+[dir="rtl"] .nav-tab,
+[dir="rtl"] .language-trigger,
+[dir="rtl"] .language-name,
+[dir="rtl"] .eyebrow {
+  font-family: "Pinar", Tahoma, sans-serif;
+  letter-spacing: 0;
+  text-transform: none;
+}
+/* Different Pinar weights: headings (titr) use ExtraBold/Bold, emphasis SemiBold */
+[dir="rtl"] h1 {
+  font-weight: 800;
+}
+[dir="rtl"] h2 {
+  font-weight: 700;
+}
+[dir="rtl"] h3 {
+  font-weight: 600;
+}
+[dir="rtl"] strong {
+  font-weight: 700;
+}
+[dir="rtl"] em {
+  font-weight: 500;
+}
+[dir="rtl"] .eyebrow {
+  font-weight: 500;
+}
+[dir="rtl"] .stat-card span,
+[dir="rtl"] .github-repository-strip span {
+  font-weight: 400;
 }
 [dir="rtl"] .nav-tab {
   letter-spacing: 0;

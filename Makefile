@@ -1,6 +1,6 @@
 # Convenience wrappers. Every command here also exists as a documented script.
 
-.PHONY: setup test lint format db-init db-sync db-reset auth-bootstrap project-check delivery-preflight delivery-preflight-report dev check
+.PHONY: setup test lint format db-init db-sync db-reset auth-bootstrap project-check delivery-preflight delivery-preflight-report demo-handoff dev check
 
 setup:            ## Create venv, install dependencies, initialize DB with data
 	./scripts/setup.sh
@@ -36,6 +36,9 @@ delivery-preflight: ## Strict final-delivery gate; exits nonzero until the relea
 
 delivery-preflight-report: ## Print current final-delivery blockers without failing
 	.venv/bin/python -m backend.delivery_preflight --report-only
+
+demo-handoff:     ## Prepare local professor demo state and print review/start instructions
+	bash ./scripts/demo-handoff.sh
 
 dev:              ## Print the two development server commands
 	@echo "Backend:  .venv/bin/python -m uvicorn backend.app.main:app --reload"

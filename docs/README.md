@@ -7,6 +7,7 @@ Use this page as the map for the repository documentation.
 - [Main README](../README.md) - product overview, current capabilities, setup, configuration, and major workflows
 - [Architecture](architecture.md) - state boundaries, modular-monolith structure, AI services, and external integration rules
 - [AI Autonomy Platform](ai-autonomy-platform.md) - repository RAG, governed actions, progress inference, orchestration, automation, and production hardening
+- [Railway Deployment](railway-deployment.md) - single-service production image, persistent volume, variables, and deployment verification
 - [Security](../SECURITY.md) - repository, AI, secrets, runner, and external-action security boundaries
 - [Contributing](../CONTRIBUTING.md) - branch, testing, migration, and AI/autonomy contribution rules
 

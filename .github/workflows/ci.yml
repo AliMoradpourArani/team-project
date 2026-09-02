@@ -78,6 +78,38 @@ jobs:
       - name: Build
         run: npm run build
 
+  production-image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Build single-service production image
+        run: docker build -t team-project-production:ci .
+      - name: Start production image
+        run: |
+          docker run --rm -d \
+            --name team-project-production \
+            -p 8000:8000 \
+            -e AI_AUTOMATION_ENABLED=false \
+            team-project-production:ci
+      - name: Smoke test health and frontend
+        run: |
+          set -euo pipefail
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:8000/health >/tmp/health.json; then
+              break
+            fi
+            if [ "$attempt" -eq 30 ]; then
+              docker logs team-project-production
+              exit 1
+            fi
+            sleep 1
+          done
+          grep -q '"status":"ok"' /tmp/health.json
+          curl --fail --silent http://127.0.0.1:8000/ | grep -qi '<!doctype html>'
+      - name: Show production logs on failure
+        if: failure()
+        run: docker logs team-project-production || true
+
   e2e:
     runs-on: ubuntu-latest
     steps:

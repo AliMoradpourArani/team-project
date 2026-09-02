@@ -15,6 +15,7 @@ from ..schemas.api import ErrorResponse
 from ..services import ai_automation
 from ..services.queries import NotFoundError
 from .api import activities, ai, auth, health, professor, projects, users
+from .frontend_static import install_frontend
 from .observability import request_observability
 
 
@@ -90,3 +91,6 @@ def value_error_handler(request: Request, exc: ValueError) -> JSONResponse:
         status_code=400,
         content=ErrorResponse(error="Invalid Request", detail=str(exc)).model_dump(),
     )
+
+
+install_frontend(app)

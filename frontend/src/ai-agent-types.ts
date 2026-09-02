@@ -29,4 +29,46 @@ export interface AIAgentReply {
   reply: AIAgentMessage;
   snapshot: AIAgentSnapshot;
   suggestedTasks: AITaskSuggestion[];
+  provider: string;
+  model: string | null;
+  providerMessage: string | null;
+}
+
+export interface AIAgentReplanResponse {
+  summary: string;
+  tasks: AITaskSuggestion[];
+  appliedActivities: Activity[];
+  snapshot: AIAgentSnapshot;
+}
+
+export interface AIDailyBrief {
+  projectId: string | null;
+  headline: string;
+  progressPercent: number;
+  overdueCount: number;
+  githubSignalCount: number;
+  blockers: string[];
+  priorities: string[];
+}
+
+export type AISpecialist =
+  | "planner"
+  | "project-manager"
+  | "code-reviewer"
+  | "debugger"
+  | "progress-tracker"
+  | "github-agent"
+  | "documentation-agent";
+
+export interface AISpecialistResult {
+  specialist: AISpecialist;
+  summary: string;
+  findings: AIFinding[];
+  suggestedTasks: AITaskSuggestion[];
+}
+
+export interface AIMultiAgentReview {
+  projectId: string | null;
+  results: AISpecialistResult[];
+  executiveSummary: string;
 }

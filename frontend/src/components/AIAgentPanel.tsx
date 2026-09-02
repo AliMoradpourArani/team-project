@@ -1,8 +1,24 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-import { createAIThread, deleteAIThread, getAIThreads, postAIMessage } from "../api";
+import {
+  createAIThread,
+  deleteAIThread,
+  getAIAgentSnapshot,
+  getAIDailyBrief,
+  getAIMultiAgentReview,
+  getAIThreads,
+  postAIMessage,
+  replanAIThread,
+} from "../api";
 import "../ai-agent.css";
-import type { AIAgentReply, AIAgentThread } from "../ai-agent-types";
+import type {
+  AIAgentReply,
+  AIAgentReplanResponse,
+  AIAgentSnapshot,
+  AIAgentThread,
+  AIDailyBrief,
+  AIMultiAgentReview,
+} from "../ai-agent-types";
 
 interface AIAgentPanelProps {
   projectId: string | null;
@@ -13,6 +29,10 @@ export default function AIAgentPanel({ projectId }: AIAgentPanelProps) {
   const [activeId, setActiveId] = useState<string>("");
   const [message, setMessage] = useState("");
   const [lastReply, setLastReply] = useState<AIAgentReply | null>(null);
+  const [snapshot, setSnapshot] = useState<AIAgentSnapshot | null>(null);
+  const [brief, setBrief] = useState<AIDailyBrief | null>(null);
+  const [replan, setReplan] = useState<AIAgentReplanResponse | null>(null);
+  const [review, setReview] = useState<AIMultiAgentReview | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
@@ -29,9 +49,32 @@ export default function AIAgentPanel({ projectId }: AIAgentPanelProps) {
     );
   }, []);
 
+  const loadProjectIntelligence = useCallback(async () => {
+    const [nextBrief, nextReview] = await Promise.all([
+      getAIDailyBrief(projectId),
+      getAIMultiAgentReview(projectId),
+    ]);
+    setBrief(nextBrief);
+    setReview(nextReview);
+  }, [projectId]);
+
   useEffect(() => {
     refresh().catch(() => setThreads([]));
-  }, [refresh]);
+    loadProjectIntelligence().catch(() => {
+      setBrief(null);
+      setReview(null);
+    });
+  }, [loadProjectIntelligence, refresh]);
+
+  useEffect(() => {
+    if (!activeId) {
+      setSnapshot(null);
+      return;
+    }
+    getAIAgentSnapshot(activeId)
+      .then(setSnapshot)
+      .catch(() => setSnapshot(null));
+  }, [activeId]);
 
   async function startThread() {
     setBusy(true);
@@ -41,6 +84,7 @@ export default function AIAgentPanel({ projectId }: AIAgentPanelProps) {
       setThreads((current) => [thread, ...current]);
       setActiveId(thread.id);
       setLastReply(null);
+      setReplan(null);
     } catch (requestError) {
       setError(
         requestError instanceof Error ? requestError.message : "Could not create AI thread.",
@@ -57,12 +101,29 @@ export default function AIAgentPanel({ projectId }: AIAgentPanelProps) {
     try {
       const response = await postAIMessage(activeThread.id, message.trim());
       setLastReply(response);
+      setSnapshot(response.snapshot);
       setThreads((current) =>
         current.map((thread) => (thread.id === response.thread.id ? response.thread : thread)),
       );
       setMessage("");
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : "AI agent request failed.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function runReplan(applyTasks: boolean) {
+    if (!activeThread) return;
+    setBusy(true);
+    setError("");
+    try {
+      const response = await replanAIThread(activeThread.id, applyTasks);
+      setReplan(response);
+      setSnapshot(response.snapshot);
+      await loadProjectIntelligence();
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : "Replanning failed.");
     } finally {
       setBusy(false);
     }
@@ -77,25 +138,43 @@ export default function AIAgentPanel({ projectId }: AIAgentPanelProps) {
       setThreads(remaining);
       setActiveId(remaining[0]?.id ?? "");
       setLastReply(null);
+      setReplan(null);
     } finally {
       setBusy(false);
     }
   }
 
+  const visibleSnapshot = lastReply?.snapshot ?? snapshot;
+
   return (
     <section className="ai-agent-panel" aria-labelledby="ai-agent-title">
       <div className="ai-agent-header">
         <div>
-          <p className="eyebrow">Persistent agent</p>
-          <h3 id="ai-agent-title">Project memory & chat</h3>
+          <p className="eyebrow">AI project agent</p>
+          <h3 id="ai-agent-title">Project intelligence cockpit</h3>
           <p>
-            Keep context between sessions and replan from tracked work, health checks, and GitHub.
+            Persistent context, GitHub evidence, replanning, engineering review, and specialist
+            agents.
           </p>
         </div>
         <button type="button" className="secondary-button" onClick={startThread} disabled={busy}>
           New thread
         </button>
       </div>
+
+      {brief ? (
+        <div className="ai-agent-brief">
+          <strong>{brief.headline}</strong>
+          <div className="ai-agent-snapshot">
+            <span>{brief.overdueCount} overdue</span>
+            <span>{brief.githubSignalCount} GitHub signals</span>
+            <span>{brief.blockers.length} blockers</span>
+          </div>
+          {brief.priorities.length > 0 ? (
+            <p>Today: {brief.priorities.slice(0, 3).join(" · ")}</p>
+          ) : null}
+        </div>
+      ) : null}
 
       {threads.length > 0 ? (
         <div className="ai-agent-thread-tabs" role="tablist" aria-label="AI threads">
@@ -109,6 +188,7 @@ export default function AIAgentPanel({ projectId }: AIAgentPanelProps) {
               onClick={() => {
                 setActiveId(thread.id);
                 setLastReply(null);
+                setReplan(null);
               }}
             >
               {thread.title}
@@ -123,10 +203,29 @@ export default function AIAgentPanel({ projectId }: AIAgentPanelProps) {
 
       {activeThread ? (
         <>
+          <div className="ai-agent-actions">
+            <button
+              type="button"
+              className="secondary-button"
+              disabled={busy}
+              onClick={() => runReplan(false)}
+            >
+              Preview replan
+            </button>
+            <button
+              type="button"
+              className="secondary-button"
+              disabled={busy}
+              onClick={() => runReplan(true)}
+            >
+              Apply replan tasks
+            </button>
+          </div>
+
           <div className="ai-agent-messages">
             {activeThread.messages.length === 0 ? (
               <p className="ai-agent-empty">
-                Ask for a replan, blocker check, review, or next milestone.
+                Ask for a roadmap, blocker check, code review, debug pass, or next milestone.
               </p>
             ) : null}
             {activeThread.messages.map((item) => (
@@ -138,11 +237,18 @@ export default function AIAgentPanel({ projectId }: AIAgentPanelProps) {
           </div>
 
           {lastReply ? (
+            <p className="ai-agent-provider">
+              Response engine: {lastReply.provider}
+              {lastReply.model ? ` · ${lastReply.model}` : ""}
+            </p>
+          ) : null}
+
+          {visibleSnapshot ? (
             <div className="ai-agent-snapshot">
-              <span>{lastReply.snapshot.progressPercent}% progress</span>
-              <span>{lastReply.snapshot.overdueTasks.length} overdue</span>
-              <span>{lastReply.snapshot.githubSignals.length} GitHub signals</span>
-              <span>{lastReply.snapshot.findings.length} checks</span>
+              <span>{visibleSnapshot.progressPercent}% progress</span>
+              <span>{visibleSnapshot.overdueTasks.length} overdue</span>
+              <span>{visibleSnapshot.githubSignals.length} GitHub signals</span>
+              <span>{visibleSnapshot.findings.length} checks</span>
             </div>
           ) : null}
 
@@ -157,13 +263,27 @@ export default function AIAgentPanel({ projectId }: AIAgentPanelProps) {
             </div>
           ) : null}
 
+          {replan ? (
+            <div className="ai-agent-suggestions">
+              <strong>{replan.summary}</strong>
+              {replan.tasks.map((task) => (
+                <p key={`${task.date}-${task.title}`}>
+                  {task.date} · {task.title}
+                </p>
+              ))}
+              {replan.appliedActivities.length > 0 ? (
+                <p>{replan.appliedActivities.length} task(s) added to tracked work.</p>
+              ) : null}
+            </div>
+          ) : null}
+
           <div className="ai-agent-composer">
             <textarea
               rows={2}
               maxLength={4000}
               value={message}
               onChange={(event) => setMessage(event.target.value)}
-              placeholder="Replan my week, check blockers, review what I finished…"
+              placeholder="Replan my week, review the implementation, debug blockers…"
             />
             <button
               type="button"
@@ -178,6 +298,21 @@ export default function AIAgentPanel({ projectId }: AIAgentPanelProps) {
             Delete thread
           </button>
         </>
+      ) : null}
+
+      {review ? (
+        <div className="ai-agent-review">
+          <strong>7-agent review</strong>
+          <p>{review.executiveSummary}</p>
+          <div className="ai-agent-specialists">
+            {review.results.map((result) => (
+              <article key={result.specialist}>
+                <strong>{result.specialist}</strong>
+                <p>{result.summary}</p>
+              </article>
+            ))}
+          </div>
+        </div>
       ) : null}
 
       {error ? <p className="ai-error">{error}</p> : null}

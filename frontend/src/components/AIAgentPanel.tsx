@@ -291,7 +291,12 @@ export default function AIAgentPanel({ projectId }: AIAgentPanelProps) {
               {busy ? "Thinking…" : "Send"}
             </button>
           </div>
-          <button type="button" className="ai-agent-delete" onClick={removeThread} disabled={busy}>
+          <button
+            type="button"
+            className="ai-agent-delete"
+            onClick={removeThread}
+            disabled={busy}
+          >
             Delete thread
           </button>
         </>

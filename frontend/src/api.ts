@@ -4,7 +4,12 @@ import type {
   AIAgentSnapshot,
   AIAgentThread,
   AIDailyBrief,
+  AIHealthScore,
   AIMultiAgentReview,
+  AIOrchestrationResult,
+  AIProgressSyncResult,
+  AIRepoIndexResult,
+  AIWeeklyBrief,
 } from "./ai-agent-types";
 import type {
   Activity,
@@ -169,8 +174,37 @@ export async function replanAIThread(
 export const getAIDailyBrief = (projectId: string | null): Promise<AIDailyBrief> =>
   request<AIDailyBrief>(`/api/ai/brief${projectQuery(projectId)}`);
 
+export const getAIWeeklyBrief = (projectId: string | null): Promise<AIWeeklyBrief> =>
+  request<AIWeeklyBrief>(`/api/ai/weekly-brief${projectQuery(projectId)}`);
+
+export const getAIHealth = (projectId: string | null): Promise<AIHealthScore> =>
+  request<AIHealthScore>(`/api/ai/health${projectQuery(projectId)}`);
+
 export const getAIMultiAgentReview = (projectId: string | null): Promise<AIMultiAgentReview> =>
   request<AIMultiAgentReview>(`/api/ai/multi-agent-review${projectQuery(projectId)}`);
+
+export const getAIOrchestration = (projectId: string | null): Promise<AIOrchestrationResult> =>
+  request<AIOrchestrationResult>(`/api/ai/orchestrate${projectQuery(projectId)}`);
+
+export async function indexAIRepository(projectId: string | null): Promise<AIRepoIndexResult> {
+  return request<AIRepoIndexResult>(`/api/ai/repo/index${projectQuery(projectId)}`, {
+    method: "POST",
+  });
+}
+
+export async function syncAIProgress(
+  projectId: string | null,
+  apply: boolean,
+): Promise<AIProgressSyncResult> {
+  return request<AIProgressSyncResult>("/api/ai/progress/sync", {
+    method: "POST",
+    body: JSON.stringify({ projectId, apply }),
+  });
+}
+
+export async function refreshAINotifications(projectId: string | null): Promise<void> {
+  await request(`/api/ai/notifications/refresh${projectQuery(projectId)}`, { method: "POST" });
+}
 
 export async function deleteAIThread(threadId: string): Promise<void> {
   await request<void>(`/api/ai/threads/${threadId}`, { method: "DELETE" });

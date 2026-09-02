@@ -1,6 +1,10 @@
 """HTTP entry point for the team project API."""
 
+from __future__ import annotations
+
+import asyncio
 import os
+from contextlib import asynccontextmanager, suppress
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
@@ -8,6 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from ..schemas.api import ErrorResponse
+from ..services import ai_automation
 from ..services.queries import NotFoundError
 from .api import activities, ai, auth, health, professor, projects, users
 from .observability import request_observability
@@ -18,14 +23,30 @@ def configured_origins() -> list[str]:
     return [origin.strip() for origin in value.split(",") if origin.strip()]
 
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    del app
+    task: asyncio.Task[None] | None = None
+    if ai_automation.enabled():
+        task = asyncio.create_task(ai_automation.maintenance_loop())
+    try:
+        yield
+    finally:
+        if task is not None:
+            task.cancel()
+            with suppress(asyncio.CancelledError):
+                await task
+
+
 app = FastAPI(
     title="Team Project API",
-    version="0.12.0",
+    version="0.13.0",
     description=(
-        "Authenticated team activity, AI-assisted planning and project diagnostics, typed member-project "
+        "Authenticated team activity, governed AI planning and repository intelligence, typed member-project "
         "onboarding and demos, professor evaluation, immutable submissions, final-delivery preflight, "
-        "and frozen release candidates."
+        "frozen release candidates, and recurring project-health automation."
     ),
+    lifespan=lifespan,
 )
 
 app.add_middleware(

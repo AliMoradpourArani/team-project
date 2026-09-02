@@ -26,6 +26,14 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
+      - name: Require AI reviewer secret
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          if [ -z "$OPENAI_API_KEY" ]; then
+            echo "OPENAI_API_KEY is not configured; refusing to pass AI review without a reviewer."
+            exit 1
+          fi
       - name: Review pull request diff
         run: python .github/scripts/ai_review.py
         env:

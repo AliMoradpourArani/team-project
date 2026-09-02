@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 
 import { deleteActivity, getActivities, getMe, getProjects, getUsers, logout } from "./api";
 import ActivityForm from "./components/ActivityForm";
+import AIWorkspace from "./components/AIWorkspace";
 import CalendarView from "./components/CalendarView";
 import DashboardStats from "./components/DashboardStats";
 import Layout from "./components/Layout";
@@ -119,6 +120,8 @@ function UserPage({ userId, readOnly }: { userId: string; readOnly: boolean }) {
       </div>
 
       <DashboardStats activities={activities} projects={projects} />
+
+      {!readOnly ? <AIWorkspace projects={projects} onTasksApplied={loadData} /> : null}
 
       <div className={`dashboard-grid ${readOnly ? "read-only-dashboard-grid" : ""}`}>
         {!readOnly ? (

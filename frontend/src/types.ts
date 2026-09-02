@@ -1,6 +1,7 @@
 export type ActivityStatus = "planned" | "in-progress" | "completed";
 export type AuthRole = "student" | "professor";
 export type ProjectReviewStatus = "in-review" | "changes-requested" | "approved";
+export type AIAction = "plan" | "roadmap" | "progress" | "debug" | "review";
 
 export interface User {
   id: string;
@@ -33,6 +34,55 @@ export interface Project {
   description: string;
   technology: string[];
   status: string;
+}
+
+export interface AIStatus {
+  available: boolean;
+  mode: "provider" | "local";
+  provider: string;
+  model: string | null;
+}
+
+export interface AITaskSuggestion {
+  title: string;
+  date: string;
+  rationale: string;
+  projectId: string | null;
+}
+
+export interface AIRoadmapMilestone {
+  title: string;
+  objective: string;
+  targetDate: string;
+  tasks: string[];
+}
+
+export interface AIFinding {
+  severity: "info" | "warning" | "error";
+  title: string;
+  detail: string;
+  recommendation: string;
+}
+
+export interface AIWorkspaceInput {
+  action: AIAction;
+  projectId: string | null;
+  goal: string;
+  taskCount: number;
+  applyTasks: boolean;
+}
+
+export interface AIWorkspaceResult {
+  action: AIAction;
+  provider: string;
+  model: string | null;
+  providerMessage: string | null;
+  summary: string;
+  progressPercent: number;
+  tasks: AITaskSuggestion[];
+  roadmap: AIRoadmapMilestone[];
+  findings: AIFinding[];
+  appliedActivities: Activity[];
 }
 
 export interface ProjectIntegration {

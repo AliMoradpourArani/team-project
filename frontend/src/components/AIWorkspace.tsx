@@ -100,6 +100,7 @@ export default function AIWorkspace({ projects, onTasksApplied }: AIWorkspacePro
             className={`ai-action ${action === item.value ? "ai-action-active" : ""}`}
             type="button"
             key={item.value}
+            aria-pressed={action === item.value}
             onClick={() => setAction(item.value)}
           >
             <strong>{item.label}</strong>
@@ -128,7 +129,10 @@ export default function AIWorkspace({ projects, onTasksApplied }: AIWorkspacePro
             min={1}
             max={12}
             value={taskCount}
-            onChange={(event) => setTaskCount(Number(event.target.value))}
+            onChange={(event) => {
+              const parsed = Number(event.target.value);
+              setTaskCount(Number.isFinite(parsed) ? Math.min(12, Math.max(1, parsed)) : 1);
+            }}
             disabled={!createsTasks}
           />
         </label>

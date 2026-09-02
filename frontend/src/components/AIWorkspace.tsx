@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { getAIStatus, runAIWorkspace } from "../api";
 import "../ai-workspace.css";
 import type { AIAction, AIStatus, AIWorkspaceResult, Project } from "../types";
+import AIAgentPanel from "./AIAgentPanel";
 
 const actions: { value: AIAction; label: string; description: string }[] = [
   { value: "plan", label: "Plan", description: "Turn a goal into dated, actionable tasks." },
@@ -259,6 +260,8 @@ export default function AIWorkspace({ projects, onTasksApplied }: AIWorkspacePro
           ) : null}
         </div>
       ) : null}
+
+      <AIAgentPanel projectId={projectId || null} />
     </section>
   );
 }

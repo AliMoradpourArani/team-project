@@ -21,10 +21,6 @@ export default function ThemeSwitcher() {
           {dark ? "🌙" : "☀️"}
         </span>
       </span>
-      <span className="theme-icons" aria-hidden="true">
-        <span className="theme-icon theme-icon-sun">☀️</span>
-        <span className="theme-icon theme-icon-moon">🌙</span>
-      </span>
     </button>
   );
 }

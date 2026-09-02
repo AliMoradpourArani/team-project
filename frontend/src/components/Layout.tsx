@@ -54,7 +54,6 @@ export default function Layout({ children, session, onLogout, currentPath = "/" 
         ) : null}
         <div className="header-tools">
           <ThemeSwitcher />
-          <LanguageSwitcher />
           {session ? (
             <div className="header-session">
               <span className="header-label">
@@ -67,6 +66,7 @@ export default function Layout({ children, session, onLogout, currentPath = "/" 
           ) : (
             <span className="header-label">{t("header.protectedWorkspace")}</span>
           )}
+          <LanguageSwitcher />
         </div>
       </header>
       <main className="page-content">{children}</main>

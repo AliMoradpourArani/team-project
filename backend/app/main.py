@@ -14,7 +14,7 @@ from fastapi.responses import JSONResponse
 from ..schemas.api import ErrorResponse
 from ..services import ai_automation
 from ..services.queries import NotFoundError
-from .api import activities, ai, auth, health, professor, projects, users
+from .api import activities, ai, auth, github, health, professor, projects, users
 from .frontend_static import install_frontend
 from .observability import request_observability
 
@@ -65,6 +65,7 @@ app.include_router(auth.router)
 app.include_router(users.router)
 app.include_router(activities.router)
 app.include_router(projects.router)
+app.include_router(github.router)
 app.include_router(ai.router)
 app.include_router(professor.router)
 

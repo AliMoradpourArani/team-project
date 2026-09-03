@@ -32,9 +32,10 @@ def test_initialize_database_creates_schema_from_scratch(tmp_path):
         "010_create_ai_agent",
         "011_ai_native_platform",
         "012_ai_autonomy_platform",
+        "014_create_github_connections",
     ]
     with connect(database_path) as connection:
-        assert row_count(connection, "schema_migrations") == 12
+        assert row_count(connection, "schema_migrations") == 13
         assert row_count(connection, "auth_accounts") == 0
         assert row_count(connection, "auth_sessions") == 0
         assert row_count(connection, "project_run_history") == 0

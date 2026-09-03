@@ -377,3 +377,49 @@ export interface ProfessorGitHubDashboardData {
   timeline: GitHubTimelineEvent[];
   generatedAt: string;
 }
+
+export interface GithubStatus {
+  connected: boolean;
+  username: string | null;
+  syncedAt: string | null;
+  canPush: boolean;
+}
+
+export interface GithubRepo {
+  fullName: string;
+  name: string;
+  owner: string;
+  htmlUrl: string;
+  language: string | null;
+  defaultBranch: string;
+  updatedAt: string | null;
+  private: boolean;
+}
+
+export interface GithubImportResponse {
+  project: Project | null;
+  imported: boolean;
+  repositoryPath: string;
+  entryPoint: string;
+}
+
+export interface ProjectFileEntry {
+  path: string;
+  name: string;
+  isDirectory: boolean;
+  size: number;
+}
+
+export interface ProjectFile {
+  path: string;
+  content: string;
+  size: number;
+}
+
+export interface ProjectCommitResponse {
+  committed: boolean;
+  pushed: boolean;
+  message: string;
+  sha: string | null;
+  detail: string;
+}

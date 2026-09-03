@@ -1,11 +1,13 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { getProjectDetail, runProject } from "../api";
+import { getProjectDetail, getProjectFile, getProjectFiles, runProject } from "../api";
 import ProjectDetailPage from "./ProjectDetailPage";
 
 vi.mock("../api", () => ({
   getProjectDetail: vi.fn(),
+  getProjectFile: vi.fn(),
+  getProjectFiles: vi.fn(),
   runProject: vi.fn(),
 }));
 
@@ -23,6 +25,8 @@ vi.mock("./ProjectSubmissionPanel", () => ({
 
 const getDetail = vi.mocked(getProjectDetail);
 const executeProject = vi.mocked(runProject);
+const listSourceFiles = vi.mocked(getProjectFiles);
+const readSourceFile = vi.mocked(getProjectFile);
 
 const detail = {
   project: {
@@ -77,7 +81,10 @@ describe("ProjectDetailPage", () => {
   beforeEach(() => {
     getDetail.mockReset();
     executeProject.mockReset();
+    listSourceFiles.mockReset();
+    readSourceFile.mockReset();
     getDetail.mockResolvedValue(detail);
+    listSourceFiles.mockResolvedValue([]);
   });
 
   it("renders health, review panel, safe readme text, and runtime history", async () => {
@@ -114,7 +121,7 @@ describe("ProjectDetailPage", () => {
       <ProjectDetailPage projectId="team-foundation" backHref="/users/hossein" role="student" />,
     );
 
-    fireEvent.click(await screen.findByRole("button", { name: "Run demo" }));
+    fireEvent.click((await screen.findAllByRole("button", { name: "Run demo" }))[0]);
 
     expect(await screen.findByText("fresh-run")).toBeInTheDocument();
     expect(executeProject).toHaveBeenCalledWith("team-foundation");

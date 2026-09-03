@@ -114,9 +114,16 @@ def _run_git(project_dir: Path, *args: str) -> subprocess.CompletedProcess[str]:
 
 
 def _credential_url(origin: str, token: str) -> str:
-    if origin.startswith("https://"):
-        return origin.replace("https://", f"https://x-access-token:{token}@", 1)
-    return origin
+    # Build a fresh, one-off authenticated URL. Never trust or duplicate any
+    # credentials that could already be embedded in the stored origin URL (a
+    # double "user@user@" URL makes real pushes to GitHub fail). If origin is
+    # not an https URL (e.g. ssh), fall back to pushing to it unchanged.
+    if not origin.startswith("https://"):
+        return origin
+    host_and_path = origin[len("https://"):]
+    if "@" in host_and_path:
+        host_and_path = host_and_path.rsplit("@", 1)[1]
+    return f"https://x-access-token:{token}@{host_and_path}"
 
 
 def _push(project_dir: Path, token: str) -> bool:

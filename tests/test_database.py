@@ -32,7 +32,7 @@ def test_initialize_database_creates_schema_from_scratch(tmp_path):
         "010_create_ai_agent",
         "011_ai_native_platform",
         "012_ai_autonomy_platform",
-        "014_create_github_connections",
+        "013_create_github_connections",
     ]
     with connect(database_path) as connection:
         assert row_count(connection, "schema_migrations") == 13
@@ -143,19 +143,21 @@ def test_duplicate_migration_prefix_is_rejected(tmp_path):
     from backend.database.init_db import MIGRATIONS_ROOT
     from backend.database.source_files import REPOSITORY_ROOT
 
-    first = MIGRATIONS_ROOT / "013_first.sql"
-    second = MIGRATIONS_ROOT / "013_second.sql"
+    # 099 is unused by the committed migrations, so it can probe for duplicate
+    # prefixes without colliding with a real migration such as 013_*.
+    first = MIGRATIONS_ROOT / "099_first.sql"
+    second = MIGRATIONS_ROOT / "099_second.sql"
     first.write_text("CREATE TABLE first_probe (id TEXT);", encoding="utf-8")
     second.write_text("CREATE TABLE second_probe (id TEXT);", encoding="utf-8")
     try:
-        with pytest.raises(RuntimeError, match="Duplicate migration prefix '013'"):
+        with pytest.raises(RuntimeError, match="Duplicate migration prefix '099'"):
             initialize_database(tmp_path / "fresh.db")
         with connect(tmp_path / "fresh.db") as connection:
             assert row_count(connection, "schema_migrations") == 0
     finally:
         first.unlink()
         second.unlink()
-    assert not list(REPOSITORY_ROOT.glob("backend/database/migrations/013_*.sql"))
+    assert not list(REPOSITORY_ROOT.glob("backend/database/migrations/099_*.sql"))
 
 
 def test_sync_deletes_rows_removed_from_source_files(tmp_path, monkeypatch):

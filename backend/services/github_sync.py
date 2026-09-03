@@ -25,7 +25,13 @@ from ..database import source_files
 from ..database.connection import connect
 from ..database.sync_data import sync_source_data
 from ..schemas.api import ProjectResponse
-from ..schemas.github_editor import GithubImportResponse, GithubRepo, GithubStatus
+from ..schemas.github_editor import (
+    GithubFileContent,
+    GithubImportResponse,
+    GithubRepo,
+    GithubStatus,
+    GithubTreeEntry,
+)
 from ..schemas.project_runner import ProjectManifest
 from ..schemas.source_data import ProjectRecord, UserRecord, validate_github_username, validate_slug
 from . import project_runner
@@ -88,9 +94,14 @@ def _next_available_slug(owner_root: Path, base: str) -> str:
     return candidate
 
 
-def _clone_url(token: str | None, full_name: str) -> str:
-    if token:
-        return f"https://{token}@github.com/{full_name}.git"
+def _clone_url(full_name: str) -> str:
+    """Return a token-free clone URL so credentials never persist in ``.git/config``.
+
+    Cloning with an embedded token would leak it into the origin remote URL that
+    git stores on disk, contradicting the isolation policy. Authentication is
+    therefore supplied only at push time (see ``code_editor._push``); imports
+    clone over plain HTTPS (public repositories).
+    """
     return f"https://github.com/{full_name}.git"
 
 
@@ -304,6 +315,116 @@ def list_repos(user_id: str) -> list[GithubRepo]:
     return [_map_repo(payload) for payload in payloads if isinstance(payload, dict)]
 
 
+def _list_tree_recursive(client: httpx.Client, full_name: str, ref: str) -> list[dict]:
+    """Fetch a repository's complete git tree recursively (all files)."""
+    response = client.get(
+        f"/repos/{full_name}/git/trees/{ref}?recursive=1",
+        params={"per_page": 100},
+    )
+    if response.status_code == 409:
+        # The requested ref may be a branch name GitHub can't resolve to a tree
+        # directly; fast-forward via the default branch metadata.
+        repo = client.get(f"/repos/{full_name}")
+        repo.raise_for_status()
+        resolved = str(repo.json().get("default_branch") or "main")
+        response = client.get(
+            f"/repos/{full_name}/git/trees/{resolved}?recursive=1",
+            params={"per_page": 100},
+        )
+    response.raise_for_status()
+    payload = response.json()
+    if not isinstance(payload, dict):
+        return []
+    entries = payload.get("tree")
+    return entries if isinstance(entries, list) else []
+
+
+def list_repo_files(user_id: str, full_name: str, ref: str | None = None) -> list[GithubTreeEntry]:
+    """List every file in a repository for the in-page file browser."""
+    connection = get_connection(user_id)
+    if connection is None:
+        raise ValueError("Connect your GitHub account before browsing repositories.")
+    full_name = full_name.strip()
+    if not REPOSITORY_PATTERN.fullmatch(full_name):
+        raise ValueError("fullName must use the owner/repository form, e.g. octocat/hello.")
+    branch = ref.strip() if ref else "HEAD"
+    client = _new_client(connection.personal_token)
+    try:
+        raw_entries = _list_tree_recursive(client, full_name, branch)
+    except httpx.HTTPError as error:
+        raise ValueError(
+            f"Could not browse the repository {full_name}. It may be private or the "
+            "name may be wrong."
+        ) from error
+
+    entries: list[GithubTreeEntry] = []
+    for raw in raw_entries:
+        if not isinstance(raw, dict):
+            continue
+        entry_type = str(raw.get("type") or "blob")
+        path = str(raw.get("path") or "")
+        if not path:
+            continue
+        if entry_type in {"tree", "blob"}:
+            size = raw.get("size")
+            entries.append(
+                GithubTreeEntry(
+                    path=path,
+                    type="tree" if entry_type == "tree" else "blob",
+                    size=int(size) if isinstance(size, int) else 0,
+                )
+            )
+    entries.sort(key=lambda entry: (entry.type == "tree", entry.path))
+    return entries
+
+
+def read_repo_file(
+    user_id: str, full_name: str, path: str, ref: str | None = None
+) -> GithubFileContent:
+    """Fetch the raw, decoded content of one file in a repository."""
+    connection = get_connection(user_id)
+    if connection is None:
+        raise ValueError("Connect your GitHub account before reading files.")
+    full_name = full_name.strip()
+    if not REPOSITORY_PATTERN.fullmatch(full_name):
+        raise ValueError("fullName must use the owner/repository form, e.g. octocat/hello.")
+    if not path or path.startswith("/") or ".." in path.split("/"):
+        raise ValueError("Invalid file path.")
+
+    branch = ref.strip() if ref else "HEAD"
+    client = _new_client(connection.personal_token)
+    try:
+        url_path = path.replace(" ", "%20")
+        response = client.get(
+            f"/repos/{full_name}/contents/{url_path}",
+            params={"ref": branch},
+        )
+        if response.status_code in {404, 409}:
+            raise ValueError(
+                f"Could not find the file {path} in {full_name}. It may have been "
+                "moved or deleted."
+            )
+        response.raise_for_status()
+        payload = response.json()
+        if not isinstance(payload, dict) or payload.get("type") != "file":
+            raise ValueError(f"{path} is not a regular file in {full_name}.")
+        encoding = str(payload.get("encoding") or "base64")
+        content = payload.get("content") or ""
+        if encoding == "base64":
+            import base64
+
+            try:
+                decoded = base64.b64decode(content).decode("utf-8")
+            except (ValueError, UnicodeDecodeError) as error:
+                raise ValueError(f"{path} is not UTF-8 text and cannot be edited.") from error
+        else:
+            decoded = str(content)
+    except httpx.HTTPError as error:
+        raise ValueError(f"Could not load the file {path} from GitHub.") from error
+
+    return GithubFileContent(path=path, content=decoded, size=len(decoded.encode("utf-8")))
+
+
 def import_repository(user_id: str, full_name: str) -> GithubImportResponse:
     connection = get_connection(user_id)
     if connection is None:
@@ -323,12 +444,16 @@ def import_repository(user_id: str, full_name: str) -> GithubImportResponse:
     dest = owner_root / slug
 
     try:
-        _clone_repository(_clone_url(connection.personal_token, full_name), dest)
+        _clone_repository(_clone_url(full_name), dest)
+        entry_point = _entry_point(dest)
     except Exception as error:
+        # Remove any partial clone so a failed import never orphans a directory.
         shutil.rmtree(dest, ignore_errors=True)
+        if isinstance(error, ValueError):
+            # e.g. "No Python (.py) file found in the cloned repository." —
+            # propagate the precise message instead of a clone error.
+            raise
         raise ValueError(f"Could not clone repository {full_name}.") from error
-
-    entry_point = _entry_point(dest)
     name = _slugify_repo(repo_name)
     description = f"Imported from GitHub: {full_name}"
     technology = ["Python"]

@@ -3,7 +3,7 @@
   padding: 1.4rem;
   border: 1px solid var(--border, var(--color-slate-soft));
   border-radius: 20px;
-  background: linear-gradient(145deg, rgba(99, 102, 241, 0.08), rgba(14, 165, 233, 0.04));
+  background: var(--ai-workspace-bg);
 }
 
 .ai-workspace-heading,
@@ -33,7 +33,7 @@
   border-radius: 999px;
   font-size: 0.78rem;
   font-weight: 700;
-  background: rgba(15, 23, 42, 0.08);
+  background: var(--color-badge-wash);
 }
 
 .ai-mode-provider {
@@ -53,7 +53,7 @@
   text-align: start;
   border: 1px solid var(--border, var(--color-slate-soft));
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.72);
+  background: var(--color-glass);
   cursor: pointer;
 }
 
@@ -172,7 +172,7 @@
   margin-top: 0.75rem;
   overflow: hidden;
   border-radius: 999px;
-  background: rgba(100, 116, 139, 0.18);
+  background: var(--color-track-wash);
 }
 
 .ai-progress-track span {
@@ -200,7 +200,7 @@
   padding: 0.85rem;
   border: 1px solid var(--border, var(--color-slate-soft));
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.7);
+  background: var(--color-glass);
 }
 
 .ai-task-card time,
@@ -248,7 +248,7 @@
   text-transform: uppercase;
   font-size: 0.66rem;
   font-weight: 800;
-  background: rgba(100, 116, 139, 0.12);
+  background: var(--color-chip-wash);
 }
 
 .ai-finding-error {

@@ -84,7 +84,7 @@
   margin-top: 0.9rem;
   padding: 0.85rem;
   border-radius: 0.7rem;
-  background: rgba(127, 127, 127, 0.08);
+  background: var(--color-wash);
 }
 
 .runner-result-meta {
@@ -211,7 +211,7 @@
   margin: 0;
   padding: 1rem;
   border-radius: 0.75rem;
-  background: rgba(127, 127, 127, 0.08);
+  background: var(--color-wash);
   white-space: pre-wrap;
   overflow-wrap: anywhere;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;

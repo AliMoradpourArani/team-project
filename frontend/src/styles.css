@@ -44,6 +44,15 @@
   --color-slate-border: #cbd5e1;
   --color-indigo: #6366f1;
   --color-plain: #ffffff;
+  --color-glass: rgba(255, 255, 255, 0.72);
+  --color-glass-soft: rgba(255, 255, 255, 0.55);
+  --color-wash-weak: rgba(127, 127, 127, 0.05);
+  --color-wash: rgba(127, 127, 127, 0.08);
+  --color-wash-strong: rgba(127, 127, 127, 0.1);
+  --color-badge-wash: rgba(15, 23, 42, 0.08);
+  --color-track-wash: rgba(100, 116, 139, 0.18);
+  --color-chip-wash: rgba(100, 116, 139, 0.12);
+  --ai-workspace-bg: linear-gradient(145deg, rgba(99, 102, 241, 0.08), rgba(14, 165, 233, 0.04));
 }
 
 /* ---- Dark theme ---- */
@@ -89,7 +98,16 @@
   --color-slate-soft: #2a313c;
   --color-slate-border: #3a424f;
   --color-indigo: #818cf8;
-  --color-plain: #ffffff;
+  --color-plain: #1a211d;
+  --color-glass: rgba(30, 38, 34, 0.75);
+  --color-glass-soft: rgba(30, 38, 34, 0.6);
+  --color-wash-weak: rgba(255, 255, 255, 0.04);
+  --color-wash: rgba(255, 255, 255, 0.07);
+  --color-wash-strong: rgba(255, 255, 255, 0.09);
+  --color-badge-wash: rgba(255, 255, 255, 0.07);
+  --color-track-wash: rgba(255, 255, 255, 0.12);
+  --color-chip-wash: rgba(255, 255, 255, 0.09);
+  --ai-workspace-bg: linear-gradient(145deg, rgba(99, 102, 241, 0.12), rgba(14, 165, 233, 0.06));
 }
 
 :root {

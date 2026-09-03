@@ -121,7 +121,7 @@
 }
 
 .review-status-pending {
-  background: rgba(120, 120, 120, 0.12);
+  background: var(--color-chip-wash);
 }
 
 .review-status-in-review {

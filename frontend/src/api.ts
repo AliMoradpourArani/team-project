@@ -20,12 +20,18 @@ import type {
   AIWorkspaceResult,
   AuthSession,
   DeliveryPreflightData,
+  GithubImportResponse,
+  GithubRepo,
+  GithubStatus,
   ProfessorDashboardData,
   ProfessorGitHubDashboardData,
   ProfessorReviewQueueData,
   ProfessorSubmissionDashboardData,
   Project,
+  ProjectCommitResponse,
   ProjectDetail,
+  ProjectFile,
+  ProjectFileEntry,
   ProjectIntegration,
   ProjectOnboarding,
   ProjectReview,
@@ -314,4 +320,54 @@ export async function updateActivity(id: string, payload: ActivityInput): Promis
 
 export async function deleteActivity(id: string): Promise<void> {
   await request<void>(`/api/activities/${id}`, { method: "DELETE" });
+}
+
+export const getGitHubStatus = (): Promise<GithubStatus> =>
+  request<GithubStatus>("/api/github/status");
+
+export function connectGitHub(username: string, token: string | null): Promise<GithubStatus> {
+  return request<GithubStatus>("/api/github/connect", {
+    method: "POST",
+    body: JSON.stringify({ username, token }),
+  });
+}
+
+export async function disconnectGitHub(): Promise<{ connected: boolean }> {
+  return request<{ connected: boolean }>("/api/github/disconnect", { method: "POST" });
+}
+
+export function importGitHubRepo(fullName: string): Promise<GithubImportResponse> {
+  return request<GithubImportResponse>("/api/github/import", {
+    method: "POST",
+    body: JSON.stringify({ fullName }),
+  });
+}
+
+export const getGitHubRepos = (): Promise<GithubRepo[]> =>
+  request<GithubRepo[]>("/api/github/repos");
+
+export function getProjectFiles(projectId: string): Promise<ProjectFileEntry[]> {
+  return request<ProjectFileEntry[]>(`/api/projects/${projectId}/files`);
+}
+
+export function getProjectFile(projectId: string, path: string): Promise<ProjectFile> {
+  return request<ProjectFile>(`/api/projects/${projectId}/file?path=${encodeURIComponent(path)}`);
+}
+
+export function saveProjectFile(
+  projectId: string,
+  path: string,
+  content: string,
+): Promise<ProjectFile> {
+  return request<ProjectFile>(`/api/projects/${projectId}/file`, {
+    method: "PUT",
+    body: JSON.stringify({ path, content }),
+  });
+}
+
+export function commitProject(projectId: string, message: string): Promise<ProjectCommitResponse> {
+  return request<ProjectCommitResponse>(`/api/projects/${projectId}/commit`, {
+    method: "POST",
+    body: JSON.stringify({ message }),
+  });
 }

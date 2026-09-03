@@ -3,6 +3,13 @@
 from fastapi import APIRouter, HTTPException, Response, status
 
 from ...schemas.api import ProjectResponse
+from ...schemas.github_editor import (
+    ProjectCommitInput,
+    ProjectCommitResponse,
+    ProjectFileEntry,
+    ProjectFilePayload,
+    ProjectFileResponse,
+)
 from ...schemas.project_onboarding import ProjectOnboardingResponse
 from ...schemas.project_review import ProjectReviewInput, ProjectReviewResponse
 from ...schemas.project_runner import (
@@ -12,6 +19,8 @@ from ...schemas.project_runner import (
 )
 from ...schemas.submission import ProjectSubmissionResponse, ProjectSubmissionStatusResponse
 from ...services import (
+    code_editor,
+    github_sync,
     project_onboarding,
     project_reviews,
     project_runner,
@@ -36,6 +45,47 @@ def _project_for_principal(project_id: str, principal: CurrentPrincipal) -> Proj
     if project is None:
         raise queries.NotFoundError(f"Unknown or inaccessible project: {project_id}")
     return project
+
+
+def _assert_student_owner(principal: CurrentPrincipal, project: ProjectResponse) -> None:
+    if principal.role != "student" or principal.user_id != project.userId:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only the project owner can edit or commit this project.",
+        )
+
+
+@router.get("/{project_id}/files", response_model=list[ProjectFileEntry])
+def list_project_files(project_id: str, principal: CurrentPrincipal) -> list[ProjectFileEntry]:
+    project = _project_for_principal(project_id, principal)
+    return code_editor.list_files(project)
+
+
+@router.get("/{project_id}/file", response_model=ProjectFileResponse)
+def read_project_file(
+    project_id: str, path: str, principal: CurrentPrincipal
+) -> ProjectFileResponse:
+    project = _project_for_principal(project_id, principal)
+    return code_editor.read_file(project, path)
+
+
+@router.put("/{project_id}/file", response_model=ProjectFileResponse)
+def write_project_file(
+    project_id: str, payload: ProjectFilePayload, principal: CsrfPrincipal
+) -> ProjectFileResponse:
+    project = _project_for_principal(project_id, principal)
+    _assert_student_owner(principal, project)
+    return code_editor.write_file(project, payload.path, payload.content)
+
+
+@router.post("/{project_id}/commit", response_model=ProjectCommitResponse)
+def commit_project(
+    project_id: str, payload: ProjectCommitInput, principal: CsrfPrincipal
+) -> ProjectCommitResponse:
+    project = _project_for_principal(project_id, principal)
+    _assert_student_owner(principal, project)
+    connection = github_sync.get_connection(principal.user_id)
+    return code_editor.commit_and_push(project, payload.message, connection)
 
 
 @router.get("", response_model=list[ProjectResponse])

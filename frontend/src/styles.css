@@ -141,6 +141,7 @@ select option {
 }
 button {
   cursor: pointer;
+  color: inherit;
 }
 a {
   color: inherit;

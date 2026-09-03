@@ -6,6 +6,7 @@ import ActivityForm from "./components/ActivityForm";
 import AIWorkspace from "./components/AIWorkspace";
 import CalendarView from "./components/CalendarView";
 import DashboardStats from "./components/DashboardStats";
+import GitHubProjectEditor from "./components/GitHubProjectEditor";
 import Layout from "./components/Layout";
 import LoginPage from "./components/LoginPage";
 import ProfessorDashboard from "./components/ProfessorDashboard";
@@ -122,6 +123,8 @@ function UserPage({ userId, readOnly }: { userId: string; readOnly: boolean }) {
       <DashboardStats activities={activities} projects={projects} />
 
       {!readOnly ? <AIWorkspace projects={projects} onTasksApplied={loadData} /> : null}
+
+      {!readOnly ? <GitHubProjectEditor userId={userId} /> : null}
 
       <div className={`dashboard-grid ${readOnly ? "read-only-dashboard-grid" : ""}`}>
         {!readOnly ? (

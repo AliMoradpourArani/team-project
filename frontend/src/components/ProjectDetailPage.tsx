@@ -1,8 +1,15 @@
 import { useCallback, useEffect, useState } from "react";
 
-import { getProjectDetail, runProject } from "../api";
+import { getProjectDetail, getProjectFile, getProjectFiles, runProject } from "../api";
+import "../github-editor.css";
 import "../project-runner.css";
-import type { AuthRole, ProjectDetail, ProjectRunResult } from "../types";
+import type {
+  AuthRole,
+  ProjectDetail,
+  ProjectFile,
+  ProjectFileEntry,
+  ProjectRunResult,
+} from "../types";
 import ProjectDemoPreview from "./ProjectDemoPreview";
 import ProjectOnboardingPanel from "./ProjectOnboardingPanel";
 import ProjectReviewPanel from "./ProjectReviewPanel";
@@ -21,6 +28,9 @@ export default function ProjectDetailPage({ projectId, backHref, role }: Props) 
   const [result, setResult] = useState<ProjectRunResult | null>(null);
   const [running, setRunning] = useState(false);
   const [error, setError] = useState("");
+  const [sourceFiles, setSourceFiles] = useState<ProjectFileEntry[]>([]);
+  const [sourceContent, setSourceContent] = useState<ProjectFile | null>(null);
+  const [sourceOpen, setSourceOpen] = useState(false);
   const { t } = useI18n();
 
   const loadDetail = useCallback(async () => {
@@ -33,6 +43,28 @@ export default function ProjectDetailPage({ projectId, backHref, role }: Props) 
     setError("");
     loadDetail().catch((requestError: Error) => setError(requestError.message));
   }, [loadDetail]);
+
+  useEffect(() => {
+    setSourceFiles([]);
+    setSourceContent(null);
+    setSourceOpen(false);
+    setError("");
+    getProjectFiles(projectId)
+      .then(setSourceFiles)
+      .catch((requestError: Error) => setError(requestError.message));
+  }, [projectId]);
+
+  async function openSource(entry: ProjectFileEntry) {
+    if (entry.isDirectory) return;
+    setError("");
+    setSourceOpen(true);
+    try {
+      setSourceContent(await getProjectFile(projectId, entry.path));
+    } catch (requestError) {
+      setSourceContent(null);
+      setError(requestError instanceof Error ? requestError.message : t("se.readError"));
+    }
+  }
 
   async function execute() {
     setError("");
@@ -153,6 +185,69 @@ export default function ProjectDetailPage({ projectId, backHref, role }: Props) 
           )}
         </section>
       </div>
+
+      <section className="dashboard-card">
+        <div className="section-heading compact">
+          <div>
+            <p className="eyebrow">{t("se.eyebrow")}</p>
+            <h2>{t("se.title")}</h2>
+          </div>
+          <span className="runner-contract">{t("se.readonly")}</span>
+        </div>
+
+        <div className="gh-editor-workspace source-explorer">
+          <aside className="gh-file-list" aria-label={t("se.title")}>
+            {sourceFiles.length > 0 ? (
+              <ul>
+                {sourceFiles.map((entry) => (
+                  <li key={entry.path}>
+                    <button
+                      className={`gh-file-button ${
+                        sourceContent?.path === entry.path ? "active" : ""
+                      }`}
+                      type="button"
+                      disabled={entry.isDirectory}
+                      title={entry.isDirectory ? t("gh.directory") : entry.path}
+                      onClick={() => void openSource(entry)}
+                    >
+                      {entry.isDirectory ? "📁 " : "📄 "}
+                      {entry.name}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <StatusMessage>{t("se.noFiles")}</StatusMessage>
+            )}
+          </aside>
+
+          <div className="gh-editor-pane">
+            <div className="gh-editor-toolbar">
+              {sourceContent ? <strong>{sourceContent.path}</strong> : null}
+              <span className="runner-contract">
+                {sourceContent ? `${sourceContent.size} B` : ""}
+              </span>
+              <button
+                className="primary-button runner-button"
+                type="button"
+                disabled={!integration.runnable || running}
+                onClick={() => void execute()}
+              >
+                {running
+                  ? t("pp.running")
+                  : integration.runnerEnabled
+                    ? t("pp.runDemo")
+                    : t("pp.runnerDisabled")}
+              </button>
+            </div>
+            {sourceOpen && sourceContent ? (
+              <pre className="gh-source-pre">{sourceContent.content}</pre>
+            ) : (
+              <StatusMessage>{t("se.selectFileHint")}</StatusMessage>
+            )}
+          </div>
+        </div>
+      </section>
 
       <ProjectOnboardingPanel projectId={projectId} role={role} />
       <ProjectReviewPanel projectId={projectId} role={role} />

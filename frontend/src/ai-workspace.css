@@ -54,6 +54,7 @@
   border: 1px solid var(--border, var(--color-slate-soft));
   border-radius: 14px;
   background: var(--color-glass);
+  color: var(--color-text, var(--color-slate));
   cursor: pointer;
 }
 

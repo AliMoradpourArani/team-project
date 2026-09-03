@@ -1,0 +1,244 @@
+name: ForgeFlow Legal Agreement Automation
+
+on:
+  pull_request_target:
+    types: [opened, reopened, synchronize, ready_for_review]
+  issue_comment:
+    types: [created, edited, deleted]
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+  statuses: write
+
+jobs:
+  legal-gate:
+    if: >-
+      github.event_name == 'pull_request_target' ||
+      (github.event_name == 'issue_comment' && github.event.issue.pull_request)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Evaluate ForgeFlow Legal Pack acceptance
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const statusContext = 'ForgeFlow Legal Gate';
+            const packPath = '.github/legal/FORGEFLOW_DEVELOPER_CONTRIBUTION_TERMS.md';
+            const versionPath = '.github/legal/AGREEMENT_VERSION';
+            const founder = 'HoosseinRahimi';
+            const exemptUsers = new Set([
+              founder,
+              'dependabot[bot]',
+              'github-actions[bot]'
+            ]);
+
+            const prNumber = context.eventName === 'pull_request_target'
+              ? context.payload.pull_request.number
+              : context.payload.issue.number;
+
+            const { data: pr } = await github.rest.pulls.get({
+              owner,
+              repo,
+              pull_number: prNumber
+            });
+
+            const author = pr.user.login;
+            const headSha = pr.head.sha;
+            const packUrl = `https://github.com/${owner}/${repo}/blob/main/${packPath}`;
+
+            const versionResponse = await github.rest.repos.getContent({
+              owner,
+              repo,
+              path: versionPath,
+              ref: pr.base.ref
+            });
+            const version = Buffer.from(versionResponse.data.content, 'base64').toString('utf8').trim();
+
+            const acceptNone = `I have read and accept the ForgeFlow Legal Pack v${version}. Pre-Existing IP: NONE.`;
+            const acceptSeparate = `I have read and accept the ForgeFlow Legal Pack v${version}. Pre-Existing IP: DISCLOSED SEPARATELY.`;
+            const ownerApproval = `ForgeFlow Pre-Existing IP Disclosure approved for @${author} under Legal Pack v${version}.`;
+            const promptMarker = `<!-- forgeflow-legal-pack:${version} -->`;
+            const confirmationMarker = `<!-- forgeflow-legal-pack-accepted:${version}:${author} -->`;
+            const disclosureMarker = `<!-- forgeflow-preexisting-approval-needed:${version}:${author} -->`;
+
+            async function setStatus(state, description, targetUrl = packUrl) {
+              await github.rest.repos.createCommitStatus({
+                owner,
+                repo,
+                sha: headSha,
+                state,
+                context: statusContext,
+                description: description.slice(0, 140),
+                target_url: targetUrl
+              });
+            }
+
+            if (exemptUsers.has(author)) {
+              await setStatus('success', 'Founder/system account exempt from Legal Pack acceptance');
+              core.info(`${author} is exempt from the ForgeFlow Legal Pack gate.`);
+              return;
+            }
+
+            async function authoredPullRequests() {
+              const query = `repo:${owner}/${repo} is:pr author:${author}`;
+              return github.paginate(
+                github.rest.search.issuesAndPullRequests,
+                { q: query, per_page: 100 }
+              );
+            }
+
+            async function findAcceptance(authoredPrs) {
+              for (const item of authoredPrs.slice(0, 100)) {
+                const comments = await github.paginate(
+                  github.rest.issues.listComments,
+                  { owner, repo, issue_number: item.number, per_page: 100 }
+                );
+
+                for (const comment of comments) {
+                  if (comment.user?.login !== author) continue;
+                  const body = (comment.body || '').trim();
+                  if (body === acceptNone) {
+                    return {
+                      accepted: true,
+                      mode: 'none',
+                      url: comment.html_url,
+                      pr: item.number,
+                      timestamp: comment.created_at
+                    };
+                  }
+                  if (body === acceptSeparate) {
+                    return {
+                      accepted: true,
+                      mode: 'separate',
+                      url: comment.html_url,
+                      pr: item.number,
+                      timestamp: comment.created_at
+                    };
+                  }
+                }
+              }
+              return { accepted: false };
+            }
+
+            async function findFounderDisclosureApproval(authoredPrs) {
+              for (const item of authoredPrs.slice(0, 100)) {
+                const comments = await github.paginate(
+                  github.rest.issues.listComments,
+                  { owner, repo, issue_number: item.number, per_page: 100 }
+                );
+                const match = comments.find(comment =>
+                  comment.user?.login === founder &&
+                  (comment.body || '').trim() === ownerApproval
+                );
+                if (match) {
+                  return {
+                    approved: true,
+                    url: match.html_url,
+                    pr: item.number,
+                    timestamp: match.created_at
+                  };
+                }
+              }
+              return { approved: false };
+            }
+
+            const authoredPrs = await authoredPullRequests();
+            const acceptance = await findAcceptance(authoredPrs);
+
+            if (acceptance.accepted && acceptance.mode === 'separate') {
+              const approval = await findFounderDisclosureApproval(authoredPrs);
+              if (!approval.approved) {
+                await setStatus(
+                  'pending',
+                  `Pre-existing IP approval required from @${founder}`,
+                  acceptance.url
+                );
+
+                const comments = await github.paginate(
+                  github.rest.issues.listComments,
+                  { owner, repo, issue_number: prNumber, per_page: 100 }
+                );
+                const alreadyRequested = comments.some(comment =>
+                  (comment.body || '').includes(disclosureMarker)
+                );
+
+                if (!alreadyRequested) {
+                  await github.rest.issues.createComment({
+                    owner,
+                    repo,
+                    issue_number: prNumber,
+                    body: `${disclosureMarker}\n## 🔐 ForgeFlow Pre-Existing IP approval required\n\n@${author} accepted Legal Pack **${version}** using the **DISCLOSED SEPARATELY** path.\n\nAfter the private disclosure has been received and approved, @${founder} must reply on a PR authored by @${author} with exactly:\n\n\`${ownerApproval}\`\n\nDo not post confidential disclosure details in GitHub. Until founder approval is found, **${statusContext}** remains pending.\n\nDeveloper acceptance record: ${acceptance.url}`
+                  });
+                }
+
+                core.notice(`Waiting for ${founder} to approve ${author}'s separate IP disclosure.`);
+                return;
+              }
+
+              await setStatus(
+                'success',
+                `Legal Pack ${version} accepted; separate IP disclosure approved`,
+                approval.url
+              );
+              core.info(`Legal Pack ${version} accepted by ${author}; disclosure approved by ${founder}.`);
+              return;
+            }
+
+            if (acceptance.accepted && acceptance.mode === 'none') {
+              await setStatus(
+                'success',
+                `Legal Pack ${version} accepted by @${author}; no pre-existing IP declared`,
+                acceptance.url
+              );
+
+              if (context.eventName === 'issue_comment') {
+                const comment = context.payload.comment;
+                if (
+                  comment?.user?.login === author &&
+                  (comment.body || '').trim() === acceptNone
+                ) {
+                  const existing = await github.paginate(
+                    github.rest.issues.listComments,
+                    { owner, repo, issue_number: prNumber, per_page: 100 }
+                  );
+                  const alreadyConfirmed = existing.some(c =>
+                    (c.body || '').includes(confirmationMarker)
+                  );
+                  if (!alreadyConfirmed) {
+                    await github.rest.issues.createComment({
+                      owner,
+                      repo,
+                      issue_number: prNumber,
+                      body: `${confirmationMarker}\n✅ **ForgeFlow Legal Pack accepted**\n\n@${author} accepted Legal Pack **${version}** from their own GitHub account and declared **Pre-Existing IP: NONE**. Acceptance is reusable for later PRs while this version remains current.\n\nAcceptance record: ${comment.html_url}`
+                    });
+                  }
+                }
+              }
+
+              core.info(`Legal Pack ${version} accepted by ${author} with no pre-existing IP declared.`);
+              return;
+            }
+
+            await setStatus('pending', `Legal Pack ${version} acceptance required from @${author}`);
+
+            const comments = await github.paginate(
+              github.rest.issues.listComments,
+              { owner, repo, issue_number: prNumber, per_page: 100 }
+            );
+            const alreadyPrompted = comments.some(comment =>
+              (comment.body || '').includes(promptMarker)
+            );
+
+            if (!alreadyPrompted) {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number: prNumber,
+                body: `${promptMarker}\n## 🔐 ForgeFlow Legal Pack\n\nBefore this PR can be merged, @${author} must read and accept the current ForgeFlow Legal Pack.\n\nRead the pack: ${packUrl}\n\nThen reply to **a PR authored by this same GitHub account** with exactly one of these statements:\n\n**If there is no relevant pre-existing IP:**\n\n\`${acceptNone}\`\n\n**If relevant pre-existing IP was disclosed privately:**\n\n\`${acceptSeparate}\`\n\nThe second path also requires a separate approval comment from @${founder}. Do not post confidential IP details in GitHub.\n\nUntil the required acceptance is found, **${statusContext}** remains pending. Acceptance applies only to Legal Pack **${version}**; a future version change requires re-acceptance.`
+              });
+            }
+
+            core.notice(`Waiting for ${author} to accept ForgeFlow Legal Pack ${version}.`);

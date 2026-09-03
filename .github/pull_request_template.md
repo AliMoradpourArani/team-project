@@ -12,10 +12,20 @@
 - [ ] Frontend lint/type/unit/build pass when applicable
 - [ ] E2E behavior is covered or not applicable
 - [ ] Fresh database init/sync still works when data/database code changed
-- [ ] No secrets, generated databases, or unrelated files are included
+- [ ] No secrets, generated databases, personal data, or unrelated files are included
 - [ ] Documentation/contracts were updated if behavior changed
 - [ ] New architecture decisions have an ADR when needed
 - [ ] Feature branch is up to date with `main` (`git merge main`)
+
+## Contribution and IP checks
+
+- [ ] The required `ForgeFlow Legal Gate` is green or I am an explicitly exempt account
+- [ ] I created this contribution for the authorized ForgeFlow engagement, or I disclosed relevant pre-existing material through the current Legal Pack process
+- [ ] I did not add third-party code, models, datasets, fonts, assets, or dependencies without a compatible licence and project approval
+- [ ] I did not copy confidential code or materials from another employer, client, university, or private repository
+- [ ] Any AI-assisted code has been reviewed for provenance, licence risk, secrets, correctness, and security
+
+> These PR checkboxes are an engineering reminder only. The versioned acceptance/evidence control is the `ForgeFlow Legal Gate` under `.github/legal/`. A dedicated e-signature agreement may additionally be required for higher-risk engagements.
 
 ### Member project integration (when this PR adds/changes `projects/<owner>/...`)
 

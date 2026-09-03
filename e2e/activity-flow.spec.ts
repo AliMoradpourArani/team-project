@@ -44,7 +44,7 @@ test("professor sees team overview and a read-only member drill-down", async ({ 
   await expect(page).toHaveURL(/\/professor$/);
   await expect(page.getByText("Professor dashboard")).toBeVisible();
   await expect(page.getByRole("heading", { name: /Team overview/i, level: 1 })).toBeVisible();
-  await expect(page.locator(".professor-member-row")).toHaveCount(3);
+  await expect(page.locator(".professor-member-row")).toHaveCount(4);
   await expect(page.getByRole("heading", { name: "Project review queue" })).toBeVisible();
 
   await page.locator(".professor-member-row").filter({ hasText: "Hossein" }).click();

@@ -159,13 +159,18 @@ def test_professor_sees_team_dashboard_and_github_panel_but_cannot_write_shared_
     csrf = login(client, "professor", PROFESSOR_PASSWORD)
 
     users = client.get("/api/users")
-    assert [user["id"] for user in users.json()] == ["ali", "hossein", "reza"]
+    assert [user["id"] for user in users.json()] == ["ali", "hossein", "reza", "shahrad"]
 
     dashboard = client.get("/api/professor/dashboard")
     assert dashboard.status_code == 200
     body = dashboard.json()
-    assert body["totals"]["members"] == 3
-    assert {member["user"]["id"] for member in body["members"]} == {"ali", "hossein", "reza"}
+    assert body["totals"]["members"] == 4
+    assert {member["user"]["id"] for member in body["members"]} == {
+        "ali",
+        "hossein",
+        "reza",
+        "shahrad",
+    }
     assert isinstance(body["recentActivities"], list)
 
     github = client.get("/api/professor/github")

@@ -2,6 +2,7 @@
 
 /* ---- Theme tokens (light default) ---- */
 :root {
+  color-scheme: light;
   --color-bg: #f3f0e8;
   --color-text: #18221e;
   --color-text-strong: #2c3a33;
@@ -57,6 +58,7 @@
 
 /* ---- Dark theme ---- */
 [data-theme="dark"] {
+  color-scheme: dark;
   --color-bg: #141a17;
   --color-text: #e8ece9;
   --color-text-strong: #f4f7f5;
@@ -129,6 +131,13 @@ button,
 input,
 select {
   font: inherit;
+}
+/* Native dropdown popups (<option>) ignore page styles on some engines and
+   otherwise render light defaults with the inherited theme text color, which
+   is unreadable in dark mode. Anchor them to theme tokens explicitly. */
+select option {
+  background-color: var(--color-surface);
+  color: var(--color-text);
 }
 button {
   cursor: pointer;

@@ -1,0 +1,5 @@
+interface:
+  display_name: "ForgeFlow Tests"
+  short_description: "Run and extend repository tests with conventions"
+policy:
+  allow_implicit_invocation: true

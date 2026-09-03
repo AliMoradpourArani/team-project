@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import json
 import os
+from collections.abc import Iterator
 from datetime import date
+from http.client import HTTPException
 from urllib import error, request
 from uuid import uuid4
 
@@ -24,6 +26,10 @@ from ..schemas.ai import (
     AIMemoryWrite,
     AIMultiAgentReview,
     AISpecialistResult,
+    AIStreamDeltaEvent,
+    AIStreamDoneEvent,
+    AIStreamErrorEvent,
+    AIStreamStartEvent,
     AITaskSuggestion,
     AIWorkspaceRequest,
 )
@@ -205,17 +211,19 @@ def _structured_memory(user_id: str, project_id: str | None) -> dict[str, str]:
     return {row["memory_key"]: row["memory_value"] for row in rows}
 
 
-def _provider_reply(
+class ProviderStreamUnavailable(Exception):
+    """Raised when the provider stream cannot be established or yields no tokens."""
+
+
+def _provider_request(
     content: str,
     thread: AIAgentThread,
     snapshot: AIAgentSnapshot,
     user_id: str,
-) -> tuple[str, str, str | None, str | None]:
-    api_key = os.getenv("AI_API_KEY", "").strip()
-    model = os.getenv("AI_MODEL", "gpt-5-mini").strip() or "gpt-5-mini"
-    if not api_key:
-        return _local_reply(content, snapshot), "local", None, "AI_API_KEY is not configured."
-
+    model: str,
+    *,
+    stream: bool,
+) -> tuple[str, bytes]:
     project = _owned_project(thread.projectId, user_id)
     context = {
         "project": project.model_dump() if project else None,
@@ -241,10 +249,27 @@ def _provider_reply(
             {"role": "user", "content": json.dumps({"context": context, "request": content})},
         ],
     }
+    if stream:
+        body["stream"] = True
     base_url = os.getenv("AI_BASE_URL", "https://api.openai.com/v1").rstrip("/")
+    return base_url, json.dumps(body).encode("utf-8")
+
+
+def _provider_reply(
+    content: str,
+    thread: AIAgentThread,
+    snapshot: AIAgentSnapshot,
+    user_id: str,
+) -> tuple[str, str, str | None, str | None]:
+    api_key = os.getenv("AI_API_KEY", "").strip()
+    model = os.getenv("AI_MODEL", "gpt-5-mini").strip() or "gpt-5-mini"
+    if not api_key:
+        return _local_reply(content, snapshot), "local", None, "AI_API_KEY is not configured."
+
+    base_url, payload = _provider_request(content, thread, snapshot, user_id, model, stream=False)
     req = request.Request(
         f"{base_url}/chat/completions",
-        data=json.dumps(body).encode("utf-8"),
+        data=payload,
         headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
         method="POST",
     )
@@ -262,6 +287,63 @@ def _provider_reply(
             None,
             f"AI provider failed ({type(exc).__name__}); local agent used.",
         )
+
+
+def _provider_stream_events(
+    content: str,
+    thread: AIAgentThread,
+    snapshot: AIAgentSnapshot,
+    user_id: str,
+) -> Iterator[str]:
+    """Yield reply deltas from the configured provider using OpenAI-compatible SSE.
+
+    ``ProviderStreamUnavailable`` is raised only before the first delta is produced
+    so the caller can safely fall back to the deterministic local reply. Failures
+    after deltas started surface as mid-stream read errors instead.
+    """
+    api_key = os.getenv("AI_API_KEY", "").strip()
+    model = os.getenv("AI_MODEL", "gpt-5-mini").strip() or "gpt-5-mini"
+    if not api_key:
+        raise ProviderStreamUnavailable("AI_API_KEY is not configured.")
+
+    base_url, payload = _provider_request(content, thread, snapshot, user_id, model, stream=True)
+    req = request.Request(
+        f"{base_url}/chat/completions",
+        data=payload,
+        headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+        method="POST",
+    )
+    try:
+        response = request.urlopen(req, timeout=float(os.getenv("AI_TIMEOUT_SECONDS", "20")))
+    except (error.URLError, TimeoutError, OSError) as exc:
+        raise ProviderStreamUnavailable(
+            f"AI provider stream could not be opened ({type(exc).__name__})."
+        ) from exc
+
+    produced = False
+    with response:
+        if getattr(response, "status", 200) != 200:
+            raise ProviderStreamUnavailable(
+                f"AI provider stream returned HTTP {response.status}."
+            )
+        for raw_line in response:
+            line = raw_line.decode("utf-8", errors="replace").strip()
+            if not line.startswith("data:"):
+                continue
+            event_payload = line[5:].strip()
+            if event_payload == "[DONE]":
+                break
+            try:
+                chunk = json.loads(event_payload)
+                delta = chunk["choices"][0].get("delta", {}).get("content")
+            except (json.JSONDecodeError, KeyError, IndexError, TypeError, AttributeError):
+                continue
+            if not delta:
+                continue
+            produced = True
+            yield str(delta)[:2000]
+    if not produced:
+        raise ProviderStreamUnavailable("AI provider stream returned no content.")
 
 
 def post_message(thread_id: str, content: str, user_id: str) -> AIAgentReply:
@@ -304,6 +386,96 @@ def post_message(thread_id: str, content: str, user_id: str) -> AIAgentReply:
         model=model,
         providerMessage=provider_message,
     )
+
+
+def stream_message(thread_id: str, content: str, user_id: str) -> Iterator[str]:
+    """Validate thread access eagerly, then return the SSE event generator for one reply."""
+    thread = _thread(thread_id, user_id)
+    snapshot = _snapshot(user_id, thread.projectId)
+    return _message_event_stream(thread_id, content.strip(), thread, snapshot, user_id)
+
+
+def _sse_event(event: AIStreamStartEvent | AIStreamDeltaEvent | AIStreamErrorEvent | AIStreamDoneEvent) -> str:
+    return f"data: {json.dumps(event.model_dump(), ensure_ascii=False)}\n\n"
+
+
+def _message_event_stream(
+    thread_id: str,
+    content: str,
+    thread: AIAgentThread,
+    snapshot: AIAgentSnapshot,
+    user_id: str,
+) -> Iterator[str]:
+    yield _sse_event(AIStreamStartEvent(threadId=thread_id))
+
+    accumulated: list[str] = []
+    provider = "openai-compatible"
+    model: str | None = os.getenv("AI_MODEL", "gpt-5-mini").strip() or "gpt-5-mini"
+    provider_message: str | None = None
+
+    try:
+        for delta in _provider_stream_events(content, thread, snapshot, user_id):
+            accumulated.append(delta)
+            yield _sse_event(AIStreamDeltaEvent(value=delta))
+    except ProviderStreamUnavailable as exc:
+        # The stream never produced a delta, so the deterministic local reply is safe.
+        accumulated = [_local_reply(content, snapshot)]
+        provider, model, provider_message = "local", None, str(exc)
+        yield _sse_event(AIStreamDeltaEvent(value=accumulated[0]))
+    except (OSError, TimeoutError, HTTPException, KeyError, IndexError, TypeError, ValueError) as exc:
+        if not accumulated:
+            accumulated = [_local_reply(content, snapshot)]
+            provider, model, provider_message = "local", None, (
+                f"AI provider stream failed ({type(exc).__name__}); local agent used."
+            )
+            yield _sse_event(AIStreamDeltaEvent(value=accumulated[0]))
+        else:
+            provider_message = (
+                f"AI provider stream interrupted ({type(exc).__name__}); "
+                "the partial reply was kept."
+            )
+
+    reply_text = "".join(accumulated)[:8000]
+    memory = (
+        f"progress={snapshot.progressPercent}%; overdue={len(snapshot.overdueTasks)}; "
+        f"github_signals={len(snapshot.githubSignals)}; last_request={content[:300]}"
+    )
+    try:
+        with connect() as connection, connection:
+            connection.execute(
+                "INSERT INTO ai_agent_messages (thread_id, role, content) VALUES (?, 'user', ?)",
+                (thread_id, content),
+            )
+            cursor = connection.execute(
+                "INSERT INTO ai_agent_messages (thread_id, role, content) VALUES (?, 'assistant', ?)",
+                (thread_id, reply_text),
+            )
+            connection.execute(
+                """
+                UPDATE ai_agent_threads
+                SET memory = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?
+                """,
+                (memory, thread_id, user_id),
+            )
+            reply_row = connection.execute(
+                "SELECT id, role, content, created_at FROM ai_agent_messages WHERE id = ?",
+                (cursor.lastrowid,),
+            ).fetchone()
+        updated = _thread(thread_id, user_id)
+    except Exception:  # pragma: no cover - persistence failure after streaming started
+        yield _sse_event(AIStreamErrorEvent(message="The AI reply could not be persisted."))
+        return
+
+    reply = AIAgentReply(
+        thread=updated,
+        reply=_message_from_row(reply_row),
+        snapshot=snapshot,
+        suggestedTasks=_suggested_tasks(updated, snapshot),
+        provider=provider,
+        model=model,
+        providerMessage=provider_message,
+    )
+    yield _sse_event(AIStreamDoneEvent(reply=reply))
 
 
 def replan(

@@ -9,6 +9,7 @@ import type {
   AIOrchestrationResult,
   AIProgressSyncResult,
   AIRepoIndexResult,
+  AIStreamEvent,
   AIWeeklyBrief,
 } from "./ai-agent-types";
 import type {
@@ -158,6 +159,55 @@ export async function postAIMessage(threadId: string, content: string): Promise<
     method: "POST",
     body: JSON.stringify({ content }),
   });
+}
+
+export async function streamAIMessage(
+  threadId: string,
+  content: string,
+  onDelta: (delta: string) => void,
+): Promise<AIAgentReply> {
+  const headers = new Headers({ "Content-Type": "application/json" });
+  if (csrfToken) headers.set("X-CSRF-Token", csrfToken);
+  const response = await fetch(`${API_BASE_URL}/api/ai/threads/${threadId}/messages/stream`, {
+    method: "POST",
+    headers,
+    credentials: "include",
+    body: JSON.stringify({ content }),
+  });
+  if (!response.ok) throw await parseError(response);
+  if (!response.body) throw new Error("The AI stream is not available in this browser.");
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  let finalReply: AIAgentReply | null = null;
+
+  const handleEvent = (raw: string): void => {
+    const dataLine = raw.split("\n").find((line) => line.startsWith("data:"));
+    if (!dataLine) return;
+    const event = JSON.parse(dataLine.slice(5).trim()) as AIStreamEvent;
+    if (event.type === "delta") {
+      onDelta(event.value);
+    } else if (event.type === "done") {
+      finalReply = event.reply;
+    } else if (event.type === "error") {
+      throw new Error(event.message);
+    }
+  };
+
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    const parts = buffer.split("\n\n");
+    buffer = parts.pop() ?? "";
+    for (const raw of parts) {
+      if (raw.trim()) handleEvent(raw);
+    }
+  }
+  if (buffer.trim()) handleEvent(buffer);
+  if (!finalReply) throw new Error("The AI stream ended without a final reply.");
+  return finalReply;
 }
 
 export async function replanAIThread(

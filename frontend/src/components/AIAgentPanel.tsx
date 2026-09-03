@@ -11,9 +11,9 @@ import {
   getAIThreads,
   getAIWeeklyBrief,
   indexAIRepository,
-  postAIMessage,
   refreshAINotifications,
   replanAIThread,
+  streamAIMessage,
   syncAIProgress,
 } from "../api";
 import "../ai-agent.css";
@@ -50,6 +50,9 @@ export default function AIAgentPanel({ projectId }: AIAgentPanelProps) {
   const [orchestration, setOrchestration] = useState<AIOrchestrationResult | null>(null);
   const [repoIndex, setRepoIndex] = useState<AIRepoIndexResult | null>(null);
   const [busy, setBusy] = useState(false);
+  const [streaming, setStreaming] = useState(false);
+  const [streamingText, setStreamingText] = useState("");
+  const [pendingMessage, setPendingMessage] = useState("");
   const [error, setError] = useState("");
 
   const activeThread = useMemo(
@@ -110,6 +113,7 @@ export default function AIAgentPanel({ projectId }: AIAgentPanelProps) {
       setActiveId(thread.id);
       setLastReply(null);
       setReplan(null);
+      setStreamingText("");
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : t("ag.createError"));
     } finally {
@@ -119,10 +123,18 @@ export default function AIAgentPanel({ projectId }: AIAgentPanelProps) {
 
   async function sendMessage() {
     if (!activeThread || !message.trim()) return;
+    const sent = message.trim();
     setBusy(true);
+    setStreaming(true);
+    setStreamingText("");
+    setPendingMessage(sent);
     setError("");
     try {
-      const response = await postAIMessage(activeThread.id, message.trim());
+      const response = await streamAIMessage(activeThread.id, sent, (delta) =>
+        setStreamingText((current) => current + delta),
+      );
+      setStreaming(false);
+      setStreamingText("");
       setLastReply(response);
       setSnapshot(response.snapshot);
       setThreads((current) =>
@@ -130,6 +142,8 @@ export default function AIAgentPanel({ projectId }: AIAgentPanelProps) {
       );
       setMessage("");
     } catch (requestError) {
+      // Keep any partially streamed reply visible when the stream fails.
+      setStreaming(false);
       setError(requestError instanceof Error ? requestError.message : t("ag.requestError"));
     } finally {
       setBusy(false);
@@ -288,6 +302,7 @@ export default function AIAgentPanel({ projectId }: AIAgentPanelProps) {
                 setActiveId(thread.id);
                 setLastReply(null);
                 setReplan(null);
+                setStreamingText("");
               }}
             >
               {thread.title}
@@ -330,6 +345,19 @@ export default function AIAgentPanel({ projectId }: AIAgentPanelProps) {
               </article>
             ))}
           </div>
+
+          {streaming ? (
+            <div className="ai-agent-messages" aria-live="polite">
+              <article className="ai-agent-message ai-agent-user">
+                <strong>{t("ag.you")}</strong>
+                <p>{pendingMessage}</p>
+              </article>
+              <article className="ai-agent-message ai-agent-assistant">
+                <strong>{t("ag.copilot")}</strong>
+                <p>{streamingText || t("ag.thinking")}</p>
+              </article>
+            </div>
+          ) : null}
 
           {lastReply ? (
             <p className="ai-agent-provider">

@@ -34,6 +34,12 @@ export interface AIAgentReply {
   providerMessage: string | null;
 }
 
+export type AIStreamEvent =
+  | { type: "start"; threadId: string }
+  | { type: "delta"; value: string }
+  | { type: "error"; message: string }
+  | { type: "done"; reply: AIAgentReply };
+
 export interface AIAgentReplanResponse {
   summary: string;
   tasks: AITaskSuggestion[];

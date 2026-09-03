@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 
 from fastapi import APIRouter, HTTPException, Query, Response, status
+from fastapi.responses import StreamingResponse
 
 from ...schemas.ai import (
     AIAgentMessageWrite,
@@ -104,6 +105,29 @@ def post_ai_message(
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
     return ai_agent.post_message(thread_id, payload.content, user_id)
+
+
+@router.post("/threads/{thread_id}/messages/stream")
+def stream_ai_message(
+    thread_id: str,
+    payload: AIAgentMessageWrite,
+    principal: CsrfPrincipal,
+) -> StreamingResponse:
+    user_id = _student_user_id(principal)
+    try:
+        ai_autonomy.guard_prompt(user_id, payload.content)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+    # stream_message validates ownership eagerly so HTTP errors stay JSON responses.
+    events = ai_agent.stream_message(thread_id, payload.content, user_id)
+    return StreamingResponse(
+        events,
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+        },
+    )
 
 
 @router.post("/threads/{thread_id}/replan", response_model=AIAgentReplanResponse)

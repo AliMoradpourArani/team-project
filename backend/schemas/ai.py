@@ -153,6 +153,26 @@ class AIAgentReply(BaseModel):
     providerMessage: str | None = None
 
 
+class AIStreamStartEvent(BaseModel):
+    type: Literal["start"] = "start"
+    threadId: str
+
+
+class AIStreamDeltaEvent(BaseModel):
+    type: Literal["delta"] = "delta"
+    value: str
+
+
+class AIStreamErrorEvent(BaseModel):
+    type: Literal["error"] = "error"
+    message: str
+
+
+class AIStreamDoneEvent(BaseModel):
+    type: Literal["done"] = "done"
+    reply: AIAgentReply
+
+
 class AIAgentReplanRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
     applyTasks: bool = False

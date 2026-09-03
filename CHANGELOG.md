@@ -7,6 +7,7 @@ All notable project changes are recorded here. The project follows a lightweight
 ### Added
 
 - persistent authenticated AI project threads, messages, project snapshots, and replanning
+- streamed AI chat responses over Server-Sent Events on `POST /api/ai/threads/{threadId}/messages/stream` with typed `start`/`delta`/`error`/`done` events, incremental rendering in the AI agent panel, and the same prompt guard, ownership checks, persistence, and local fallback as the non-streaming endpoint
 - provider-backed in-app AI chat with deterministic local fallback when `AI_API_KEY` is not configured
 - structured project memory, decision history, and project-scoped memory search
 - GitHub evidence links between activities and branches, commits, pull requests, or issues

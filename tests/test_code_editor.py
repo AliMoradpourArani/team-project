@@ -88,7 +88,7 @@ def test_list_read_write_project_files(tmp_path, monkeypatch):
     written = code_editor.write_file(project, "notes/todo.txt", "do it\n")
     assert written.content == "do it\n"
     content = code_editor.read_file(project, "notes/todo.txt")
-    assert content.size == 7
+    assert content.content == "do it\n"
 
 
 def test_write_file_rejects_traversal(tmp_path, monkeypatch):

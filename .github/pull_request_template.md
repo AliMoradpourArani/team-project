@@ -19,13 +19,13 @@
 
 ## Contribution and IP checks
 
-- [ ] I have completed the required ForgeFlow onboarding/agreement before receiving private Core access
-- [ ] I created this contribution for the authorized ForgeFlow engagement, or I have documented any pre-existing material used
+- [ ] The required `ForgeFlow Legal Gate` is green or I am an explicitly exempt account
+- [ ] I created this contribution for the authorized ForgeFlow engagement, or I disclosed relevant pre-existing material through the current Legal Pack process
 - [ ] I did not add third-party code, models, datasets, fonts, assets, or dependencies without a compatible licence and project approval
 - [ ] I did not copy confidential code or materials from another employer, client, university, or private repository
 - [ ] Any AI-assisted code has been reviewed for provenance, licence risk, secrets, correctness, and security
 
-> These PR checkboxes are an engineering control and record only. They do not replace the signed Developer/IP/Confidentiality Agreement.
+> These PR checkboxes are an engineering reminder only. The versioned acceptance/evidence control is the `ForgeFlow Legal Gate` under `.github/legal/`. A dedicated e-signature agreement may additionally be required for higher-risk engagements.
 
 ### Member project integration (when this PR adds/changes `projects/<owner>/...`)
 

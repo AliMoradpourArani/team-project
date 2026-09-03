@@ -1,9 +1,9 @@
 .ai-workspace {
   margin: 2rem 0;
   padding: 1.4rem;
-  border: 1px solid var(--border, #d9dee8);
+  border: 1px solid var(--border, var(--color-slate-soft));
   border-radius: 20px;
-  background: linear-gradient(145deg, rgba(99, 102, 241, 0.08), rgba(14, 165, 233, 0.04));
+  background: var(--ai-workspace-bg);
 }
 
 .ai-workspace-heading,
@@ -24,7 +24,7 @@
 .ai-workspace-intro {
   max-width: 760px;
   margin-bottom: 0;
-  color: var(--muted, #64748b);
+  color: var(--muted, var(--color-slate));
 }
 
 .ai-mode-badge {
@@ -33,7 +33,7 @@
   border-radius: 999px;
   font-size: 0.78rem;
   font-weight: 700;
-  background: rgba(15, 23, 42, 0.08);
+  background: var(--color-badge-wash);
 }
 
 .ai-mode-provider {
@@ -50,10 +50,10 @@
 .ai-action {
   min-height: 96px;
   padding: 0.8rem;
-  text-align: left;
-  border: 1px solid var(--border, #d9dee8);
+  text-align: start;
+  border: 1px solid var(--border, var(--color-slate-soft));
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.72);
+  background: var(--color-glass);
   cursor: pointer;
 }
 
@@ -66,11 +66,11 @@
   margin-top: 0.35rem;
   font-size: 0.8rem;
   line-height: 1.35;
-  color: var(--muted, #64748b);
+  color: var(--muted, var(--color-slate));
 }
 
 .ai-action-active {
-  border-color: #6366f1;
+  border-color: var(--color-indigo);
   box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.12);
 }
 
@@ -94,9 +94,9 @@
   width: 100%;
   box-sizing: border-box;
   padding: 0.7rem 0.8rem;
-  border: 1px solid var(--border, #cbd5e1);
+  border: 1px solid var(--border, var(--color-slate-border));
   border-radius: 10px;
-  background: var(--surface, #fff);
+  background: var(--surface, var(--color-plain));
   color: inherit;
   font: inherit;
 }
@@ -145,12 +145,12 @@
 .ai-result {
   margin-top: 1.25rem;
   padding-top: 1.25rem;
-  border-top: 1px solid var(--border, #d9dee8);
+  border-top: 1px solid var(--border, var(--color-slate-soft));
 }
 
 .ai-progress-score {
   min-width: 100px;
-  text-align: right;
+  text-align: end;
 }
 
 .ai-progress-score strong,
@@ -163,7 +163,7 @@
 }
 
 .ai-progress-score span {
-  color: var(--muted, #64748b);
+  color: var(--muted, var(--color-slate));
   font-size: 0.72rem;
 }
 
@@ -172,7 +172,7 @@
   margin-top: 0.75rem;
   overflow: hidden;
   border-radius: 999px;
-  background: rgba(100, 116, 139, 0.18);
+  background: var(--color-track-wash);
 }
 
 .ai-progress-track span {
@@ -198,16 +198,16 @@
 .ai-finding,
 .ai-roadmap-list li {
   padding: 0.85rem;
-  border: 1px solid var(--border, #d9dee8);
+  border: 1px solid var(--border, var(--color-slate-soft));
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.7);
+  background: var(--color-glass);
 }
 
 .ai-task-card time,
 .ai-roadmap-list time {
   display: block;
   margin-bottom: 0.35rem;
-  color: var(--muted, #64748b);
+  color: var(--muted, var(--color-slate));
   font-size: 0.75rem;
 }
 
@@ -236,7 +236,7 @@
 
 .ai-roadmap-list small,
 .ai-finding small {
-  color: var(--muted, #64748b);
+  color: var(--muted, var(--color-slate));
   line-height: 1.45;
 }
 
@@ -248,7 +248,7 @@
   text-transform: uppercase;
   font-size: 0.66rem;
   font-weight: 800;
-  background: rgba(100, 116, 139, 0.12);
+  background: var(--color-chip-wash);
 }
 
 .ai-finding-error {
@@ -286,6 +286,6 @@
   }
 
   .ai-progress-score {
-    text-align: left;
+    text-align: start;
   }
 }

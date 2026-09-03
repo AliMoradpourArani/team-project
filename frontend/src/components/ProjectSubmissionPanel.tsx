@@ -4,6 +4,7 @@ import { getProjectSubmissionStatus, submitProject } from "../api";
 import "../submission.css";
 import type { AuthRole, ProjectSubmissionStatus } from "../types";
 import StatusMessage from "./StatusMessage";
+import { useI18n } from "../i18n";
 
 interface Props {
   projectId: string;
@@ -21,6 +22,7 @@ export default function ProjectSubmissionPanel({ projectId, role }: Props) {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const { t } = useI18n();
 
   const load = useCallback(async () => {
     setStatus(await getProjectSubmissionStatus(projectId));
@@ -39,67 +41,64 @@ export default function ProjectSubmissionPanel({ projectId, role }: Props) {
     setSubmitting(true);
     try {
       const frozen = await submitProject(projectId);
-      setMessage(`Submission v${frozen.version} frozen successfully.`);
+      setMessage(t("sub.frozenSuccess", { version: frozen.version }));
       await load();
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "Could not submit project.");
+      setError(requestError instanceof Error ? requestError.message : t("sub.submitError"));
     } finally {
       setSubmitting(false);
     }
   }
 
   if (!status && error) return <StatusMessage error>{error}</StatusMessage>;
-  if (!status) return <StatusMessage>Loading submission status…</StatusMessage>;
+  if (!status) return <StatusMessage>{t("sub.loading")}</StatusMessage>;
 
   const latest = status.latestSubmission;
   const deadline = status.settings.deadlineAt
     ? new Date(status.settings.deadlineAt).toLocaleString()
-    : "No deadline configured";
+    : t("sub.noDeadline");
 
   return (
     <section className="dashboard-card submission-card">
       <div className="section-heading compact">
         <div>
-          <p className="eyebrow">Submission</p>
-          <h2>{latest ? `Frozen submission · v${latest.version}` : "Not submitted yet"}</h2>
+          <p className="eyebrow">{t("sub.eyebrow")}</p>
+          <h2>{latest ? t("sub.frozen", { version: latest.version }) : t("sub.notSubmitted")}</h2>
         </div>
         <span
           className={`submission-state ${status.settings.acceptingSubmissions ? "open" : "closed"}`}
         >
-          {status.settings.acceptingSubmissions ? "open" : "closed"}
+          {status.settings.acceptingSubmissions ? t("sub.open") : t("sub.closed")}
         </span>
       </div>
 
-      <p className="runner-safety-note">
-        A submission stores an immutable runtime snapshot and SHA-256 fingerprint of the reviewed
-        project source. Later Git changes do not rewrite previous submissions.
-      </p>
+      <p className="runner-safety-note">{t("sub.safetyNote")}</p>
 
       <dl className="submission-meta">
         <div>
-          <dt>Deadline</dt>
+          <dt>{t("sub.deadline")}</dt>
           <dd>{deadline}</dd>
         </div>
         <div>
-          <dt>Submission history</dt>
+          <dt>{t("sub.history")}</dt>
           <dd>{status.historyCount}</dd>
         </div>
         {latest ? (
           <>
             <div>
-              <dt>Frozen at</dt>
+              <dt>{t("sub.frozenAt")}</dt>
               <dd>{latest.submittedAt}</dd>
             </div>
             <div>
-              <dt>Source</dt>
+              <dt>{t("sub.source")}</dt>
               <dd>
                 {latest.sourceFileCount} files · {formatBytes(latest.sourceTotalBytes)}
               </dd>
             </div>
             <div>
-              <dt>Review at submit</dt>
+              <dt>{t("sub.reviewAtSubmit")}</dt>
               <dd>
-                {latest.reviewStatus ?? "not reviewed"}
+                {latest.reviewStatus ?? t("sub.notReviewed")}
                 {latest.reviewTotalScore !== null ? ` · ${latest.reviewTotalScore}/100` : ""}
               </dd>
             </div>
@@ -109,7 +108,7 @@ export default function ProjectSubmissionPanel({ projectId, role }: Props) {
 
       {latest ? (
         <div className="submission-digest">
-          <span>SHA-256</span>
+          <span>{t("sub.sha256")}</span>
           <code>{latest.snapshotDigest}</code>
         </div>
       ) : null}
@@ -125,16 +124,12 @@ export default function ProjectSubmissionPanel({ projectId, role }: Props) {
             disabled={!status.canSubmit || submitting}
             onClick={() => void submit()}
           >
-            {submitting
-              ? "Freezing…"
-              : latest
-                ? "Submit new frozen version"
-                : "Submit frozen snapshot"}
+            {submitting ? t("sub.freezing") : latest ? t("sub.submitNew") : t("sub.submitSnapshot")}
           </button>
           {!status.canSubmit && status.blockedReason ? <small>{status.blockedReason}</small> : null}
         </div>
       ) : (
-        <p className="submission-readonly">Professor view · submission history is immutable.</p>
+        <p className="submission-readonly">{t("sub.professorReadonly")}</p>
       )}
     </section>
   );

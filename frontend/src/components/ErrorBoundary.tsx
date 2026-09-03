@@ -1,5 +1,7 @@
 import { Component, type ErrorInfo, type ReactNode } from "react";
 
+import { I18nContext } from "../i18n";
+
 interface Props {
   children: ReactNode;
 }
@@ -11,6 +13,9 @@ interface State {
 export default class ErrorBoundary extends Component<Props, State> {
   state: State = { failed: false };
 
+  static contextType = I18nContext;
+  declare context: React.ContextType<typeof I18nContext>;
+
   static getDerivedStateFromError(): State {
     return { failed: true };
   }
@@ -21,13 +26,14 @@ export default class ErrorBoundary extends Component<Props, State> {
 
   render() {
     if (this.state.failed) {
+      const { t } = this.context;
       return (
         <div className="empty-state" role="alert">
-          <p className="eyebrow">Unexpected error</p>
-          <h1>Something went wrong</h1>
-          <p>The page hit an unexpected rendering error. Reload to try again.</p>
+          <p className="eyebrow">{t("error.unexpected")}</p>
+          <h1>{t("error.somethingWrong")}</h1>
+          <p>{t("error.description")}</p>
           <button className="primary-button" type="button" onClick={() => window.location.reload()}>
-            Reload application
+            {t("error.reload")}
           </button>
         </div>
       );

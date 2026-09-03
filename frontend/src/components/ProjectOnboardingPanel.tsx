@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 
 import { getProjectOnboarding } from "../api";
+import { useI18n } from "../i18n";
 import "../onboarding.css";
 import type { AuthRole, ProjectOnboarding } from "../types";
 import StatusMessage from "./StatusMessage";
@@ -11,6 +12,7 @@ interface Props {
 }
 
 export default function ProjectOnboardingPanel({ projectId, role }: Props) {
+  const { t } = useI18n();
   const [onboarding, setOnboarding] = useState<ProjectOnboarding | null>(null);
   const [error, setError] = useState("");
 
@@ -23,36 +25,35 @@ export default function ProjectOnboardingPanel({ projectId, role }: Props) {
   }, [projectId]);
 
   if (error) return <StatusMessage error>{error}</StatusMessage>;
-  if (!onboarding) return <StatusMessage>Loading onboarding gates…</StatusMessage>;
+  if (!onboarding) return <StatusMessage>{t("on.loading")}</StatusMessage>;
 
   return (
     <section className="dashboard-card onboarding-card">
       <div className="section-heading compact">
         <div>
-          <p className="eyebrow">Phase 10 onboarding</p>
-          <h2>Member project integration gates</h2>
+          <p className="eyebrow">{t("on.eyebrow")}</p>
+          <h2>{t("on.title")}</h2>
         </div>
         <span className={`onboarding-status ${onboarding.status}`}>{onboarding.status}</span>
       </div>
 
       <div className="onboarding-summary">
         <strong>
-          {onboarding.completedGates}/{onboarding.totalGates} blocking gates complete
+          {t("on.gatesComplete", {
+            done: onboarding.completedGates,
+            total: onboarding.totalGates,
+          })}
         </strong>
-        <span>
-          {onboarding.readyForSubmission
-            ? "Integration-ready for the Phase 9 submission flow."
-            : "Submission stays blocked until every integration gate passes."}
-        </span>
+        <span>{onboarding.readyForSubmission ? t("on.ready") : t("on.blocked")}</span>
       </div>
 
       <div className="onboarding-paths">
         <div>
-          <span>Tracked metadata</span>
+          <span>{t("on.trackedMetadata")}</span>
           <code>{onboarding.expectedMetadataPath}</code>
         </div>
         <div>
-          <span>Project source</span>
+          <span>{t("on.projectSource")}</span>
           <code>{onboarding.expectedRepositoryPath}</code>
         </div>
       </div>
@@ -74,20 +75,20 @@ export default function ProjectOnboardingPanel({ projectId, role }: Props) {
       </div>
 
       <div className="onboarding-next">
-        <span>{role === "professor" ? "Read-only readiness" : "Next action"}</span>
+        <span>{role === "professor" ? t("on.readonlyReadiness") : t("on.nextAction")}</span>
         <p>{onboarding.nextAction}</p>
         <code>{onboarding.localCheckCommand}</code>
       </div>
 
       <details className="onboarding-contracts">
-        <summary>Supported typed project contracts</summary>
+        <summary>{t("on.contracts")}</summary>
         <div>
           {onboarding.supportedContracts.map((contract) => (
             <article key={contract.runner}>
               <strong>{contract.projectType}</strong>
               <span>{contract.runner}</span>
               <small>
-                {contract.demoMode} · example entry point: {contract.entryPointExample}
+                {contract.demoMode} · {t("on.entryExample")} {contract.entryPointExample}
               </small>
             </article>
           ))}

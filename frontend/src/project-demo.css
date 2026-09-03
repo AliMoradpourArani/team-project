@@ -12,7 +12,7 @@
 .project-static-preview {
   width: 100%;
   min-height: 28rem;
-  border: 1px solid var(--border-color, #d8dee9);
+  border: 1px solid var(--border-color, var(--color-slate-soft));
   border-radius: 0.75rem;
   background: white;
 }
@@ -23,7 +23,7 @@
   margin: 0;
   padding: 1rem;
   border-radius: 0.75rem;
-  background: rgba(127, 127, 127, 0.08);
+  background: var(--color-wash);
   white-space: pre-wrap;
   overflow-wrap: anywhere;
   font-size: 0.84rem;

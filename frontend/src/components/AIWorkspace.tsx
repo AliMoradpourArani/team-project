@@ -1,28 +1,18 @@
 import { useEffect, useState } from "react";
 
 import { getAIStatus, runAIWorkspace } from "../api";
+import { useI18n } from "../i18n";
+import type { TranslationKey } from "../i18n/translations";
 import "../ai-workspace.css";
 import type { AIAction, AIStatus, AIWorkspaceResult, Project } from "../types";
 import AIAgentPanel from "./AIAgentPanel";
 
-const actions: { value: AIAction; label: string; description: string }[] = [
-  { value: "plan", label: "Plan", description: "Turn a goal into dated, actionable tasks." },
-  { value: "roadmap", label: "Roadmap", description: "Build milestones from scope to delivery." },
-  {
-    value: "progress",
-    label: "Progress",
-    description: "Measure tracked work and suggest next steps.",
-  },
-  {
-    value: "debug",
-    label: "Debug",
-    description: "Inspect project health and recent run failures.",
-  },
-  {
-    value: "review",
-    label: "Review",
-    description: "Check completed work for errors and quality gaps.",
-  },
+const actions: { value: AIAction; labelKey: TranslationKey; descKey: TranslationKey }[] = [
+  { value: "plan", labelKey: "ai.action.plan", descKey: "ai.action.plan.desc" },
+  { value: "roadmap", labelKey: "ai.action.roadmap", descKey: "ai.action.roadmap.desc" },
+  { value: "progress", labelKey: "ai.action.progress", descKey: "ai.action.progress.desc" },
+  { value: "debug", labelKey: "ai.action.debug", descKey: "ai.action.debug.desc" },
+  { value: "review", labelKey: "ai.action.review", descKey: "ai.action.review.desc" },
 ];
 
 interface AIWorkspaceProps {
@@ -31,6 +21,7 @@ interface AIWorkspaceProps {
 }
 
 export default function AIWorkspace({ projects, onTasksApplied }: AIWorkspaceProps) {
+  const { t } = useI18n();
   const [status, setStatus] = useState<AIStatus | null>(null);
   const [action, setAction] = useState<AIAction>("plan");
   const [projectId, setProjectId] = useState(projects[0]?.id ?? "");
@@ -69,9 +60,7 @@ export default function AIWorkspace({ projects, onTasksApplied }: AIWorkspacePro
       setResult(response);
       if (response.appliedActivities.length > 0) await onTasksApplied();
     } catch (requestError) {
-      setError(
-        requestError instanceof Error ? requestError.message : "AI workspace request failed.",
-      );
+      setError(requestError instanceof Error ? requestError.message : t("ai.requestError"));
     } finally {
       setLoading(false);
     }
@@ -83,19 +72,18 @@ export default function AIWorkspace({ projects, onTasksApplied }: AIWorkspacePro
     <section className="ai-workspace" aria-labelledby="ai-workspace-title">
       <div className="ai-workspace-heading">
         <div>
-          <p className="eyebrow">Project copilot</p>
-          <h2 id="ai-workspace-title">AI workspace</h2>
-          <p className="ai-workspace-intro">
-            Plan work, create roadmaps, measure progress, inspect failures, and review what has
-            already been built.
-          </p>
+          <p className="eyebrow">{t("ai.copilot")}</p>
+          <h2 id="ai-workspace-title">{t("ai.workspace")}</h2>
+          <p className="ai-workspace-intro">{t("ai.intro")}</p>
         </div>
         <span className={`ai-mode-badge ai-mode-${status?.mode ?? "local"}`}>
-          {status?.mode === "provider" ? `${status.model ?? "AI"} connected` : "Local engine ready"}
+          {status?.mode === "provider"
+            ? t("ai.providerConnected", { model: status.model ?? "AI" })
+            : t("ai.localReady")}
         </span>
       </div>
 
-      <div className="ai-action-grid" role="group" aria-label="AI action">
+      <div className="ai-action-grid" role="group" aria-label={t("ai.action")}>
         {actions.map((item) => (
           <button
             className={`ai-action ${action === item.value ? "ai-action-active" : ""}`}
@@ -104,17 +92,17 @@ export default function AIWorkspace({ projects, onTasksApplied }: AIWorkspacePro
             aria-pressed={action === item.value}
             onClick={() => setAction(item.value)}
           >
-            <strong>{item.label}</strong>
-            <span>{item.description}</span>
+            <strong>{t(item.labelKey)}</strong>
+            <span>{t(item.descKey)}</span>
           </button>
         ))}
       </div>
 
       <div className="ai-controls">
         <label>
-          Project
+          {t("ai.project")}
           <select value={projectId} onChange={(event) => setProjectId(event.target.value)}>
-            <option value="">Whole workspace</option>
+            <option value="">{t("ai.wholeWorkspace")}</option>
             {projects.map((project) => (
               <option value={project.id} key={project.id}>
                 {project.name}
@@ -124,7 +112,7 @@ export default function AIWorkspace({ projects, onTasksApplied }: AIWorkspacePro
         </label>
 
         <label>
-          Suggested task count
+          {t("ai.taskCount")}
           <input
             type="number"
             min={1}
@@ -140,17 +128,13 @@ export default function AIWorkspace({ projects, onTasksApplied }: AIWorkspacePro
       </div>
 
       <label className="ai-goal-field">
-        Goal or question
+        {t("ai.goal")}
         <textarea
           value={goal}
           onChange={(event) => setGoal(event.target.value)}
           rows={3}
           maxLength={2000}
-          placeholder={
-            action === "debug"
-              ? "What is failing or behaving unexpectedly?"
-              : "What outcome do you want the AI to plan or review?"
-          }
+          placeholder={action === "debug" ? t("ai.goalDebugPlaceholder") : t("ai.goalPlaceholder")}
         />
       </label>
 
@@ -161,7 +145,7 @@ export default function AIWorkspace({ projects, onTasksApplied }: AIWorkspacePro
             checked={applyTasks}
             onChange={(event) => setApplyTasks(event.target.checked)}
           />
-          Add generated tasks to my tracked timeline
+          {t("ai.applyTasks")}
         </label>
       ) : null}
 
@@ -172,8 +156,12 @@ export default function AIWorkspace({ projects, onTasksApplied }: AIWorkspacePro
         onClick={generate}
       >
         {loading
-          ? "Analyzing workspace…"
-          : `Run ${actions.find((item) => item.value === action)?.label}`}
+          ? t("ai.analyzing")
+          : t("ai.run", {
+              action: t(
+                actions.find((item) => item.value === action)?.labelKey ?? "ai.action.plan",
+              ),
+            })}
       </button>
 
       {error ? <p className="ai-error">{error}</p> : null}
@@ -182,12 +170,15 @@ export default function AIWorkspace({ projects, onTasksApplied }: AIWorkspacePro
         <div className="ai-result" aria-live="polite">
           <div className="ai-result-summary">
             <div>
-              <p className="eyebrow">AI result</p>
+              <p className="eyebrow">{t("ai.result")}</p>
               <h3>{result.summary}</h3>
             </div>
-            <div className="ai-progress-score" aria-label={`${result.progressPercent}% progress`}>
+            <div
+              className="ai-progress-score"
+              aria-label={t("prof.percentComplete", { rate: result.progressPercent })}
+            >
               <strong>{result.progressPercent}%</strong>
-              <span>tracked progress</span>
+              <span>{t("ai.trackedProgress")}</span>
             </div>
           </div>
 
@@ -200,14 +191,13 @@ export default function AIWorkspace({ projects, onTasksApplied }: AIWorkspacePro
           ) : null}
           {result.appliedActivities.length > 0 ? (
             <p className="ai-applied-note">
-              Added {result.appliedActivities.length} task
-              {result.appliedActivities.length === 1 ? "" : "s"} to your timeline.
+              {t("ai.addedTasks", { count: result.appliedActivities.length })}
             </p>
           ) : null}
 
           {result.tasks.length > 0 ? (
             <div className="ai-result-section">
-              <h4>Suggested tasks</h4>
+              <h4>{t("ai.suggestedTasks")}</h4>
               <div className="ai-task-list">
                 {result.tasks.map((task, index) => (
                   <article className="ai-task-card" key={`${task.date}-${task.title}-${index}`}>
@@ -222,7 +212,7 @@ export default function AIWorkspace({ projects, onTasksApplied }: AIWorkspacePro
 
           {result.roadmap.length > 0 ? (
             <div className="ai-result-section">
-              <h4>Roadmap</h4>
+              <h4>{t("ai.roadmap")}</h4>
               <ol className="ai-roadmap-list">
                 {result.roadmap.map((milestone) => (
                   <li key={`${milestone.targetDate}-${milestone.title}`}>
@@ -242,7 +232,7 @@ export default function AIWorkspace({ projects, onTasksApplied }: AIWorkspacePro
 
           {result.findings.length > 0 ? (
             <div className="ai-result-section">
-              <h4>Checks and findings</h4>
+              <h4>{t("ai.findings")}</h4>
               <div className="ai-finding-list">
                 {result.findings.map((finding, index) => (
                   <article

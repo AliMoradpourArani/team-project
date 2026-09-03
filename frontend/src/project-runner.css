@@ -5,7 +5,7 @@
 .runner-safety-note {
   margin: 0 0 1rem;
   padding: 0.8rem 0.9rem;
-  border: 1px solid var(--border-color, #d8dee9);
+  border: 1px solid var(--border-color, var(--color-slate-soft));
   border-radius: 0.75rem;
   font-size: 0.9rem;
   line-height: 1.5;
@@ -84,7 +84,7 @@
   margin-top: 0.9rem;
   padding: 0.85rem;
   border-radius: 0.7rem;
-  background: rgba(127, 127, 127, 0.08);
+  background: var(--color-wash);
 }
 
 .runner-result-meta {
@@ -110,7 +110,7 @@
 
 .runner-result .runner-stderr,
 .project-run-history-item .runner-stderr {
-  border-left: 3px solid currentColor;
+  border-inline-start: 3px solid currentColor;
 }
 
 .project-detail-page {
@@ -157,7 +157,7 @@
   gap: 0.7rem;
   align-items: start;
   padding: 0.75rem;
-  border: 1px solid var(--border-color, #d8dee9);
+  border: 1px solid var(--border-color, var(--color-slate-soft));
   border-radius: 0.7rem;
 }
 
@@ -211,7 +211,7 @@
   margin: 0;
   padding: 1rem;
   border-radius: 0.75rem;
-  background: rgba(127, 127, 127, 0.08);
+  background: var(--color-wash);
   white-space: pre-wrap;
   overflow-wrap: anywhere;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
@@ -221,7 +221,7 @@
 
 .project-run-history-item {
   padding: 0.85rem;
-  border: 1px solid var(--border-color, #d8dee9);
+  border: 1px solid var(--border-color, var(--color-slate-soft));
   border-radius: 0.75rem;
 }
 

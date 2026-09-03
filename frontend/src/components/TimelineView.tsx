@@ -1,4 +1,5 @@
 import type { Activity } from "../types";
+import { useI18n } from "../i18n";
 
 interface Props {
   activities: Activity[];
@@ -7,6 +8,7 @@ interface Props {
 }
 
 export default function TimelineView({ activities, onEdit, onDelete }: Props) {
+  const { t } = useI18n();
   const groups = new Map<string, Activity[]>();
   for (const activity of [...activities].sort((a, b) => b.date.localeCompare(a.date))) {
     const group = groups.get(activity.date) ?? [];
@@ -20,12 +22,12 @@ export default function TimelineView({ activities, onEdit, onDelete }: Props) {
     <section className="dashboard-card timeline-card">
       <div className="section-heading compact">
         <div>
-          <p className="eyebrow">Timeline</p>
-          <h2>Work history</h2>
+          <p className="eyebrow">{t("timeline.eyebrow")}</p>
+          <h2>{t("timeline.workHistory")}</h2>
         </div>
         <span className="member-count">{activities.length}</span>
       </div>
-      {groups.size === 0 ? <p className="status-message">No activities recorded yet.</p> : null}
+      {groups.size === 0 ? <p className="status-message">{t("timeline.noActivities")}</p> : null}
       <div className="timeline-list">
         {[...groups.entries()].map(([date, items]) => (
           <section className="timeline-group" key={date}>
@@ -36,15 +38,17 @@ export default function TimelineView({ activities, onEdit, onDelete }: Props) {
                   <span className={`status-dot ${activity.status}`} />
                   <div className="timeline-copy">
                     <h3>{activity.title}</h3>
-                    <span className={`pill ${activity.status}`}>{activity.status}</span>
+                    <span className={`pill ${activity.status}`}>
+                      {t(`status.${activity.status}`)}
+                    </span>
                   </div>
                   {editable ? (
                     <div className="item-actions">
                       <button type="button" onClick={() => onEdit?.(activity)}>
-                        Edit
+                        {t("timeline.edit")}
                       </button>
                       <button type="button" onClick={() => onDelete?.(activity)}>
-                        Delete
+                        {t("timeline.delete")}
                       </button>
                     </div>
                   ) : null}

@@ -16,6 +16,7 @@ import type {
   SubmissionReleaseSummary,
 } from "../types";
 import StatusMessage from "./StatusMessage";
+import { useI18n } from "../i18n";
 
 function toLocalDateTime(value: string | null): string {
   if (!value) return "";
@@ -36,6 +37,7 @@ export default function ProfessorSubmissionPanel() {
   const [exportingReleaseId, setExportingReleaseId] = useState<number | null>(null);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  const { t } = useI18n();
 
   const load = useCallback(async () => {
     const [nextData, nextPreflight, nextReleases] = await Promise.all([
@@ -64,10 +66,10 @@ export default function ProfessorSubmissionPanel() {
         isOpen,
         deadlineAt: deadline ? new Date(deadline).toISOString() : null,
       });
-      setMessage("Submission settings saved.");
+      setMessage(t("ps.settingsSaved"));
       await load();
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "Could not save settings.");
+      setError(requestError instanceof Error ? requestError.message : t("ps.settingsError"));
     } finally {
       setSaving(false);
     }
@@ -80,15 +82,11 @@ export default function ProfessorSubmissionPanel() {
     setMessage("");
     try {
       const release = await createSubmissionRelease(releaseLabel);
-      setMessage(`Release candidate “${release.label}” frozen.`);
+      setMessage(t("ps.releaseFrozen", { label: release.label }));
       setReleaseLabel("");
       await load();
     } catch (requestError) {
-      setError(
-        requestError instanceof Error
-          ? requestError.message
-          : "Could not freeze release candidate.",
-      );
+      setError(requestError instanceof Error ? requestError.message : t("ps.releaseError"));
     } finally {
       setCreatingRelease(false);
     }
@@ -109,46 +107,46 @@ export default function ProfessorSubmissionPanel() {
       anchor.click();
       anchor.remove();
       URL.revokeObjectURL(url);
-      setMessage(`Report for “${release.label}” exported.`);
+      setMessage(t("ps.exported", { label: release.label }));
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "Could not export report.");
+      setError(requestError instanceof Error ? requestError.message : t("ps.exportError"));
     } finally {
       setExportingReleaseId(null);
     }
   }
 
   if ((!data || !preflight) && error) return <StatusMessage error>{error}</StatusMessage>;
-  if (!data || !preflight) return <StatusMessage>Loading final delivery controls…</StatusMessage>;
+  if (!data || !preflight) return <StatusMessage>{t("ps.loading")}</StatusMessage>;
 
   return (
     <section className="dashboard-card professor-submission-card">
       <div className="section-heading compact">
         <div>
-          <p className="eyebrow">Submission &amp; release</p>
-          <h2>Final delivery control</h2>
+          <p className="eyebrow">{t("ps.eyebrow")}</p>
+          <h2>{t("ps.title")}</h2>
         </div>
         <span
           className={`submission-state ${data.settings.acceptingSubmissions ? "open" : "closed"}`}
         >
-          {data.settings.acceptingSubmissions ? "accepting" : "closed"}
+          {data.settings.acceptingSubmissions ? t("ps.accepting") : t("ps.closed")}
         </span>
       </div>
 
       <div className="submission-summary-grid">
         <article>
-          <span>Projects</span>
+          <span>{t("ps.summaryProjects")}</span>
           <strong>{data.totalProjects}</strong>
         </article>
         <article>
-          <span>Submitted</span>
+          <span>{t("ps.summarySubmitted")}</span>
           <strong>{data.submittedProjects}</strong>
         </article>
         <article>
-          <span>Pending</span>
+          <span>{t("ps.summaryPending")}</span>
           <strong>{data.pendingProjects}</strong>
         </article>
         <article>
-          <span>Approved reviews</span>
+          <span>{t("ps.summaryApproved")}</span>
           <strong>{data.approvedProjects}</strong>
         </article>
       </div>
@@ -160,10 +158,10 @@ export default function ProfessorSubmissionPanel() {
             checked={isOpen}
             onChange={(event) => setIsOpen(event.target.checked)}
           />
-          <span>Accept project submissions</span>
+          <span>{t("ps.acceptSubmissions")}</span>
         </label>
         <label>
-          <span>Deadline</span>
+          <span>{t("ps.deadline")}</span>
           <input
             type="datetime-local"
             value={deadline}
@@ -171,7 +169,7 @@ export default function ProfessorSubmissionPanel() {
           />
         </label>
         <button className="secondary-button" type="submit" disabled={saving}>
-          {saving ? "Saving…" : "Save submission settings"}
+          {saving ? t("form.saving") : t("ps.saveSettings")}
         </button>
       </form>
 
@@ -188,10 +186,12 @@ export default function ProfessorSubmissionPanel() {
               <small>{item.project.userId}</small>
             </div>
             <span>
-              {item.latestSubmission ? `v${item.latestSubmission.version}` : "not submitted"}
+              {item.latestSubmission ? `v${item.latestSubmission.version}` : t("ps.notSubmitted")}
             </span>
             <span>
-              {item.review ? `${item.review.status} · ${item.review.totalScore}/100` : "no review"}
+              {item.review
+                ? `${item.review.status} · ${item.review.totalScore}/100`
+                : t("ps.noReview")}
             </span>
             <span className="card-arrow">↗</span>
           </a>
@@ -201,18 +201,23 @@ export default function ProfessorSubmissionPanel() {
       <section className={`delivery-preflight ${preflight.status}`}>
         <div className="section-heading compact">
           <div>
-            <p className="eyebrow">Phase 11 preflight</p>
+            <p className="eyebrow">{t("ps.preflightEyebrow")}</p>
             <h3>{preflight.summary}</h3>
           </div>
           <span
             className={`submission-state ${preflight.releaseCandidateReady ? "open" : "closed"}`}
           >
-            {preflight.releaseCandidateReady ? "ready" : `${preflight.blockerCount} blockers`}
+            {preflight.releaseCandidateReady
+              ? t("ps.ready")
+              : t("ps.blockers", { count: preflight.blockerCount })}
           </span>
         </div>
         <div className="delivery-preflight-meta">
           <span>
-            {preflight.readyProjects}/{preflight.totalProjects} projects ready
+            {t("ps.projectsReady", {
+              ready: preflight.readyProjects,
+              total: preflight.totalProjects,
+            })}
           </span>
           <code>{preflight.localCheckCommand}</code>
         </div>
@@ -244,9 +249,11 @@ export default function ProfessorSubmissionPanel() {
                 <span>{project.status}</span>
                 <small>
                   {project.latestSubmissionVersion
-                    ? `frozen v${project.latestSubmissionVersion}`
-                    : "not frozen"}
-                  {project.reviewStatus ? ` · ${project.reviewStatus}` : " · no review"}
+                    ? t("ps.frozenV", { version: project.latestSubmissionVersion })
+                    : t("ps.notFrozen")}
+                  {project.reviewStatus
+                    ? t("ps.statusPrefix", { status: project.reviewStatus })
+                    : t("ps.noReviewSuffix")}
                 </small>
                 {failed.length ? <small>{failed[0].remediation}</small> : null}
               </a>
@@ -257,24 +264,18 @@ export default function ProfessorSubmissionPanel() {
 
       <div className={`release-readiness ${preflight.releaseCandidateReady ? "ready" : "blocked"}`}>
         <strong>
-          {preflight.releaseCandidateReady
-            ? "Ready to freeze release candidate"
-            : "Release candidate blocked"}
+          {preflight.releaseCandidateReady ? t("ps.readyToFreeze") : t("ps.releaseBlocked")}
         </strong>
-        <span>
-          {preflight.releaseCandidateReady
-            ? "Every project is integrated, frozen, and approved after its latest frozen submission."
-            : preflight.summary}
-        </span>
+        <span>{preflight.releaseCandidateReady ? t("ps.readyMessage") : preflight.summary}</span>
       </div>
 
       <form className="release-form" onSubmit={(event) => void freezeRelease(event)}>
         <label>
-          <span>Release candidate label</span>
+          <span>{t("ps.releaseLabel")}</span>
           <input
             type="text"
             maxLength={120}
-            placeholder="RC1 · Fall 2026"
+            placeholder={t("ps.releasePlaceholder")}
             value={releaseLabel}
             onChange={(event) => setReleaseLabel(event.target.value)}
           />
@@ -284,7 +285,7 @@ export default function ProfessorSubmissionPanel() {
           type="submit"
           disabled={!preflight.releaseCandidateReady || !releaseLabel.trim() || creatingRelease}
         >
-          {creatingRelease ? "Freezing candidate…" : "Freeze release candidate"}
+          {creatingRelease ? t("ps.freezingCandidate") : t("ps.freezeRelease")}
         </button>
       </form>
 
@@ -294,8 +295,8 @@ export default function ProfessorSubmissionPanel() {
       <div className="frozen-release-list">
         <div className="section-heading compact">
           <div>
-            <p className="eyebrow">Immutable history</p>
-            <h3>Frozen releases</h3>
+            <p className="eyebrow">{t("ps.immutableHistory")}</p>
+            <h3>{t("ps.frozenReleases")}</h3>
           </div>
           <span className="member-count">{releases.length}</span>
         </div>
@@ -305,7 +306,7 @@ export default function ProfessorSubmissionPanel() {
               <div>
                 <strong>{release.label}</strong>
                 <small>
-                  {release.projectCount} projects · {release.createdAt}
+                  {t("ps.projectsCount", { count: release.projectCount })} · {release.createdAt}
                 </small>
               </div>
               <div className="frozen-release-actions">
@@ -315,15 +316,15 @@ export default function ProfessorSubmissionPanel() {
                   type="button"
                   disabled={exportingReleaseId === release.id}
                   onClick={() => void exportReport(release)}
-                  aria-label={`Export ${release.label} report`}
+                  aria-label={t("ps.exportAria", { label: release.label })}
                 >
-                  {exportingReleaseId === release.id ? "Exporting…" : "Export report"}
+                  {exportingReleaseId === release.id ? t("ps.exporting") : t("ps.exportReport")}
                 </button>
               </div>
             </article>
           ))
         ) : (
-          <p className="submission-empty">No frozen team release yet.</p>
+          <p className="submission-empty">{t("ps.noFrozenRelease")}</p>
         )}
       </div>
     </section>

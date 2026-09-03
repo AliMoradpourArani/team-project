@@ -1,5 +1,8 @@
 import type { ReactNode } from "react";
 
+import { useI18n } from "../i18n";
+import LanguageSwitcher from "../i18n/LanguageSwitcher";
+import ThemeSwitcher from "../theme/ThemeSwitcher";
 import type { AuthSession } from "../types";
 
 interface Props {
@@ -10,6 +13,7 @@ interface Props {
 }
 
 export default function Layout({ children, session, onLogout, currentPath = "/" }: Props) {
+  const { t } = useI18n();
   const normalizedPath = currentPath.replace(/\/+$/, "") || "/";
   const homeHref =
     session?.role === "professor"
@@ -19,9 +23,9 @@ export default function Layout({ children, session, onLogout, currentPath = "/" 
         : "/";
   const tabs =
     session?.role === "professor"
-      ? [{ href: "/professor", label: "Team dashboard" }]
+      ? [{ href: "/professor", label: t("nav.teamDashboard") }]
       : session?.role === "student" && session.userId
-        ? [{ href: `/users/${session.userId}`, label: "My dashboard" }]
+        ? [{ href: `/users/${session.userId}`, label: t("nav.myDashboard") }]
         : [];
 
   return (
@@ -31,7 +35,7 @@ export default function Layout({ children, session, onLogout, currentPath = "/" 
           ForgeFlow AI
         </a>
         {tabs.length > 0 ? (
-          <nav className="site-nav" aria-label="Main navigation">
+          <nav className="site-nav" aria-label={t("nav.mainNavigation")}>
             {tabs.map((tab) => {
               const isActive = normalizedPath === tab.href;
               return (
@@ -48,18 +52,22 @@ export default function Layout({ children, session, onLogout, currentPath = "/" 
             })}
           </nav>
         ) : null}
-        {session ? (
-          <div className="header-session">
+        <div className="header-tools">
+          {session ? (
             <span className="header-label">
               {session.displayName} · {session.role}
             </span>
+          ) : (
+            <span className="header-label">{t("header.protectedWorkspace")}</span>
+          )}
+          <ThemeSwitcher />
+          <LanguageSwitcher />
+          {session ? (
             <button className="header-logout" type="button" onClick={onLogout}>
-              Sign out
+              {t("header.signOut")}
             </button>
-          </div>
-        ) : (
-          <span className="header-label">Protected local workspace</span>
-        )}
+          ) : null}
+        </div>
       </header>
       <main className="page-content">{children}</main>
     </div>

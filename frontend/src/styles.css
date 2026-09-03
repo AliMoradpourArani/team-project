@@ -1,9 +1,119 @@
-@import url("https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap");
+﻿@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap");
+
+/* ---- Theme tokens (light default) ---- */
+:root {
+  --color-bg: #f3f0e8;
+  --color-text: #18221e;
+  --color-text-strong: #2c3a33;
+  --color-muted: #66736c;
+  --color-muted-2: #8b918d;
+  --color-muted-soft: #e4e0d5;
+  --color-border: #d4d4c8;
+  --color-border-2: #c8c8bc;
+  --color-card: #e6e8db;
+  --color-card-2: #dedbd0;
+  --color-surface: #ffffff;
+  --color-surface-2: #e9e8df;
+  --color-accent: #4f806b;
+  --color-accent-strong: #35654e;
+  --color-accent-soft: #d8e3d5;
+  --color-accent-soft-2: #c4d2c5;
+  --color-accent-soft-3: #c4cdc2;
+  --color-accent-soft-4: #e4e6da;
+  --color-warn: #d05b3b;
+  --color-warn-strong: #8f4b2d;
+  --color-warn-soft: #f2d8bf;
+  --color-warn-soft-2: #dfc3a7;
+  --color-danger: #b13f31;
+  --color-danger-soft: #a25230;
+  --color-shadow: rgba(24, 34, 30, 0.14);
+  --color-paper: #f7f5ef;
+  --color-paper-2: #f2efe3;
+  --color-paper-strong: #fffdf8;
+  --color-paper-soft: #fbf5f1;
+  --color-paper-hover: #f2f8f3;
+  --color-warm-border: #dfded3;
+  --color-warm-accent: #2f6d50;
+  --color-warm-accent-soft: #e7f2eb;
+  --color-warm-streak: #8a4b3d;
+  --color-warm-muted: #7c4b3e;
+  --color-warm-muted-2: #aeb9b3;
+  --color-olive: #6e6332;
+  --color-slate: #64748b;
+  --color-slate-soft: #d9dee8;
+  --color-slate-border: #cbd5e1;
+  --color-indigo: #6366f1;
+  --color-plain: #ffffff;
+  --color-glass: rgba(255, 255, 255, 0.72);
+  --color-glass-soft: rgba(255, 255, 255, 0.55);
+  --color-wash-weak: rgba(127, 127, 127, 0.05);
+  --color-wash: rgba(127, 127, 127, 0.08);
+  --color-wash-strong: rgba(127, 127, 127, 0.1);
+  --color-badge-wash: rgba(15, 23, 42, 0.08);
+  --color-track-wash: rgba(100, 116, 139, 0.18);
+  --color-chip-wash: rgba(100, 116, 139, 0.12);
+  --ai-workspace-bg: linear-gradient(145deg, rgba(99, 102, 241, 0.08), rgba(14, 165, 233, 0.04));
+}
+
+/* ---- Dark theme ---- */
+[data-theme="dark"] {
+  --color-bg: #141a17;
+  --color-text: #e8ece9;
+  --color-text-strong: #f4f7f5;
+  --color-muted: #9aa6a0;
+  --color-muted-2: #7d857f;
+  --color-muted-soft: #2a332e;
+  --color-border: #2c3530;
+  --color-border-2: #3a4440;
+  --color-card: #1e2622;
+  --color-card-2: #232c27;
+  --color-surface: #1a211d;
+  --color-surface-2: #202823;
+  --color-accent: #6fae93;
+  --color-accent-strong: #8fc4ab;
+  --color-accent-soft: #24352d;
+  --color-accent-soft-2: #2a3d33;
+  --color-accent-soft-3: #27332d;
+  --color-accent-soft-4: #202a25;
+  --color-warn: #e07a5a;
+  --color-warn-strong: #c96a4c;
+  --color-warn-soft: #3a2a20;
+  --color-warn-soft-2: #443024;
+  --color-danger: #e06a5c;
+  --color-danger-soft: #c05a40;
+  --color-shadow: rgba(0, 0, 0, 0.5);
+  --color-paper: #1b211d;
+  --color-paper-2: #202822;
+  --color-paper-strong: #161c18;
+  --color-paper-soft: #1e2621;
+  --color-paper-hover: #232d27;
+  --color-warm-border: #333b36;
+  --color-warm-accent: #69a582;
+  --color-warm-accent-soft: #22342b;
+  --color-warm-streak: #dc8a70;
+  --color-warm-muted: #cf8f7a;
+  --color-warm-muted-2: #7f8c86;
+  --color-olive: #a89d63;
+  --color-slate: #8a93a6;
+  --color-slate-soft: #2a313c;
+  --color-slate-border: #3a424f;
+  --color-indigo: #818cf8;
+  --color-plain: #1a211d;
+  --color-glass: rgba(30, 38, 34, 0.75);
+  --color-glass-soft: rgba(30, 38, 34, 0.6);
+  --color-wash-weak: rgba(255, 255, 255, 0.04);
+  --color-wash: rgba(255, 255, 255, 0.07);
+  --color-wash-strong: rgba(255, 255, 255, 0.09);
+  --color-badge-wash: rgba(255, 255, 255, 0.07);
+  --color-track-wash: rgba(255, 255, 255, 0.12);
+  --color-chip-wash: rgba(255, 255, 255, 0.09);
+  --ai-workspace-bg: linear-gradient(145deg, rgba(99, 102, 241, 0.12), rgba(14, 165, 233, 0.06));
+}
 
 :root {
-  color: #18221e;
-  background: #f3f0e8;
-  font-family: "Space Grotesk", sans-serif;
+  color: var(--color-text);
+  background: var(--color-bg);
+  font-family: "Inter", "Segoe UI", Arial, Helvetica, sans-serif;
   font-synthesis: none;
   line-height: 1.5;
 }
@@ -33,7 +143,7 @@ a {
 }
 .site-header {
   align-items: center;
-  border-bottom: 1px solid #d4d4c8;
+  border-bottom: 1px solid var(--color-border);
   display: flex;
   justify-content: space-between;
   margin: 0 auto;
@@ -50,8 +160,8 @@ a {
   gap: 18px;
 }
 .nav-tab {
-  color: #66736c;
-  font-family: "DM Mono", monospace;
+  color: var(--color-muted);
+  font-family: inherit;
   font-size: 0.76rem;
   text-transform: uppercase;
   text-decoration: none;
@@ -59,17 +169,17 @@ a {
   border-bottom: 2px solid transparent;
 }
 .nav-tab:hover {
-  color: #4f806b;
+  color: var(--color-accent);
 }
 .nav-tab-active {
-  color: #2c3a33;
-  border-bottom-color: #4f806b;
+  color: var(--color-text-strong);
+  border-bottom-color: var(--color-accent);
 }
 .header-label,
 .member-count,
 time {
-  color: #66736c;
-  font-family: "DM Mono", monospace;
+  color: var(--color-muted);
+  font-family: inherit;
   font-size: 0.72rem;
   text-transform: uppercase;
 }
@@ -83,8 +193,8 @@ time {
   padding-bottom: 116px;
 }
 .eyebrow {
-  color: #d05b3b;
-  font-family: "DM Mono", monospace;
+  color: var(--color-warn);
+  font-family: inherit;
   font-size: 0.72rem;
   letter-spacing: 0.08em;
   margin: 0 0 18px;
@@ -103,17 +213,17 @@ h1 {
   margin-bottom: 30px;
 }
 h1 em {
-  color: #4f806b;
+  color: var(--color-accent);
   font-style: normal;
 }
 .hero-copy {
-  color: #66736c;
+  color: var(--color-muted);
   font-size: 1.1rem;
   max-width: 370px;
 }
 .section-heading {
   align-items: end;
-  border-bottom: 1px solid #d4d4c8;
+  border-bottom: 1px solid var(--color-border);
   display: flex;
   justify-content: space-between;
   margin-bottom: 28px;
@@ -135,7 +245,7 @@ h2 {
 }
 .member-card {
   align-items: center;
-  background: #e6e8db;
+  background: var(--color-card);
   display: flex;
   gap: 16px;
   min-height: 132px;
@@ -145,16 +255,16 @@ h2 {
     transform 0.2s;
 }
 .member-card:hover {
-  background: #d8e3d5;
+  background: var(--color-accent-soft);
   transform: translateY(-3px);
 }
 .member-avatar,
 .profile-avatar {
   align-items: center;
-  background: #f3f0e8;
-  border: 1px solid #c4cdc2;
+  background: var(--color-bg);
+  border: 1px solid var(--color-accent-soft-3);
   border-radius: 50%;
-  color: #4f806b;
+  color: var(--color-accent);
   display: flex;
   flex: 0 0 auto;
   font-size: 1.45rem;
@@ -172,27 +282,27 @@ h2 {
 }
 .member-card small,
 .role-label {
-  color: #66736c;
+  color: var(--color-muted);
   font-size: 0.85rem;
   margin-top: 3px;
 }
 .card-arrow {
-  color: #d05b3b;
+  color: var(--color-warn);
   font-size: 1.4rem;
-  margin-left: auto;
+  margin-inline-start: auto;
 }
 .status-message {
-  color: #66736c;
+  color: var(--color-muted);
   padding: 18px 0;
 }
 .status-message.error,
 .form-error {
-  color: #b13f31;
+  color: var(--color-danger);
 }
 .back-link,
 .text-link {
-  color: #4f806b;
-  font-family: "DM Mono", monospace;
+  color: var(--color-accent);
+  font-family: inherit;
   font-size: 0.76rem;
   text-transform: uppercase;
 }
@@ -217,7 +327,7 @@ h2 {
   margin-bottom: 0;
 }
 .profile-avatar {
-  background: #d8e3d5;
+  background: var(--color-accent-soft);
   border: 0;
   font-size: 2.3rem;
   height: 90px;
@@ -228,7 +338,7 @@ h2 {
 }
 .project-item {
   align-items: flex-start;
-  border-bottom: 1px solid #d4d4c8;
+  border-bottom: 1px solid var(--color-border);
   display: flex;
   gap: 14px;
   padding: 20px 0;
@@ -239,35 +349,35 @@ h2 {
   margin: 0;
 }
 .project-mark {
-  color: #d05b3b;
+  color: var(--color-warn);
   font-size: 1.2rem;
 }
 .project-item p {
-  color: #66736c;
+  color: var(--color-muted);
   font-size: 0.88rem;
   margin: 5px 0;
 }
 .project-item small {
-  color: #66736c;
+  color: var(--color-muted);
 }
 .pill {
   border-radius: 999px;
-  font-family: "DM Mono", monospace;
+  font-family: inherit;
   font-size: 0.65rem;
   padding: 5px 9px;
   text-transform: uppercase;
 }
 .pill.completed {
-  background: #d8e3d5;
-  color: #35654e;
+  background: var(--color-accent-soft);
+  color: var(--color-accent-strong);
 }
 .pill.in-progress {
-  background: #f2d8bf;
-  color: #a25230;
+  background: var(--color-warn-soft);
+  color: var(--color-danger-soft);
 }
 .pill.planned {
-  background: #e4e0d5;
-  color: #66736c;
+  background: var(--color-muted-soft);
+  color: var(--color-muted);
 }
 .empty-state {
   padding: 80px 0;
@@ -285,14 +395,14 @@ h2 {
 .stat-card,
 .dashboard-card,
 .activity-form {
-  background: #e9e8df;
-  border: 1px solid #d4d4c8;
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
   padding: 24px;
 }
 .stat-card span {
-  color: #66736c;
+  color: var(--color-muted);
   display: block;
-  font-family: "DM Mono", monospace;
+  font-family: inherit;
   font-size: 0.7rem;
   text-transform: uppercase;
 }
@@ -318,16 +428,16 @@ h2 {
   grid-template-columns: 1fr 1fr;
 }
 .form-grid label {
-  color: #66736c;
-  font-family: "DM Mono", monospace;
+  color: var(--color-muted);
+  font-family: inherit;
   font-size: 0.72rem;
   text-transform: uppercase;
 }
 .form-grid input,
 .form-grid select {
-  background: #f3f0e8;
-  border: 1px solid #c8c8bc;
-  color: #18221e;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border-2);
+  color: var(--color-text);
   display: block;
   margin-top: 7px;
   min-height: 44px;
@@ -347,18 +457,18 @@ h2 {
 .calendar-nav button,
 .item-actions button {
   border: 0;
-  font-family: "DM Mono", monospace;
+  font-family: inherit;
   font-size: 0.72rem;
   text-transform: uppercase;
 }
 .primary-button {
-  background: #18221e;
-  color: #f3f0e8;
+  background: var(--color-text);
+  color: var(--color-bg);
   padding: 12px 16px;
 }
 .secondary-button {
   background: transparent;
-  color: #66736c;
+  color: var(--color-muted);
   padding: 12px 16px;
 }
 .primary-button:disabled {
@@ -373,8 +483,8 @@ h2 {
   gap: 6px;
 }
 .calendar-nav button {
-  background: #f3f0e8;
-  border: 1px solid #d4d4c8;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
   height: 34px;
   width: 34px;
 }
@@ -384,8 +494,8 @@ h2 {
   grid-template-columns: repeat(7, 1fr);
 }
 .calendar-weekdays span {
-  color: #66736c;
-  font-family: "DM Mono", monospace;
+  color: var(--color-muted);
+  font-family: inherit;
   font-size: 0.62rem;
   padding: 6px;
   text-align: center;
@@ -397,9 +507,9 @@ h2 {
 }
 .calendar-day {
   align-items: center;
-  background: #f3f0e8;
-  border: 1px solid #dedbd0;
-  color: #18221e;
+  background: var(--color-bg);
+  border: 1px solid var(--color-card-2);
+  color: var(--color-text);
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -407,15 +517,15 @@ h2 {
   min-width: 0;
 }
 .calendar-day strong {
-  color: #d05b3b;
-  font-family: "DM Mono", monospace;
+  color: var(--color-warn);
+  font-family: inherit;
   font-size: 0.62rem;
 }
 .calendar-day.selected {
-  background: #d8e3d5;
+  background: var(--color-accent-soft);
 }
 .calendar-detail {
-  border-top: 1px solid #d4d4c8;
+  border-top: 1px solid var(--color-border);
   margin-top: 20px;
   padding-top: 16px;
 }
@@ -427,7 +537,7 @@ h2 {
   margin: 8px 0 0;
 }
 .status-dot {
-  background: #8b918d;
+  background: var(--color-muted-2);
   border-radius: 50%;
   display: inline-block;
   flex: 0 0 auto;
@@ -435,10 +545,10 @@ h2 {
   width: 9px;
 }
 .status-dot.completed {
-  background: #4f806b;
+  background: var(--color-accent);
 }
 .status-dot.in-progress {
-  background: #d05b3b;
+  background: var(--color-warn);
 }
 .timeline-group {
   display: grid;
@@ -447,7 +557,7 @@ h2 {
   padding: 18px 0;
 }
 .timeline-group + .timeline-group {
-  border-top: 1px solid #d4d4c8;
+  border-top: 1px solid var(--color-border);
 }
 .timeline-item {
   align-items: center;
@@ -456,7 +566,7 @@ h2 {
   min-height: 50px;
 }
 .timeline-item + .timeline-item {
-  border-top: 1px solid #dedbd0;
+  border-top: 1px solid var(--color-card-2);
 }
 .timeline-copy {
   align-items: center;
@@ -475,11 +585,11 @@ h2 {
 }
 .item-actions button {
   background: transparent;
-  color: #66736c;
+  color: var(--color-muted);
   padding: 6px;
 }
 .item-actions button:hover {
-  color: #18221e;
+  color: var(--color-text);
 }
 
 @media (max-width: 800px) {
@@ -494,8 +604,16 @@ h2 {
 @media (max-width: 700px) {
   .site-header,
   .page-content {
-    padding-left: 20px;
-    padding-right: 20px;
+    padding-inline: 20px;
+  }
+  .site-header {
+    flex-wrap: wrap;
+    row-gap: 12px;
+  }
+  .header-tools {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    row-gap: 10px;
   }
   .page-content {
     padding-top: 54px;
@@ -533,4 +651,264 @@ h2 {
     flex-direction: column;
     gap: 6px;
   }
+}
+/* ---- Header language tools ---- */
+.header-tools {
+  align-items: center;
+  display: flex;
+  gap: 16px;
+}
+/* ---- Theme switcher (sliding sun/moon toggle) ---- */
+.theme-switcher {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  display: flex;
+  padding: 0;
+}
+.theme-track {
+  align-items: center;
+  background: var(--color-border);
+  border: 1px solid var(--color-border-2);
+  border-radius: 999px;
+  display: block;
+  height: 26px;
+  padding: 2px;
+  position: relative;
+  transition: background 0.25s ease;
+  width: 52px;
+}
+.theme-thumb {
+  align-items: center;
+  background: var(--color-surface);
+  border-radius: 50%;
+  display: flex;
+  height: 20px;
+  justify-content: center;
+  inset-inline-start: 2px;
+  position: absolute;
+  top: 2px;
+  transition:
+    transform 0.25s ease,
+    inset-inline-start 0.25s ease;
+  width: 20px;
+  font-size: 0.7rem;
+  box-shadow: 0 1px 3px var(--color-shadow);
+}
+.theme-switcher.dark .theme-thumb {
+  transform: translateX(26px);
+}
+
+/* In RTL, flip the thumb travel direction (inline-start is the right edge) */
+[dir="rtl"] .theme-switcher.dark .theme-thumb {
+  transform: translateX(-26px);
+}
+
+/* ---- Language switcher ---- */
+.language-switcher {
+  position: relative;
+}
+.language-trigger {
+  align-items: center;
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  color: var(--color-text-strong);
+  cursor: pointer;
+  display: flex;
+  font-family: inherit;
+  font-size: 0.74rem;
+  gap: 6px;
+  padding: 6px 12px;
+  transition:
+    border-color 0.2s ease,
+    color 0.2s ease;
+}
+.language-trigger:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+.language-caret {
+  font-size: 0.6rem;
+  transition: transform 0.2s ease;
+}
+.language-caret.open {
+  transform: rotate(180deg);
+}
+.language-menu {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  box-shadow: 0 12px 32px var(--color-shadow);
+  inset-inline-end: 0;
+  list-style: none;
+  margin: 8px 0 0;
+  min-width: 190px;
+  opacity: 0;
+  padding: 6px;
+  position: absolute;
+  top: 100%;
+  transform: translateY(-8px);
+  transition:
+    opacity 0.22s ease,
+    transform 0.22s ease,
+    visibility 0.22s;
+  visibility: hidden;
+  z-index: 60;
+}
+.language-menu.open {
+  opacity: 1;
+  transform: translateY(0);
+  visibility: visible;
+}
+.language-option {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 8px;
+  color: var(--color-text-strong);
+  cursor: pointer;
+  display: flex;
+  font-family: inherit;
+  font-size: 0.86rem;
+  gap: 8px;
+  padding: 9px 10px;
+  text-align: start;
+  width: 100%;
+}
+.language-option:hover {
+  background: var(--color-bg);
+}
+.language-option.active {
+  color: var(--color-accent);
+  font-weight: 600;
+}
+.language-name {
+  color: var(--color-muted);
+  font-family: inherit;
+  font-size: 0.68rem;
+  margin-inline-start: auto;
+  text-transform: uppercase;
+}
+.language-check {
+  color: var(--color-accent);
+}
+
+/* ---- Sahel Persian font (open-source, OFL-licensed) ---- */
+@font-face {
+  font-family: "Sahel";
+  src:
+    url("./fonts/Sahel-Light.woff2") format("woff2"),
+    url("./fonts/Sahel-Light.woff") format("woff");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Sahel";
+  src:
+    url("./fonts/Sahel.woff2") format("woff2"),
+    url("./fonts/Sahel.woff") format("woff");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Sahel";
+  src:
+    url("./fonts/Sahel-SemiBold.woff2") format("woff2"),
+    url("./fonts/Sahel-SemiBold.woff") format("woff");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Sahel";
+  src:
+    url("./fonts/Sahel-SemiBold.woff2") format("woff2"),
+    url("./fonts/Sahel-SemiBold.woff") format("woff");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Sahel";
+  src:
+    url("./fonts/Sahel-Bold.woff2") format("woff2"),
+    url("./fonts/Sahel-Bold.woff") format("woff");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Sahel";
+  src:
+    url("./fonts/Sahel-Black.woff2") format("woff2"),
+    url("./fonts/Sahel-Black.woff") format("woff");
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ---- Persian (RTL) typography: Sahel family ---- */
+[dir="rtl"] {
+  font-family: "Sahel", Tahoma, sans-serif;
+}
+/* Small uppercase labels also use Sahel in Persian instead of the mono/sans accents */
+[dir="rtl"] .header-label,
+[dir="rtl"] .member-count,
+[dir="rtl"] time,
+[dir="rtl"] .nav-tab,
+[dir="rtl"] .language-trigger,
+[dir="rtl"] .language-name,
+[dir="rtl"] .eyebrow {
+  font-family: "Sahel", Tahoma, sans-serif;
+  letter-spacing: 0;
+  text-transform: none;
+}
+/* Different Sahel weights: headings (titr) use Black/Bold, emphasis SemiBold */
+[dir="rtl"] h1 {
+  font-weight: 800;
+}
+/* Give a touch more breathing room between the bold hero title and the copy below it in Persian */
+[dir="rtl"] .login-copy h1,
+[dir="rtl"] .professor-hero h1 {
+  margin-bottom: 46px;
+}
+/* Add more vertical distance between the two hero title lines ("Team work," / "accountable.") in Persian */
+[dir="rtl"] .login-copy h1 {
+  line-height: 1.15;
+}
+[dir="rtl"] h2 {
+  font-weight: 700;
+}
+[dir="rtl"] h3 {
+  font-weight: 600;
+}
+[dir="rtl"] strong {
+  font-weight: 700;
+}
+[dir="rtl"] em {
+  font-weight: 500;
+}
+[dir="rtl"] .eyebrow {
+  font-weight: 500;
+}
+[dir="rtl"] .stat-card span,
+[dir="rtl"] .github-repository-strip span {
+  font-weight: 400;
+}
+[dir="rtl"] .nav-tab {
+  letter-spacing: 0;
+  text-transform: none;
+}
+[dir="rtl"] .calendar-nav button:first-child {
+  order: 2;
+}
+[dir="rtl"] .calendar-nav button:last-child {
+  order: 1;
+}
+[dir="rtl"] .progress-track span {
+  float: right;
 }

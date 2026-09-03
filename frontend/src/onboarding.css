@@ -1,29 +1,29 @@
-.onboarding-card {
+﻿.onboarding-card {
   display: grid;
   gap: 20px;
 }
 
 .onboarding-status {
   border-radius: 999px;
-  font-family: "DM Mono", monospace;
+  font-family: inherit;
   font-size: 0.72rem;
   padding: 7px 10px;
   text-transform: uppercase;
 }
 
 .onboarding-status.ready {
-  background: #e7f2eb;
-  color: #2f6d50;
+  background: var(--color-warm-accent-soft);
+  color: var(--color-warm-accent);
 }
 
 .onboarding-status.pending {
-  background: #f2efe3;
-  color: #6e6332;
+  background: var(--color-paper-2);
+  color: var(--color-olive);
 }
 
 .onboarding-status.invalid {
-  background: #f2e9e3;
-  color: #8a4b3d;
+  background: var(--color-paper-2);
+  color: var(--color-warm-streak);
 }
 
 .onboarding-summary {
@@ -35,7 +35,7 @@
 .onboarding-gate p,
 .onboarding-gate small,
 .onboarding-next p {
-  color: #66736c;
+  color: var(--color-muted);
 }
 
 .onboarding-paths {
@@ -46,8 +46,8 @@
 
 .onboarding-paths div,
 .onboarding-next {
-  background: #f7f5ef;
-  border: 1px solid #dfded3;
+  background: var(--color-paper);
+  border: 1px solid var(--color-warm-border);
   border-radius: 14px;
   display: grid;
   gap: 6px;
@@ -56,28 +56,28 @@
 
 .onboarding-paths span,
 .onboarding-next > span {
-  color: #66736c;
-  font-family: "DM Mono", monospace;
+  color: var(--color-muted);
+  font-family: inherit;
   font-size: 0.7rem;
   text-transform: uppercase;
 }
 
 .onboarding-paths code,
 .onboarding-next code {
-  font-family: "DM Mono", monospace;
+  font-family: inherit;
   font-size: 0.78rem;
   overflow-wrap: anywhere;
 }
 
 .onboarding-gates {
-  border: 1px solid #dfded3;
+  border: 1px solid var(--color-warm-border);
   border-radius: 14px;
   overflow: hidden;
 }
 
 .onboarding-gate {
   align-items: flex-start;
-  border-bottom: 1px solid #dfded3;
+  border-bottom: 1px solid var(--color-warm-border);
   display: grid;
   gap: 12px;
   grid-template-columns: auto 1fr;
@@ -99,13 +99,13 @@
 }
 
 .onboarding-gate.passed .onboarding-gate-mark {
-  background: #e7f2eb;
-  color: #2f6d50;
+  background: var(--color-warm-accent-soft);
+  color: var(--color-warm-accent);
 }
 
 .onboarding-gate.blocked .onboarding-gate-mark {
-  background: #f2e9e3;
-  color: #8a4b3d;
+  background: var(--color-paper-2);
+  color: var(--color-warm-streak);
 }
 
 .onboarding-gate p {
@@ -122,7 +122,7 @@
 }
 
 .onboarding-contracts {
-  border-top: 1px solid #dfded3;
+  border-top: 1px solid var(--color-warm-border);
   padding-top: 16px;
 }
 
@@ -139,7 +139,7 @@
 }
 
 .onboarding-contracts article {
-  background: #f7f5ef;
+  background: var(--color-paper);
   border-radius: 12px;
   display: grid;
   gap: 4px;
@@ -148,7 +148,7 @@
 
 .onboarding-contracts article span,
 .onboarding-contracts article small {
-  color: #66736c;
+  color: var(--color-muted);
 }
 
 @media (max-width: 760px) {

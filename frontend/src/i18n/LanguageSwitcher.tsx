@@ -7,6 +7,7 @@ export default function LanguageSwitcher() {
   const { lang, setLang, t } = useI18n();
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLUListElement>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -28,12 +29,28 @@ export default function LanguageSwitcher() {
 
   const current = LANGUAGES.find((language) => language.code === lang) ?? LANGUAGES[0];
 
+  function focusIndex(index: number) {
+    const items = menuRef.current?.querySelectorAll<HTMLButtonElement>('[role="menuitemradio"]');
+    if (!items?.length) return;
+    const next = (index + items.length) % items.length;
+    items[next].focus();
+  }
+
+  function handleMenuKeyDown(event: React.KeyboardEvent) {
+    if (event.key !== "ArrowDown" && event.key !== "ArrowUp") return;
+    event.preventDefault();
+    const items = menuRef.current?.querySelectorAll<HTMLButtonElement>('[role="menuitemradio"]');
+    if (!items?.length) return;
+    const currentIndex = Array.prototype.indexOf.call(items, document.activeElement);
+    focusIndex(currentIndex >= 0 ? currentIndex + (event.key === "ArrowDown" ? 1 : -1) : 0);
+  }
+
   return (
     <div className="language-switcher" ref={containerRef}>
       <button
         className="language-trigger"
         type="button"
-        aria-haspopup="listbox"
+        aria-haspopup="menu"
         aria-expanded={open}
         aria-label={t("header.changeLanguage")}
         onClick={() => setOpen((value) => !value)}
@@ -47,15 +64,19 @@ export default function LanguageSwitcher() {
         </span>
       </button>
       <ul
+        ref={menuRef}
         className={`language-menu${open ? " open" : ""}`}
-        role="listbox"
+        role="menu"
         aria-label={t("header.language")}
+        onKeyDown={handleMenuKeyDown}
       >
         {LANGUAGES.map((language) => (
-          <li key={language.code} role="option" aria-selected={language.code === lang}>
+          <li key={language.code} role="presentation">
             <button
               className={`language-option${language.code === lang ? " active" : ""}`}
               type="button"
+              role="menuitemradio"
+              aria-checked={language.code === lang}
               onClick={() => {
                 setLang(language.code);
                 setOpen(false);

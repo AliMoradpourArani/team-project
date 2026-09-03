@@ -74,4 +74,15 @@ describe("i18n", () => {
     expect(screen.getByTestId("dir").textContent).toBe("ltr");
     expect(screen.getByTestId("signout").textContent).toBe("Abmelden");
   });
+
+  it("migrates a legacy team-project.language value", () => {
+    window.localStorage.setItem("team-project.language", "fa");
+    render(
+      <I18nProvider>
+        <Probe />
+      </I18nProvider>,
+    );
+    expect(screen.getByTestId("lang").textContent).toBe("fa");
+    expect(screen.getByTestId("dir").textContent).toBe("rtl");
+  });
 });

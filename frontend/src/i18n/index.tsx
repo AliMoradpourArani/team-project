@@ -4,11 +4,13 @@ import type { ReactNode } from "react";
 import { LANGUAGES, translations } from "./translations";
 import type { Language, TranslationKey } from "./translations";
 
-const STORAGE_KEY = "team-project.language";
+const STORAGE_KEY = "forgeflow.language";
+const LEGACY_STORAGE_KEY = "team-project.language";
 
 function detectInitialLanguage(): Language {
   try {
-    const stored = window.localStorage.getItem(STORAGE_KEY);
+    const stored =
+      window.localStorage.getItem(STORAGE_KEY) ?? window.localStorage.getItem(LEGACY_STORAGE_KEY);
     if (stored === "en" || stored === "fa" || stored === "de") return stored;
   } catch {
     // localStorage unavailable (e.g. tests) — fall through to default

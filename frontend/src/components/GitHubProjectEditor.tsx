@@ -5,6 +5,7 @@ import {
   connectGitHub,
   createActivity,
   disconnectGitHub,
+  getActivities,
   getGitHubRepos,
   getGitHubStatus,
   getProjectFile,
@@ -13,10 +14,12 @@ import {
   importGitHubRepo,
   runProject,
   saveProjectFile,
+  updateActivity,
 } from "../api";
 import "../github-editor.css";
 import { useI18n } from "../i18n";
 import type {
+  Activity,
   GithubRepo,
   GithubStatus,
   Project,
@@ -29,9 +32,10 @@ import StatusMessage from "./StatusMessage";
 
 interface Props {
   userId: string;
+  initialTarget?: { projectId: string; path: string | null } | null;
 }
 
-export default function GitHubProjectEditor({ userId }: Props) {
+export default function GitHubProjectEditor({ userId, initialTarget = null }: Props) {
   const { t } = useI18n();
 
   const [status, setStatus] = useState<GithubStatus | null>(null);
@@ -57,7 +61,10 @@ export default function GitHubProjectEditor({ userId }: Props) {
   const [running, setRunning] = useState(false);
   const [commitMessage, setCommitMessage] = useState("");
   const [committing, setCommitting] = useState(false);
-  const [addingActivity, setAddingActivity] = useState(false);
+  const [activities, setActivities] = useState<Activity[]>([]);
+  const [attachActivityId, setAttachActivityId] = useState("");
+  const [attaching, setAttaching] = useState(false);
+  const [reposError, setReposError] = useState("");
 
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -67,19 +74,53 @@ export default function GitHubProjectEditor({ userId }: Props) {
     setProjects(all.filter((project) => project.userId === userId));
   }, [userId]);
 
+  const loadActivities = useCallback(async () => {
+    const all = await getActivities();
+    setActivities(all.filter((activity) => activity.userId === userId));
+  }, [userId]);
+
   const loadStatus = useCallback(async () => {
     const next = await getGitHubStatus();
     setStatus(next);
-    if (next.connected) setRepos(await getGitHubRepos());
-  }, []);
+    if (!next.connected) {
+      setRepos([]);
+      setReposError("");
+      return;
+    }
+    // A repositories failure must never take down the whole editor:
+    // connecting, importing, editing, running and attaching keep working.
+    try {
+      setRepos(await getGitHubRepos());
+      setReposError("");
+    } catch (requestError) {
+      setRepos([]);
+      setReposError(requestError instanceof Error ? requestError.message : t("gh.noRepos"));
+    }
+  }, [t]);
 
   useEffect(() => {
     setNotice("");
     setError("");
     loadStatus()
       .then(loadProjects)
+      .then(loadActivities)
       .catch((requestError: Error) => setError(requestError.message));
-  }, [loadStatus, loadProjects]);
+  }, [loadStatus, loadProjects, loadActivities]);
+
+  // Deep-link target from the activity form ("Open in code editor").
+  useEffect(() => {
+    if (!initialTarget) return;
+    setProjectId(initialTarget.projectId);
+    if (initialTarget.path) {
+      setSelectedPath(initialTarget.path);
+      getProjectFile(initialTarget.projectId, initialTarget.path)
+        .then((next) => {
+          setFile(next);
+          setContent(next.content);
+        })
+        .catch((requestError: Error) => setError(requestError.message));
+    }
+  }, [initialTarget]);
 
   useEffect(() => {
     setSelectedPath("");
@@ -195,26 +236,42 @@ export default function GitHubProjectEditor({ userId }: Props) {
     }
   }
 
-  async function handleAddActivity() {
-    if (!projectId) return;
+  async function handleAttach() {
+    if (!projectId || attaching) return;
     const project = projects.find((candidate) => candidate.id === projectId);
     if (!project) return;
     setError("");
     setNotice("");
-    setAddingActivity(true);
+    setAttaching(true);
     try {
-      await createActivity({
-        userId,
-        date: new Date().toISOString().slice(0, 10),
-        title: project.name,
-        projectId,
-        status: "in-progress",
-      });
-      setNotice(t("gh.addedToActivities"));
+      if (attachActivityId) {
+        const target = activities.find((candidate) => candidate.id === attachActivityId);
+        if (!target) {
+          setError(t("gh.attachError"));
+          return;
+        }
+        await updateActivity(target.id, {
+          userId,
+          date: target.date,
+          title: target.title,
+          status: target.status,
+          projectId,
+        });
+      } else {
+        await createActivity({
+          userId,
+          date: new Date().toISOString().slice(0, 10),
+          title: project.name,
+          projectId,
+          status: "in-progress",
+        });
+        await loadActivities();
+      }
+      setNotice(t("gh.attachedToActivity"));
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : t("gh.addActivityError"));
+      setError(requestError instanceof Error ? requestError.message : t("gh.attachError"));
     } finally {
-      setAddingActivity(false);
+      setAttaching(false);
     }
   }
 
@@ -256,7 +313,7 @@ export default function GitHubProjectEditor({ userId }: Props) {
 
   const connectedProject = projects.find((candidate) => candidate.id === projectId);
   return (
-    <section className="dashboard-card github-editor-card">
+    <section className="dashboard-card github-editor-card" id="github-editor">
       <div className="section-heading compact">
         <div>
           <p className="eyebrow">{t("gh.editorEyebrow")}</p>
@@ -349,6 +406,18 @@ export default function GitHubProjectEditor({ userId }: Props) {
               {importing ? t("gh.importing") : t("gh.import")}
             </button>
           </div>
+          {reposError ? (
+            <div className="gh-repos-error">
+              <StatusMessage error>{reposError}</StatusMessage>
+              <button
+                className="secondary-button runner-button"
+                type="button"
+                onClick={() => void loadStatus().catch(() => undefined)}
+              >
+                {t("gh.retryRepos")}
+              </button>
+            </div>
+          ) : null}
 
           <div className="gh-field">
             <span>{t("gh.pickProject")}</span>
@@ -402,14 +471,6 @@ export default function GitHubProjectEditor({ userId }: Props) {
                       >
                         {running ? t("pp.running") : t("gh.run")}
                       </button>
-                      <button
-                        className="gh-run-button"
-                        type="button"
-                        disabled={addingActivity}
-                        onClick={() => void handleAddActivity()}
-                      >
-                        {addingActivity ? t("gh.addingActivity") : t("gh.addActivity")}
-                      </button>
                     </div>
                     <textarea
                       className="gh-code-textarea"
@@ -442,6 +503,35 @@ export default function GitHubProjectEditor({ userId }: Props) {
                   <StatusMessage>{t("gh.selectFileHint")}</StatusMessage>
                 )}
               </div>
+            </div>
+          ) : null}
+
+          {projectId ? (
+            <div className="gh-attach-row">
+              <div className="gh-field">
+                <span>{t("gh.attachActivity")}</span>
+                <select
+                  className="gh-picker"
+                  value={attachActivityId}
+                  aria-label={t("gh.attachActivity")}
+                  onChange={(event) => setAttachActivityId(event.target.value)}
+                >
+                  <option value="">{t("gh.newActivity")}</option>
+                  {activities.map((activity) => (
+                    <option key={activity.id} value={activity.id}>
+                      {activity.title}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <button
+                className="gh-run-button"
+                type="button"
+                disabled={attaching}
+                onClick={() => void handleAttach()}
+              >
+                {attaching ? t("gh.attaching") : t("gh.attach")}
+              </button>
             </div>
           ) : null}
 

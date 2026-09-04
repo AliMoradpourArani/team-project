@@ -261,6 +261,36 @@ def _fetch_authenticated_user(token: str) -> tuple[str, str | None]:
     return str(payload.get("login") or ""), payload.get("avatar_url")
 
 
+def _fetch_public_user(username: str) -> str:
+    """Confirm a username exists on github.com, returning its canonical login.
+
+    Raises a ValueError with an actionable message when the user is unknown
+    or when GitHub cannot be reached at all.
+    """
+    validate_github_username(username)
+    client = _new_client()
+    try:
+        response = client.get(f"/users/{username}")
+        if response.status_code == 404:
+            raise ValueError(f"GitHub user '{username}' was not found on github.com.")
+        if response.status_code == 403:
+            raise ValueError(
+                "GitHub rate limit reached. Try again later or connect with an access token."
+            )
+        response.raise_for_status()
+        payload = response.json()
+    except ValueError:
+        raise
+    except httpx.HTTPError as error:
+        raise ValueError(
+            f"Could not reach GitHub to verify '{username}'. Check your connection and try again."
+        ) from error
+    login = str(payload.get("login") or "")
+    if not login:
+        raise ValueError(f"GitHub user '{username}' was not found on github.com.")
+    return login
+
+
 # ---------------------------------------------------------------------------
 # Public service entry points
 # ---------------------------------------------------------------------------
@@ -287,7 +317,7 @@ def connect_github(user_id: str, username: str, token: str | None) -> GithubStat
                 "The provided token does not belong to the given GitHub username."
             )
     else:
-        validate_github_username(username)
+        username = _fetch_public_user(username)
     set_connection(user_id, username, token)
     _apply_profile(user_id, username)
     connection = get_connection(user_id)
@@ -317,8 +347,18 @@ def list_repos(user_id: str) -> list[GithubRepo]:
                 f"/users/{connection.github_username}/repos",
                 params={"per_page": 100, "sort": "updated"},
             )
+        if response.status_code == 404:
+            raise ValueError(
+                f"GitHub user '{connection.github_username}' was not found on github.com."
+            )
+        if response.status_code == 403:
+            raise ValueError(
+                "GitHub rate limit reached. Try again later or connect with an access token."
+            )
         response.raise_for_status()
         payloads = response.json()
+    except ValueError:
+        raise
     except httpx.HTTPError as error:
         raise ValueError("Could not fetch your repositories from GitHub.") from error
     return [_map_repo(payload) for payload in payloads if isinstance(payload, dict)]

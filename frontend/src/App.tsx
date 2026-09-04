@@ -60,6 +60,17 @@ function UserPage({ userId, readOnly }: { userId: string; readOnly: boolean }) {
   const [state, setState] = useState<TeamState>({ users: [], activities: [], projects: [] });
   const [error, setError] = useState("");
   const [editing, setEditing] = useState<Activity | null>(null);
+  const [editorTarget, setEditorTarget] = useState<{
+    projectId: string;
+    path: string | null;
+  } | null>(null);
+
+  function openInEditor(projectId: string, path: string | null) {
+    setEditorTarget({ projectId, path });
+    requestAnimationFrame(() => {
+      document.getElementById("github-editor")?.scrollIntoView({ behavior: "smooth" });
+    });
+  }
 
   async function loadData() {
     const [users, activities, projects] = await Promise.all([
@@ -130,7 +141,7 @@ function UserPage({ userId, readOnly }: { userId: string; readOnly: boolean }) {
 
       {!readOnly ? <AIWorkspace projects={projects} onTasksApplied={loadData} /> : null}
 
-      {!readOnly ? <GitHubProjectEditor userId={userId} /> : null}
+      {!readOnly ? <GitHubProjectEditor userId={userId} initialTarget={editorTarget} /> : null}
 
       <div className={`dashboard-grid ${readOnly ? "read-only-dashboard-grid" : ""}`}>
         {!readOnly ? (
@@ -140,6 +151,7 @@ function UserPage({ userId, readOnly }: { userId: string; readOnly: boolean }) {
             editing={editing}
             onSaved={loadData}
             onCancelEdit={() => setEditing(null)}
+            onOpenInEditor={(targetProjectId, path) => openInEditor(targetProjectId, path)}
           />
         ) : null}
         <CalendarView activities={activities} />

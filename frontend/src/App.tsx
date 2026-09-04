@@ -6,6 +6,7 @@ import ActivityForm from "./components/ActivityForm";
 import AIWorkspace from "./components/AIWorkspace";
 import CalendarView from "./components/CalendarView";
 import DashboardStats from "./components/DashboardStats";
+import GitHubConnectButton from "./components/GitHubConnectButton";
 import GitHubProjectEditor from "./components/GitHubProjectEditor";
 import Layout from "./components/Layout";
 import LoginPage from "./components/LoginPage";
@@ -111,13 +112,18 @@ function UserPage({ userId, readOnly }: { userId: string; readOnly: boolean }) {
       ) : null}
       <div className="profile-header dashboard-profile">
         <span className="profile-avatar">{user.name.charAt(0)}</span>
-        <div>
+        <div className="profile-name-block">
           <p className="eyebrow">
             {readOnly ? t("app.professorReadOnlyView") : t("app.memberDashboard")}
           </p>
           <h1>{user.name}</h1>
           <p className="role-label">{user.role}</p>
         </div>
+        <GitHubConnectButton
+          userId={user.id}
+          initialUsername={user.githubUsername ?? null}
+          canConnect={!readOnly}
+        />
       </div>
 
       <DashboardStats activities={activities} projects={projects} />

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 import os
 from contextlib import asynccontextmanager, suppress
 
@@ -11,12 +12,15 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+from ..database.init_db import initialize_database
 from ..schemas.api import ErrorResponse
 from ..services import ai_automation
 from ..services.queries import NotFoundError
 from .api import activities, ai, auth, github, health, professor, projects, users
 from .frontend_static import install_frontend
 from .observability import request_observability
+
+LOGGER = logging.getLogger(__name__)
 
 
 def configured_origins() -> list[str]:
@@ -27,6 +31,12 @@ def configured_origins() -> list[str]:
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     del app
+    # Self-heal databases created before newer migrations landed (e.g. a dev
+    # database missing github_connections): without this every new endpoint
+    # fails with a 500 instead of working. Idempotent; no seeding here.
+    applied = initialize_database()
+    if applied:
+        LOGGER.info("Applied pending database migrations: %s", ", ".join(applied))
     task: asyncio.Task[None] | None = None
     if ai_automation.enabled():
         task = asyncio.create_task(ai_automation.maintenance_loop())

@@ -145,6 +145,7 @@ const en = {
   "gh.connectFirst": "Connect to the git first.",
   "gh.connectCaption": "Link your GitHub account to import, edit, run and push your repositories.",
   "gh.username": "GitHub username",
+  "gh.usernameHint": "Type your GitHub username, for example: octocat.",
   "gh.usernamePlaceholder": "octocat",
   "gh.token": "Access token (optional)",
   "gh.tokenPlaceholder": "Personal access token",
@@ -591,6 +592,7 @@ const fa: Partial<Record<TranslationKey, string>> = {
   "gh.connectCaption":
     "حساب گیت‌هاب خود را وصل کنید تا مخزن‌هایتان را وارد، ویرایش، اجرا و انتشار کنید.",
   "gh.username": "نام کاربری گیت‌هاب",
+  "gh.usernameHint": "نام کاربری گیت‌هاب خود را بنویسید، مثلاً: octocat.",
   "gh.usernamePlaceholder": "octocat",
   "gh.token": "توکن دسترسی (اختیاری)",
   "gh.tokenPlaceholder": "توکن دسترسی شخصی",
@@ -1037,6 +1039,7 @@ const de: Partial<Record<TranslationKey, string>> = {
   "gh.connectCaption":
     "Verknüpfen Sie Ihr GitHub-Konto, um Ihre Repositories zu importieren, zu bearbeiten, auszuführen und zu pushen.",
   "gh.username": "GitHub-Benutzername",
+  "gh.usernameHint": "Geben Sie Ihren GitHub-Benutzernamen ein, z. B.: octocat.",
   "gh.usernamePlaceholder": "octocat",
   "gh.token": "Zugriffstoken (optional)",
   "gh.tokenPlaceholder": "Persönliches Zugriffstoken",

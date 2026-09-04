@@ -153,31 +153,41 @@ export default function GitHubConnectButton({
         </button>
       ) : (
         <span className="gh-connect-form-mini">
-          <input
-            type="text"
-            value={username}
-            maxLength={39}
-            placeholder={t("gh.usernamePlaceholder")}
-            aria-label={t("gh.username")}
-            autoComplete="username"
-            onChange={(event) => setUsername(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === "Enter") void handleConnect();
-              if (event.key === "Escape") setExpanded(false);
-            }}
-          />
-          <input
-            type="password"
-            value={token}
-            placeholder={t("gh.tokenPlaceholder")}
-            aria-label={t("gh.token")}
-            autoComplete="off"
-            onChange={(event) => setToken(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === "Enter") void handleConnect();
-              if (event.key === "Escape") setExpanded(false);
-            }}
-          />
+          <label className="gh-connect-label">
+            <span>{t("gh.username")}</span>
+            <input
+              type="text"
+              value={username}
+              maxLength={39}
+              placeholder={t("gh.usernamePlaceholder")}
+              aria-label={t("gh.username")}
+              title={t("gh.usernameHint")}
+              autoComplete="username"
+              onChange={(event) => setUsername(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") void handleConnect();
+                if (event.key === "Escape") setExpanded(false);
+              }}
+            />
+            <small className="gh-connect-hint">{t("gh.usernameHint")}</small>
+          </label>
+          <label className="gh-connect-label">
+            <span>{t("gh.token")}</span>
+            <input
+              type="password"
+              value={token}
+              placeholder={t("gh.tokenPlaceholder")}
+              aria-label={t("gh.token")}
+              title={t("gh.tokenHint")}
+              autoComplete="off"
+              onChange={(event) => setToken(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") void handleConnect();
+                if (event.key === "Escape") setExpanded(false);
+              }}
+            />
+            <small className="gh-connect-hint">{t("gh.tokenHint")}</small>
+          </label>
           {error ? <p className="gh-connect-error">{error}</p> : null}
           <span className="gh-connect-actions">
             <button

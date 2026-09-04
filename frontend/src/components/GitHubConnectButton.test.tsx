@@ -73,9 +73,18 @@ describe("GitHubConnectButton", () => {
     render(<GitHubConnectButton userId="ali" canConnect />);
 
     fireEvent.click(await screen.findByRole("button", { name: "Connect GitHub" }));
-    fireEvent.change(screen.getByPlaceholderText("octocat"), {
-      target: { value: "octocat" },
-    });
+    const usernameInput = screen.getByPlaceholderText("octocat");
+    expect(usernameInput).toHaveAttribute(
+      "title",
+      "Type your GitHub username, for example: octocat.",
+    );
+    expect(
+      screen.getByText("Type your GitHub username, for example: octocat."),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("A token lets you push commits and see private repositories."),
+    ).toBeInTheDocument();
+    fireEvent.change(usernameInput, { target: { value: "octocat" } });
     fireEvent.click(screen.getByRole("button", { name: "Connect" }));
 
     expect(await screen.findByText("@octocat")).toBeInTheDocument();

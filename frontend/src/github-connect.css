@@ -167,6 +167,24 @@
   outline-offset: 1px;
 }
 
+.gh-connect-label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.gh-connect-label > span {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--color-text-strong);
+}
+
+.gh-connect-hint {
+  font-size: 0.72rem;
+  line-height: 1.5;
+  color: var(--color-muted);
+}
+
 .gh-connect-error {
   color: var(--color-danger);
   font-size: 0.75rem;

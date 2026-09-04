@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 
-import { createActivity, updateActivity } from "../api";
+import { createActivity, getProjectFiles, updateActivity } from "../api";
 import { useI18n } from "../i18n";
-import type { Activity, ActivityInput, ActivityStatus, Project } from "../types";
+import type { Activity, ActivityInput, ActivityStatus, Project, ProjectFileEntry } from "../types";
 
 interface Props {
   userId: string;
@@ -10,11 +10,19 @@ interface Props {
   editing: Activity | null;
   onSaved: () => Promise<void> | void;
   onCancelEdit: () => void;
+  onOpenInEditor?: (projectId: string, path: string) => void;
 }
 
 const today = new Date().toISOString().slice(0, 10);
 
-export default function ActivityForm({ userId, projects, editing, onSaved, onCancelEdit }: Props) {
+export default function ActivityForm({
+  userId,
+  projects,
+  editing,
+  onSaved,
+  onCancelEdit,
+  onOpenInEditor,
+}: Props) {
   const { t } = useI18n();
   const [date, setDate] = useState(today);
   const [title, setTitle] = useState("");
@@ -22,6 +30,7 @@ export default function ActivityForm({ userId, projects, editing, onSaved, onCan
   const [projectId, setProjectId] = useState("");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [attachedFiles, setAttachedFiles] = useState<ProjectFileEntry[]>([]);
 
   useEffect(() => {
     if (editing) {
@@ -36,6 +45,27 @@ export default function ActivityForm({ userId, projects, editing, onSaved, onCan
       setProjectId("");
     }
     setError("");
+  }, [editing]);
+
+  // Code files attached to the activity being edited follow its linked
+  // project, so previously attached work stays reachable while editing.
+  useEffect(() => {
+    const linkedProjectId = editing?.projectId ?? "";
+    if (!editing || !linkedProjectId) {
+      setAttachedFiles([]);
+      return;
+    }
+    let active = true;
+    getProjectFiles(linkedProjectId)
+      .then((entries) => {
+        if (active) setAttachedFiles(entries.filter((entry) => !entry.isDirectory));
+      })
+      .catch(() => {
+        if (active) setAttachedFiles([]);
+      });
+    return () => {
+      active = false;
+    };
   }, [editing]);
 
   async function submit(event: React.FormEvent) {
@@ -116,6 +146,31 @@ export default function ActivityForm({ userId, projects, editing, onSaved, onCan
         </label>
       </div>
       {error ? <p className="form-error">{error}</p> : null}
+      {editing && editing.projectId ? (
+        <div className="attached-files" aria-live="polite">
+          <h3>{t("gh.attachedFiles")}</h3>
+          {attachedFiles.length > 0 ? (
+            <ul>
+              {attachedFiles.map((entry) => (
+                <li key={entry.path}>
+                  <span className="attached-file-name">{entry.path}</span>
+                  {onOpenInEditor ? (
+                    <button
+                      className="secondary-button attached-file-open"
+                      type="button"
+                      onClick={() => onOpenInEditor(editing.projectId as string, entry.path)}
+                    >
+                      {t("gh.openInEditor")}
+                    </button>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="attached-files-empty">{t("gh.noFiles")}</p>
+          )}
+        </div>
+      ) : null}
       <div className="form-actions">
         <button className="primary-button" type="submit" disabled={saving}>
           {saving ? t("form.saving") : editing ? t("form.saveChanges") : t("form.addActivity")}

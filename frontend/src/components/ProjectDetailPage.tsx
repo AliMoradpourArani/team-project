@@ -10,6 +10,7 @@ import type {
   ProjectFileEntry,
   ProjectRunResult,
 } from "../types";
+import FileTree from "./FileTree";
 import ProjectDemoPreview from "./ProjectDemoPreview";
 import ProjectOnboardingPanel from "./ProjectOnboardingPanel";
 import ProjectReviewPanel from "./ProjectReviewPanel";
@@ -198,24 +199,11 @@ export default function ProjectDetailPage({ projectId, backHref, role }: Props) 
         <div className="gh-editor-workspace source-explorer">
           <aside className="gh-file-list" aria-label={t("se.title")}>
             {sourceFiles.length > 0 ? (
-              <ul>
-                {sourceFiles.map((entry) => (
-                  <li key={entry.path}>
-                    <button
-                      className={`gh-file-button ${
-                        sourceContent?.path === entry.path ? "active" : ""
-                      }`}
-                      type="button"
-                      disabled={entry.isDirectory}
-                      title={entry.isDirectory ? t("gh.directory") : entry.path}
-                      onClick={() => void openSource(entry)}
-                    >
-                      {entry.isDirectory ? "📁 " : "📄 "}
-                      {entry.name}
-                    </button>
-                  </li>
-                ))}
-              </ul>
+              <FileTree
+                entries={sourceFiles}
+                selectedPath={sourceContent?.path ?? null}
+                onSelectFile={(entry) => void openSource(entry)}
+              />
             ) : (
               <StatusMessage>{t("se.noFiles")}</StatusMessage>
             )}

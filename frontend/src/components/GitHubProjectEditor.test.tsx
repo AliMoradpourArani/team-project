@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
@@ -6,6 +6,7 @@ import {
   connectGitHub,
   createActivity,
   disconnectGitHub,
+  getActivities,
   getGitHubRepos,
   getGitHubStatus,
   getProjectFile,
@@ -14,7 +15,9 @@ import {
   importGitHubRepo,
   runProject,
   saveProjectFile,
+  updateActivity,
 } from "../api";
+import type { Activity } from "../types";
 import GitHubProjectEditor from "./GitHubProjectEditor";
 
 vi.mock("../api", () => ({
@@ -22,6 +25,7 @@ vi.mock("../api", () => ({
   connectGitHub: vi.fn(),
   createActivity: vi.fn(),
   disconnectGitHub: vi.fn(),
+  getActivities: vi.fn(),
   getGitHubRepos: vi.fn(),
   getGitHubStatus: vi.fn(),
   getProjectFile: vi.fn(),
@@ -30,6 +34,7 @@ vi.mock("../api", () => ({
   importGitHubRepo: vi.fn(),
   runProject: vi.fn(),
   saveProjectFile: vi.fn(),
+  updateActivity: vi.fn(),
 }));
 
 const statusApi = vi.mocked(getGitHubStatus);
@@ -106,5 +111,103 @@ describe("GitHubProjectEditor", () => {
     expect(statusApi).toHaveBeenCalled();
     expect(reposApi).toHaveBeenCalled();
     expect(screen.queryByText("Connect to the git first.")).not.toBeInTheDocument();
+  });
+});
+
+const connectedStatus = {
+  connected: true,
+  username: "octocat",
+  syncedAt: "2026-09-01T00:00:00Z",
+  canPush: false,
+};
+
+const project = {
+  id: "demo",
+  userId: "ali",
+  name: "demo",
+  description: "demo project",
+  technology: ["Python"],
+  status: "active",
+};
+
+const activity: Activity = {
+  id: "a1",
+  userId: "ali",
+  date: "2026-09-01",
+  title: "some work",
+  status: "in-progress",
+  projectId: null,
+};
+
+describe("GitHubProjectEditor activity attach", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(getGitHubStatus).mockResolvedValue(connectedStatus);
+    vi.mocked(getGitHubRepos).mockResolvedValue([]);
+    vi.mocked(getProjects).mockResolvedValue([project]);
+    vi.mocked(getActivities).mockResolvedValue([activity]);
+    vi.mocked(getProjectFiles).mockResolvedValue([
+      { path: "main.py", name: "main.py", isDirectory: false, size: 10 },
+    ]);
+    vi.mocked(createActivity).mockResolvedValue({ ...activity, projectId: "demo" });
+    vi.mocked(updateActivity).mockResolvedValue({ ...activity, projectId: "demo" });
+  });
+
+  it("attaches the current project to an existing activity", async () => {
+    render(<GitHubProjectEditor userId="ali" />);
+
+    const selects = await screen.findAllByRole("combobox");
+    fireEvent.change(selects[1], { target: { value: "demo" } });
+
+    const attachSelect = await screen.findByRole("combobox", {
+      name: "Attach to activity",
+    });
+    fireEvent.change(attachSelect, { target: { value: "a1" } });
+    fireEvent.click(screen.getByRole("button", { name: "Attach" }));
+
+    expect(await screen.findByText("Attached to your tracked activities.")).toBeInTheDocument();
+    expect(updateActivity).toHaveBeenCalledWith("a1", {
+      userId: "ali",
+      date: "2026-09-01",
+      title: "some work",
+      status: "in-progress",
+      projectId: "demo",
+    });
+    expect(createActivity).not.toHaveBeenCalled();
+  });
+
+  it("creates a new activity when no existing one is picked", async () => {
+    render(<GitHubProjectEditor userId="ali" />);
+
+    const selects = await screen.findAllByRole("combobox");
+    fireEvent.change(selects[1], { target: { value: "demo" } });
+
+    await screen.findByRole("combobox", { name: "Attach to activity" });
+    fireEvent.click(screen.getByRole("button", { name: "Attach" }));
+
+    expect(await screen.findByText("Attached to your tracked activities.")).toBeInTheDocument();
+    expect(createActivity).toHaveBeenCalledWith({
+      userId: "ali",
+      date: expect.any(String),
+      title: "demo",
+      projectId: "demo",
+      status: "in-progress",
+    });
+  });
+
+  it("keeps the editor usable when repositories cannot be listed", async () => {
+    vi.mocked(getGitHubRepos).mockRejectedValue(
+      new Error("GitHub rate limit reached. Try again later or connect with an access token."),
+    );
+
+    render(<GitHubProjectEditor userId="ali" />);
+
+    expect(
+      await screen.findByText(
+        "GitHub rate limit reached. Try again later or connect with an access token.",
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Retry" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Import repository" })).toBeInTheDocument();
   });
 });

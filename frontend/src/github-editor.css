@@ -148,6 +148,68 @@
   flex: 1 1 16rem;
 }
 
+.gh-picker-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.gh-picker-row .gh-picker {
+  flex: 1 1 16rem;
+}
+
+.gh-delete-button {
+  border-color: var(--color-danger);
+  color: var(--color-danger);
+}
+
+.gh-delete-button:hover:not(:disabled) {
+  background: var(--color-danger);
+  color: var(--color-plain);
+  border-color: var(--color-danger);
+}
+
+.gh-confirm-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  z-index: 50;
+}
+
+.gh-confirm-dialog {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 1.25rem;
+  max-inline-size: 28rem;
+  inline-size: 100%;
+  box-shadow: 0 12px 32px var(--color-shadow);
+}
+
+.gh-confirm-dialog p {
+  margin: 0 0 1rem;
+  color: var(--color-text);
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.gh-confirm-actions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+.gh-confirm-danger {
+  background: var(--color-danger) !important;
+  color: var(--color-plain) !important;
+}
+
 .gh-picker {
   min-block-size: 2.4rem;
 }

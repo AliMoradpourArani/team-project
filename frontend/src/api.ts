@@ -322,6 +322,10 @@ export async function deleteActivity(id: string): Promise<void> {
   await request<void>(`/api/activities/${id}`, { method: "DELETE" });
 }
 
+export async function deleteProject(projectId: string): Promise<void> {
+  await request<void>(`/api/projects/${projectId}`, { method: "DELETE" });
+}
+
 export const getGitHubStatus = (): Promise<GithubStatus> =>
   request<GithubStatus>("/api/github/status");
 

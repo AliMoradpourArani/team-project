@@ -82,16 +82,13 @@ export default function ProfessorDashboard() {
               ? Math.round((member.completedActivities / member.totalActivities) * 100)
               : 0;
             return (
-              <a
-                className="professor-member-row"
-                href={`/users/${member.user.id}`}
-                data-link
-                key={member.user.id}
-              >
+              <div className="professor-member-row" key={member.user.id}>
                 <span className="member-avatar">{member.user.name.charAt(0)}</span>
                 <div className="professor-member-main">
                   <div className="professor-member-title">
-                    <strong>{member.user.name}</strong>
+                    <a href={`/users/${member.user.id}`} data-link>
+                      <strong>{member.user.name}</strong>
+                    </a>
                     <GitHubConnectButton
                       userId={member.user.id}
                       initialUsername={member.user.githubUsername ?? null}
@@ -120,8 +117,15 @@ export default function ProfessorDashboard() {
                     <dd>{member.latestActivityDate ?? "—"}</dd>
                   </div>
                 </dl>
-                <span className="card-arrow">↗</span>
-              </a>
+                <a
+                  className="card-arrow"
+                  href={`/users/${member.user.id}`}
+                  data-link
+                  aria-label={`Open ${member.user.name} dashboard`}
+                >
+                  ↗
+                </a>
+              </div>
             );
           })}
         </div>

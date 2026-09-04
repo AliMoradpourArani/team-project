@@ -12,19 +12,35 @@ interface GitHubConnectButtonProps {
   initialUsername?: string | null;
   /**
    * When true the button manages its own GitHub service connection
-   * (student's own workspace). When false it renders read-only,
-   * non-clickable text: the linked GitHub id, or a "not connected yet"
-   * note. Professors can never connect on behalf of a student.
+   * (student's own workspace). When false it renders read-only boxes:
+   * the linked GitHub id, or a "not connected yet" note. Professors
+   * can never connect on behalf of a student.
    */
   canConnect?: boolean;
 }
 
-function GitHubMark() {
+function GitHubLogo() {
   return (
-    <span className="gh-connect-mark" aria-hidden="true">
-      <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
-        <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z" />
-      </svg>
+    <svg className="gh-connect-logo" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+      <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z" />
+    </svg>
+  );
+}
+
+function LinkedIdBox({ username, title }: { username: string; title: string }) {
+  return (
+    <span className="gh-connect-slot">
+      <span className="gh-status-box is-linked" role="status" title={title}>
+        <GitHubLogo />
+        <a
+          className="gh-connect-id"
+          href={`https://github.com/${username}`}
+          target="_blank"
+          rel="noreferrer"
+        >
+          @{username}
+        </a>
+      </span>
     </span>
   );
 }
@@ -66,24 +82,23 @@ export default function GitHubConnectButton({
     };
   }, [canConnect, userId]);
 
-  // Professor / read-only view: plain non-clickable text only. The
+  // Professor / read-only view: status boxes only, never a button. The
   // professor can never connect on behalf of a student.
   if (!canConnect) {
     const linkedUsername = (initialUsername ?? "").trim();
     if (linkedUsername) {
       return (
-        <span className="gh-connect-slot">
-          <span className="gh-status-text gh-status-linked" role="status">
-            <GitHubMark />
-            <span className="gh-connect-id">@{linkedUsername}</span>
-          </span>
-        </span>
+        <LinkedIdBox
+          username={linkedUsername}
+          title={t("gh.connectedAs", { username: linkedUsername })}
+        />
       );
     }
     return (
       <span className="gh-connect-slot">
-        <span className="gh-status-text gh-status-unlinked" role="status">
-          {t("gh.notConnectedYet")}
+        <span className="gh-status-box is-unlinked" role="status">
+          <GitHubLogo />
+          <span>{t("gh.notConnectedYet")}</span>
         </span>
       </span>
     );
@@ -111,20 +126,14 @@ export default function GitHubConnectButton({
     }
   }
 
-  // Connected student dashboard: show just the student GitHub id,
-  // no connect button.
+  // Connected student dashboard: show just the student GitHub id in the
+  // shared green box, no connect button.
   if (status?.connected && liveUsername) {
     return (
-      <span className="gh-connect-slot">
-        <span
-          className="gh-connect connected"
-          role="status"
-          title={t("gh.connectedAs", { username: liveUsername })}
-        >
-          <GitHubMark />
-          <span className="gh-connect-id">@{liveUsername}</span>
-        </span>
-      </span>
+      <LinkedIdBox
+        username={liveUsername}
+        title={t("gh.connectedAs", { username: liveUsername })}
+      />
     );
   }
 
@@ -139,7 +148,7 @@ export default function GitHubConnectButton({
             setExpanded(true);
           }}
         >
-          <GitHubMark />
+          <GitHubLogo />
           <span>{t("gh.connectGitHub")}</span>
         </button>
       ) : (

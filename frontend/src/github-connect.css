@@ -72,28 +72,10 @@
   color: #0b1410;
 }
 
-.gh-connect-mark {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  inline-size: 1.1rem;
-  block-size: 1.1rem;
-  border-radius: 50%;
-  background: currentcolor;
+.gh-connect-logo {
+  inline-size: 1rem;
+  block-size: 1rem;
   flex: 0 0 auto;
-}
-
-.gh-connect-mark svg {
-  inline-size: 0.8rem;
-  block-size: 0.8rem;
-}
-
-.gh-connect.connected .gh-connect-mark {
-  background: rgba(255, 255, 255, 0.22);
-}
-
-[data-theme="dark"] .gh-connect.connected .gh-connect-mark {
-  background: rgba(11, 20, 16, 0.18);
 }
 
 .gh-connect-id {
@@ -105,29 +87,61 @@
   max-inline-size: 12rem;
 }
 
-/* Read-only professor view: plain non-clickable text, never a button. */
-.gh-status-text {
+/* Status boxes shared by the professor views and the connected student
+   dashboard. The linked box is green, the unlinked box is red. Only the
+   GitHub id itself is a link; the box is never a connect button. */
+.gh-status-box {
   display: inline-flex;
   align-items: center;
   gap: 0.45rem;
+  padding: 0.45rem 0.8rem;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  font: inherit;
   font-size: 0.78rem;
+  font-weight: 600;
   line-height: 1.2;
   white-space: nowrap;
   cursor: default;
 }
 
-.gh-status-linked {
-  color: var(--color-text-strong);
-  font-weight: 600;
+.gh-status-box.is-linked {
+  background: #dcf2e3;
+  border-color: #1a7f37;
+  color: #0f5132;
 }
 
-.gh-status-linked .gh-connect-mark {
-  color: var(--color-muted);
+.gh-status-box.is-unlinked {
+  background: #fdecec;
+  border-color: var(--color-danger);
+  color: var(--color-danger);
 }
 
-.gh-status-unlinked {
-  color: var(--color-muted);
-  font-style: italic;
+[data-theme="dark"] .gh-status-box.is-linked {
+  background: rgba(46, 160, 67, 0.18);
+  border-color: #3fb950;
+  color: #7ee787;
+}
+
+[data-theme="dark"] .gh-status-box.is-unlinked {
+  background: rgba(224, 106, 92, 0.15);
+  border-color: #e06a5c;
+  color: #f0a49a;
+}
+
+.gh-status-box a.gh-connect-id {
+  color: inherit;
+  text-decoration: none;
+}
+
+.gh-status-box a.gh-connect-id:hover {
+  text-decoration: underline;
+}
+
+.gh-status-box a.gh-connect-id:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+  border-radius: 4px;
 }
 
 .gh-connect-form-mini {
@@ -188,8 +202,9 @@
   padding: 0.4rem 0.7rem;
 }
 
-.member-card .gh-status-text {
+.member-card .gh-status-box {
   font-size: 0.72rem;
+  padding: 0.35rem 0.65rem;
 }
 
 .dashboard-profile .profile-name-block {

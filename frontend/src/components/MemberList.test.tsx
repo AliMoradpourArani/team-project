@@ -14,8 +14,11 @@ describe("MemberList", () => {
     render(<MemberList users={users} />);
 
     for (const user of users) {
-      const link = screen.getByRole("link", { name: new RegExp(user.name) });
-      expect(link).toHaveAttribute("href", `/users/${user.id}`);
+      const links = screen.getAllByRole("link", { name: new RegExp(user.name) });
+      expect(links).not.toHaveLength(0);
+      for (const link of links) {
+        expect(link).toHaveAttribute("href", `/users/${user.id}`);
+      }
     }
   });
 });

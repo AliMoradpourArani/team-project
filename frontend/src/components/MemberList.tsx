@@ -5,17 +5,22 @@ export default function MemberList({ users }: { users: User[] }) {
   return (
     <div className="member-grid">
       {users.map((user) => (
-        <a className="member-card" href={`/users/${user.id}`} data-link key={user.id}>
+        <div className="member-card" key={user.id}>
           <span className="member-avatar">{user.name.charAt(0)}</span>
-          <span>
+          <a href={`/users/${user.id}`} data-link>
             <strong>{user.name}</strong>
             <small>{user.role}</small>
-          </span>
+          </a>
           <GitHubConnectButton userId={user.id} initialUsername={user.githubUsername ?? null} />
-          <span className="card-arrow" aria-hidden="true">
+          <a
+            className="card-arrow"
+            href={`/users/${user.id}`}
+            data-link
+            aria-label={`Open ${user.name} dashboard`}
+          >
             →
-          </span>
-        </a>
+          </a>
+        </div>
       ))}
     </div>
   );

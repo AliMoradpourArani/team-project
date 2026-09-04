@@ -18,18 +18,23 @@ describe("GitHubConnectButton", () => {
     mockConnect.mockReset();
   });
 
-  it("shows the linked GitHub id as non-clickable text in the professor view", () => {
+  it("shows the linked GitHub id in a green box with a profile link in the professor view", () => {
     render(<GitHubConnectButton userId="ali" initialUsername="octocat" />);
 
     const badge = screen.getByRole("status");
-    expect(screen.getByText("@octocat")).toBeInTheDocument();
+    expect(badge).toHaveClass("gh-status-box", "is-linked");
     expect(badge.tagName).not.toBe("BUTTON");
+    const profileLink = screen.getByRole("link", { name: "@octocat" });
+    expect(profileLink).toHaveAttribute("href", "https://github.com/octocat");
+    expect(profileLink).toHaveAttribute("target", "_blank");
     expect(screen.queryByRole("button")).not.toBeInTheDocument();
   });
 
-  it("shows a not-connected note with no button in the professor view", () => {
+  it("shows a red not-connected box with no button in the professor view", () => {
     render(<GitHubConnectButton userId="ali" initialUsername={null} />);
 
+    const badge = screen.getByRole("status");
+    expect(badge).toHaveClass("gh-status-box", "is-unlinked");
     expect(screen.getByText("Not connected yet")).toBeInTheDocument();
     expect(screen.queryByRole("button")).not.toBeInTheDocument();
     expect(mockStatus).not.toHaveBeenCalled();
@@ -47,6 +52,7 @@ describe("GitHubConnectButton", () => {
 
     expect(await screen.findByText("@octocat")).toBeInTheDocument();
     expect(mockStatus).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole("status")).toHaveClass("gh-status-box", "is-linked");
     expect(screen.queryByRole("button")).not.toBeInTheDocument();
   });
 
@@ -74,6 +80,7 @@ describe("GitHubConnectButton", () => {
 
     expect(await screen.findByText("@octocat")).toBeInTheDocument();
     expect(mockConnect).toHaveBeenCalledWith("octocat", null);
+    expect(screen.getByRole("status")).toHaveClass("gh-status-box", "is-linked");
     expect(screen.queryByRole("button")).not.toBeInTheDocument();
   });
 });

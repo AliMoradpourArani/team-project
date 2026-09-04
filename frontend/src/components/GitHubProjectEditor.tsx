@@ -24,6 +24,7 @@ import type {
   ProjectFileEntry,
   ProjectRunResult,
 } from "../types";
+import FileTree from "./FileTree";
 import StatusMessage from "./StatusMessage";
 
 interface Props {
@@ -369,22 +370,11 @@ export default function GitHubProjectEditor({ userId }: Props) {
               <aside className="gh-file-list" aria-label={t("gh.projectFiles")}>
                 <h3>{t("gh.projectFiles")}</h3>
                 {files.length > 0 ? (
-                  <ul>
-                    {files.map((entry) => (
-                      <li key={entry.path}>
-                        <button
-                          className={`gh-file-button ${entry.path === selectedPath ? "active" : ""}`}
-                          type="button"
-                          disabled={entry.isDirectory}
-                          title={entry.isDirectory ? t("gh.directory") : entry.path}
-                          onClick={() => void selectFile(entry)}
-                        >
-                          {entry.isDirectory ? "📁 " : "📄 "}
-                          {entry.name}
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
+                  <FileTree
+                    entries={files}
+                    selectedPath={selectedPath || null}
+                    onSelectFile={(entry) => void selectFile(entry)}
+                  />
                 ) : (
                   <StatusMessage>{t("gh.noFiles")}</StatusMessage>
                 )}

@@ -4,6 +4,7 @@ import {
   commitProject,
   connectGitHub,
   createActivity,
+  deleteProject,
   disconnectGitHub,
   getActivities,
   getGitHubRepos,
@@ -65,6 +66,8 @@ export default function GitHubProjectEditor({ userId, initialTarget = null }: Pr
   const [attachActivityId, setAttachActivityId] = useState("");
   const [attaching, setAttaching] = useState(false);
   const [reposError, setReposError] = useState("");
+  const [deleting, setDeleting] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -275,6 +278,30 @@ export default function GitHubProjectEditor({ userId, initialTarget = null }: Pr
     }
   }
 
+  async function handleDelete() {
+    if (!projectId || deleting) return;
+    const target = projects.find((candidate) => candidate.id === projectId);
+    if (!target) return;
+    setError("");
+    setNotice("");
+    setDeleting(true);
+    try {
+      await deleteProject(projectId);
+      setProjectId("");
+      setSelectedPath("");
+      setFile(null);
+      setContent("");
+      setFiles([]);
+      setConfirmDelete(false);
+      await loadProjects();
+      setNotice(t("gh.deleted", { name: target.name }));
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : t("gh.deleteError"));
+    } finally {
+      setDeleting(false);
+    }
+  }
+
   async function handleCommit() {
     if (!projectId) return;
     if (!commitMessage.trim()) {
@@ -386,6 +413,7 @@ export default function GitHubProjectEditor({ userId, initialTarget = null }: Pr
               <span>{t("gh.repositories")}</span>
               <select
                 className="gh-picker"
+                aria-label={t("gh.repositories")}
                 value={selectedRepo}
                 onChange={(event) => setSelectedRepo(event.target.value)}
               >
@@ -419,21 +447,69 @@ export default function GitHubProjectEditor({ userId, initialTarget = null }: Pr
             </div>
           ) : null}
 
-          <div className="gh-field">
+          <div className="gh-field gh-field-row">
             <span>{t("gh.pickProject")}</span>
-            <select
-              className="gh-picker"
-              value={projectId}
-              onChange={(event) => setProjectId(event.target.value)}
-            >
-              <option value="">{t("gh.chooseProject")}</option>
-              {projects.map((project) => (
-                <option key={project.id} value={project.id}>
-                  {project.name}
-                </option>
-              ))}
-            </select>
+            <div className="gh-picker-row">
+              <select
+                className="gh-picker"
+                aria-label={t("gh.pickProject")}
+                value={projectId}
+                onChange={(event) => setProjectId(event.target.value)}
+              >
+                <option value="">{t("gh.chooseProject")}</option>
+                {projects.map((project) => (
+                  <option key={project.id} value={project.id}>
+                    {project.name}
+                  </option>
+                ))}
+              </select>
+              {projectId ? (
+                <button
+                  className="secondary-button runner-button gh-delete-button"
+                  type="button"
+                  disabled={deleting}
+                  title={t("gh.deleteProject")}
+                  onClick={() => setConfirmDelete(true)}
+                >
+                  {t("gh.deleteProject")}
+                </button>
+              ) : null}
+            </div>
           </div>
+          {confirmDelete && projectId
+            ? (() => {
+                const target = projects.find((candidate) => candidate.id === projectId);
+                return (
+                  <div className="gh-confirm-backdrop" role="dialog" aria-modal="true">
+                    <div className="gh-confirm-dialog">
+                      <p>
+                        {t("gh.deleteConfirm", {
+                          name: target ? target.name : projectId,
+                        })}
+                      </p>
+                      <div className="gh-confirm-actions">
+                        <button
+                          className="secondary-button runner-button"
+                          type="button"
+                          disabled={deleting}
+                          onClick={() => setConfirmDelete(false)}
+                        >
+                          {t("form.cancel")}
+                        </button>
+                        <button
+                          className="primary-button runner-button gh-confirm-danger"
+                          type="button"
+                          disabled={deleting}
+                          onClick={() => void handleDelete()}
+                        >
+                          {deleting ? t("gh.deleting") : t("gh.confirmDelete")}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()
+            : null}
           {projectId ? (
             <div className="gh-editor-workspace">
               <aside className="gh-file-list" aria-label={t("gh.projectFiles")}>

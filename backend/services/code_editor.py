@@ -35,6 +35,8 @@ def _resolve_project_dir(project: ProjectResponse) -> Path:
     manifest, manifest_path = item
     project_dir, _entry = project_runner._resolve_project_paths(manifest, manifest_path)
     return project_dir.resolve()
+
+
 def _safe_target(project_dir: Path, rel_path: str) -> Path:
     """Resolve a user-supplied relative path inside the project directory."""
     rel_path = rel_path.replace("\\", "/")
@@ -55,7 +57,9 @@ def list_files(project: ProjectResponse) -> list[ProjectFileEntry]:
     project_dir = _resolve_project_dir(project)
     entries: list[ProjectFileEntry] = []
     for root, dirnames, filenames in os.walk(project_dir):
-        dirnames[:] = sorted(name for name in dirnames if name != ".git" and not name.startswith("."))
+        dirnames[:] = sorted(
+            name for name in dirnames if name != ".git" and not name.startswith(".")
+        )
         root_path = Path(root)
         relative = root_path.relative_to(project_dir)
         if relative != Path("."):
@@ -101,6 +105,67 @@ def write_file(project: ProjectResponse, path: str, content: str) -> ProjectFile
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text(content, encoding="utf-8")
     return ProjectFileResponse(path=path, content=content, size=target.stat().st_size)
+
+
+def delete_project(project: ProjectResponse) -> None:
+    """Remove an imported project from the Git-tracked source and the runtime DB.
+
+    Deletes ``data/projects/<id>.json`` and the on-disk repository at
+    ``projects/<user>/<id>`` / manifest root, then resynchronizes the
+    SQLite mirror. Activities linked to the project are retained but their
+    ``project_id`` is nulled by the FK rule; submissions stay as an
+    immutable audit record.
+
+    The operation is rollback-safe: if ``sync_source_data`` fails after
+    destructive filesystem changes, the original files are restored before
+    the exception propagates so filesystem/source-of-truth and DB never
+    diverge.
+    """
+    import shutil
+    import tempfile
+
+    from ..database import source_files
+    from ..database.connection import connect
+    from ..database.sync_data import sync_source_data
+
+    record_path = source_files.DATA_ROOT / "projects" / f"{project.id}.json"
+    try:
+        project_dir = _resolve_project_dir(project)
+    except ProjectNotIntegrated:
+        project_dir = _projects_root() / project.userId / project.id
+
+    original_bytes: bytes | None = None
+    if record_path.exists():
+        original_bytes = record_path.read_bytes()
+
+    backup_dir: Path | None = None
+    temp_root: Path | None = None
+    if project_dir.exists():
+        temp_root = Path(tempfile.mkdtemp(prefix="forgeflow-delete-"))
+        backup_dir = temp_root / project_dir.name
+        shutil.move(str(project_dir), str(backup_dir))
+
+    try:
+        if record_path.exists():
+            record_path.unlink()
+        with connect() as connection:
+            sync_source_data(connection)
+    except Exception:
+        # Roll back filesystem to the pre-delete state
+        if original_bytes is not None and not record_path.exists():
+            record_path.parent.mkdir(parents=True, exist_ok=True)
+            record_path.write_bytes(original_bytes)
+        if backup_dir is not None and backup_dir.exists():
+            if project_dir.exists():
+                shutil.rmtree(project_dir, ignore_errors=True)
+            project_dir.parent.mkdir(parents=True, exist_ok=True)
+            shutil.move(str(backup_dir), str(project_dir))
+        raise
+    finally:
+        if temp_root is not None and temp_root.exists():
+            shutil.rmtree(temp_root, ignore_errors=True)
+
+
 def _run_git(project_dir: Path, *args: str) -> subprocess.CompletedProcess[str]:
     """Run a git subcommand inside the project. Overridable by tests."""
     return subprocess.run(

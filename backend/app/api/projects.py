@@ -88,6 +88,14 @@ def commit_project(
     return code_editor.commit_and_push(project, payload.message, connection)
 
 
+@router.delete("/{project_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_project(project_id: str, principal: CsrfPrincipal) -> Response:
+    project = _project_for_principal(project_id, principal)
+    _assert_student_owner(principal, project)
+    code_editor.delete_project(project)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
 @router.get("", response_model=list[ProjectResponse])
 def list_projects(principal: CurrentPrincipal) -> list[ProjectResponse]:
     return _visible_projects(principal)
@@ -103,7 +111,9 @@ def list_project_onboarding(principal: CurrentPrincipal) -> list[ProjectOnboardi
     try:
         return project_onboarding.list_onboarding(_visible_projects(principal))
     except project_runner.ProjectRunnerError as error:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(error)) from error
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(error)
+        ) from error
 
 
 @router.get("/{project_id}/detail", response_model=ProjectDetailResponse)
@@ -112,7 +122,9 @@ def get_project_detail(project_id: str, principal: CurrentPrincipal) -> ProjectD
     try:
         return project_runner.project_detail(project)
     except project_runner.ProjectRunnerError as error:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(error)) from error
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(error)
+        ) from error
 
 
 @router.get("/{project_id}/onboarding", response_model=ProjectOnboardingResponse)
@@ -123,7 +135,9 @@ def get_project_onboarding(
     try:
         return project_onboarding.get_onboarding(project)
     except project_runner.ProjectRunnerError as error:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(error)) from error
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(error)
+        ) from error
 
 
 @router.get("/{project_id}/review", response_model=ProjectReviewResponse | None)
@@ -162,7 +176,9 @@ def get_project_submission(
     try:
         onboarding = project_onboarding.get_onboarding(project)
     except project_runner.ProjectRunnerError as error:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(error)) from error
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(error)
+        ) from error
     if onboarding.readyForSubmission:
         return submission_status
     return submission_status.model_copy(
@@ -195,8 +211,12 @@ def run_project(project_id: str, principal: CsrfPrincipal) -> ProjectRunResponse
         project_runner.record_run(result)
         return result
     except project_runner.ProjectRunnerDisabled as error:
-        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(error)) from error
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(error)
+        ) from error
     except project_runner.ProjectManifestError as error:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(error)) from error
     except project_runner.ProjectRunnerError as error:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(error)) from error
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(error)
+        ) from error

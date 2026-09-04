@@ -5,6 +5,7 @@ import {
   commitProject,
   connectGitHub,
   createActivity,
+  deleteProject,
   disconnectGitHub,
   getActivities,
   getGitHubRepos,
@@ -24,6 +25,7 @@ vi.mock("../api", () => ({
   commitProject: vi.fn(),
   connectGitHub: vi.fn(),
   createActivity: vi.fn(),
+  deleteProject: vi.fn(),
   disconnectGitHub: vi.fn(),
   getActivities: vi.fn(),
   getGitHubRepos: vi.fn(),
@@ -49,6 +51,7 @@ const saveApi = vi.mocked(saveProjectFile);
 const runApi = vi.mocked(runProject);
 const activityApi = vi.mocked(createActivity);
 const commitApi = vi.mocked(commitProject);
+const deleteApi = vi.mocked(deleteProject);
 
 describe("GitHubProjectEditor", () => {
   beforeEach(() => {
@@ -64,6 +67,7 @@ describe("GitHubProjectEditor", () => {
     runApi.mockReset();
     activityApi.mockReset();
     commitApi.mockReset();
+    deleteApi.mockReset();
     projectsApi.mockResolvedValue([]);
   });
 
@@ -111,6 +115,56 @@ describe("GitHubProjectEditor", () => {
     expect(statusApi).toHaveBeenCalled();
     expect(reposApi).toHaveBeenCalled();
     expect(screen.queryByText("Connect to the git first.")).not.toBeInTheDocument();
+  });
+
+  it("asks for confirmation and deletes the selected imported project", async () => {
+    statusApi.mockResolvedValue({
+      connected: true,
+      username: "octocat",
+      syncedAt: "2026-09-03T00:00:00Z",
+      canPush: false,
+    });
+    reposApi.mockResolvedValue([]);
+    projectsApi.mockResolvedValue([
+      {
+        id: "hello",
+        userId: "ali",
+        name: "hello",
+        description: "demo",
+        technology: ["Python"],
+        status: "active",
+      },
+    ]);
+    filesApi.mockResolvedValue([]);
+    deleteApi.mockResolvedValue(undefined);
+    // After delete, no projects remain
+    projectsApi.mockResolvedValueOnce([
+      {
+        id: "hello",
+        userId: "ali",
+        name: "hello",
+        description: "demo",
+        technology: ["Python"],
+        status: "active",
+      },
+    ]);
+    projectsApi.mockResolvedValueOnce([]);
+
+    render(<GitHubProjectEditor userId="ali" />);
+
+    expect(await screen.findByText("Connected as octocat")).toBeInTheDocument();
+    const select = screen.getByRole("combobox", { name: "Imported project" });
+    const { fireEvent } = await import("@testing-library/react");
+    fireEvent.change(select, { target: { value: "hello" } });
+
+    expect(await screen.findByRole("button", { name: "Delete project" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Delete project" }));
+    expect(await screen.findByText("Are you sure about delete hello?")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Yes, delete" }));
+
+    // Wait a tick for the async delete to settle, then verify
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(deleteApi).toHaveBeenCalledWith("hello");
   });
 });
 

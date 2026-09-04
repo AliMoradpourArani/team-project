@@ -150,6 +150,7 @@ const en = {
   "gh.tokenPlaceholder": "Personal access token",
   "gh.tokenHint": "A token lets you push commits and see private repositories.",
   "gh.connect": "Connect",
+  "gh.connectGitHub": "Connect GitHub",
   "gh.connecting": "Connecting…",
   "gh.connectError": "Could not connect your GitHub account.",
   "gh.disconnect": "Disconnect",
@@ -594,6 +595,7 @@ const fa: Partial<Record<TranslationKey, string>> = {
   "gh.tokenPlaceholder": "توکن دسترسی شخصی",
   "gh.tokenHint": "توکن به شما امکان انتشار کامیت و دیدن مخزن‌های خصوصی را می‌دهد.",
   "gh.connect": "اتصال",
+  "gh.connectGitHub": "اتصال گیت‌هاب",
   "gh.connecting": "در حال اتصال…",
   "gh.connectError": "اتصال حساب گیت‌هاب انجام نشد.",
   "gh.disconnect": "قطع اتصال",
@@ -1039,6 +1041,7 @@ const de: Partial<Record<TranslationKey, string>> = {
   "gh.tokenHint":
     "Ein Token ermöglicht das Pushen von Commits und das Anzeigen privater Repositories.",
   "gh.connect": "Verbinden",
+  "gh.connectGitHub": "GitHub verbinden",
   "gh.connecting": "Verbinde…",
   "gh.connectError": "Das GitHub-Konto konnte nicht verbunden werden.",
   "gh.disconnect": "Trennen",

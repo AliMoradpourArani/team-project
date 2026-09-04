@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { getProfessorDashboard } from "../api";
 import { useI18n } from "../i18n";
 import type { ProfessorDashboardData } from "../types";
+import GitHubConnectButton from "./GitHubConnectButton";
 import GitHubContributionPanel from "./GitHubContributionPanel";
 import ProfessorReviewQueue from "./ProfessorReviewQueue";
 import ProfessorSubmissionPanel from "./ProfessorSubmissionPanel";
@@ -89,7 +90,13 @@ export default function ProfessorDashboard() {
               >
                 <span className="member-avatar">{member.user.name.charAt(0)}</span>
                 <div className="professor-member-main">
-                  <strong>{member.user.name}</strong>
+                  <div className="professor-member-title">
+                    <strong>{member.user.name}</strong>
+                    <GitHubConnectButton
+                      userId={member.user.id}
+                      initialUsername={member.user.githubUsername ?? null}
+                    />
+                  </div>
                   <small>{member.user.role}</small>
                   <div className="progress-track" aria-label={t("prof.percentComplete", { rate })}>
                     <span style={{ width: `${rate}%` }} />

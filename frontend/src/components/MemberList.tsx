@@ -1,4 +1,5 @@
 import type { User } from "../types";
+import GitHubConnectButton from "./GitHubConnectButton";
 
 export default function MemberList({ users }: { users: User[] }) {
   return (
@@ -10,6 +11,7 @@ export default function MemberList({ users }: { users: User[] }) {
             <strong>{user.name}</strong>
             <small>{user.role}</small>
           </span>
+          <GitHubConnectButton userId={user.id} initialUsername={user.githubUsername ?? null} />
           <span className="card-arrow" aria-hidden="true">
             →
           </span>

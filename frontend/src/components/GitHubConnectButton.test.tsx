@@ -18,21 +18,24 @@ describe("GitHubConnectButton", () => {
     mockConnect.mockReset();
   });
 
-  it("shows the linked GitHub id in green in read-only members view", () => {
+  it("shows the linked GitHub id as non-clickable text in the professor view", () => {
     render(<GitHubConnectButton userId="ali" initialUsername="octocat" />);
 
     const badge = screen.getByRole("status");
-    expect(badge).toHaveClass("connected");
     expect(screen.getByText("@octocat")).toBeInTheDocument();
+    expect(badge.tagName).not.toBe("BUTTON");
+    expect(screen.queryByRole("button")).not.toBeInTheDocument();
   });
 
-  it("shows a connect affordance when the member has no linked GitHub id", () => {
+  it("shows a not-connected note with no button in the professor view", () => {
     render(<GitHubConnectButton userId="ali" initialUsername={null} />);
 
-    expect(screen.getByText("Connect GitHub")).toBeInTheDocument();
+    expect(screen.getByText("Not connected yet")).toBeInTheDocument();
+    expect(screen.queryByRole("button")).not.toBeInTheDocument();
+    expect(mockStatus).not.toHaveBeenCalled();
   });
 
-  it("automatically loads the GitHub service status and shows the id when connected", async () => {
+  it("automatically loads the GitHub service status and shows only the id when connected", async () => {
     mockStatus.mockResolvedValue({
       connected: true,
       username: "octocat",
@@ -44,10 +47,10 @@ describe("GitHubConnectButton", () => {
 
     expect(await screen.findByText("@octocat")).toBeInTheDocument();
     expect(mockStatus).toHaveBeenCalledTimes(1);
-    expect(screen.getByRole("status")).toHaveClass("connected");
+    expect(screen.queryByRole("button")).not.toBeInTheDocument();
   });
 
-  it("connects through the GitHub service and turns green with the new id", async () => {
+  it("connects through the GitHub service and then shows only the new id", async () => {
     mockStatus.mockResolvedValue({
       connected: false,
       username: null,
@@ -64,10 +67,13 @@ describe("GitHubConnectButton", () => {
     render(<GitHubConnectButton userId="ali" canConnect />);
 
     fireEvent.click(await screen.findByRole("button", { name: "Connect GitHub" }));
-    fireEvent.change(screen.getByPlaceholderText("octocat"), { target: { value: "octocat" } });
+    fireEvent.change(screen.getByPlaceholderText("octocat"), {
+      target: { value: "octocat" },
+    });
     fireEvent.click(screen.getByRole("button", { name: "Connect" }));
 
     expect(await screen.findByText("@octocat")).toBeInTheDocument();
     expect(mockConnect).toHaveBeenCalledWith("octocat", null);
+    expect(screen.queryByRole("button")).not.toBeInTheDocument();
   });
 });

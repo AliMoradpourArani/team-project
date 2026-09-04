@@ -12,8 +12,9 @@ interface GitHubConnectButtonProps {
   initialUsername?: string | null;
   /**
    * When true the button manages its own GitHub service connection
-   * (student's own workspace). When false it is a read-only status pill
-   * opposite the student name.
+   * (student's own workspace). When false it renders read-only,
+   * non-clickable text: the linked GitHub id, or a "not connected yet"
+   * note. Professors can never connect on behalf of a student.
    */
   canConnect?: boolean;
 }
@@ -37,10 +38,11 @@ export default function GitHubConnectButton({
   const [status, setStatus] = useState<GithubStatus | null>(null);
   const [expanded, setExpanded] = useState(false);
   const [username, setUsername] = useState("");
+  const [token, setToken] = useState("");
   const [connecting, setConnecting] = useState(false);
   const [error, setError] = useState("");
 
-  // Automatically connect to the GitHub service: load live status on mount
+  // Automatically check the GitHub service: load live status on mount
   // for the student's own workspace.
   useEffect(() => {
     if (!canConnect) return;
@@ -50,19 +52,28 @@ export default function GitHubConnectButton({
         if (active) setStatus(next);
       })
       .catch(() => {
-        if (active) setStatus({ connected: false, username: null, syncedAt: null, canPush: false });
+        if (active) {
+          setStatus({
+            connected: false,
+            username: null,
+            syncedAt: null,
+            canPush: false,
+          });
+        }
       });
     return () => {
       active = false;
     };
   }, [canConnect, userId]);
 
+  // Professor / read-only view: plain non-clickable text only. The
+  // professor can never connect on behalf of a student.
   if (!canConnect) {
     const linkedUsername = (initialUsername ?? "").trim();
     if (linkedUsername) {
       return (
         <span className="gh-connect-slot">
-          <span className="gh-connect connected" role="status">
+          <span className="gh-status-text gh-status-linked" role="status">
             <GitHubMark />
             <span className="gh-connect-id">@{linkedUsername}</span>
           </span>
@@ -71,9 +82,8 @@ export default function GitHubConnectButton({
     }
     return (
       <span className="gh-connect-slot">
-        <span className="gh-connect" role="status" aria-disabled="true">
-          <GitHubMark />
-          <span>{t("gh.connectGitHub")}</span>
+        <span className="gh-status-text gh-status-unlinked" role="status">
+          {t("gh.notConnectedYet")}
         </span>
       </span>
     );
@@ -82,14 +92,17 @@ export default function GitHubConnectButton({
   const liveUsername = status?.username?.trim() || (initialUsername ?? "").trim();
 
   async function handleConnect() {
-    const trimmed = username.trim();
-    if (!trimmed || connecting) return;
+    const trimmedUsername = username.trim();
+    if (!trimmedUsername || connecting) return;
     setConnecting(true);
     setError("");
     try {
-      const next = await connectGitHub(trimmed, null);
+      // Authorized through the GitHub service: the backend verifies the
+      // username, and verifies a supplied token live against api.github.com.
+      const next = await connectGitHub(trimmedUsername, token.trim() || null);
       setStatus(next);
       setUsername("");
+      setToken("");
       setExpanded(false);
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : t("gh.connectError"));
@@ -98,10 +111,16 @@ export default function GitHubConnectButton({
     }
   }
 
+  // Connected student dashboard: show just the student GitHub id,
+  // no connect button.
   if (status?.connected && liveUsername) {
     return (
       <span className="gh-connect-slot">
-        <span className="gh-connect connected" role="status" title={t("gh.connectedAs", { username: liveUsername })}>
+        <span
+          className="gh-connect connected"
+          role="status"
+          title={t("gh.connectedAs", { username: liveUsername })}
+        >
           <GitHubMark />
           <span className="gh-connect-id">@{liveUsername}</span>
         </span>
@@ -133,6 +152,18 @@ export default function GitHubConnectButton({
             aria-label={t("gh.username")}
             autoComplete="username"
             onChange={(event) => setUsername(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") void handleConnect();
+              if (event.key === "Escape") setExpanded(false);
+            }}
+          />
+          <input
+            type="password"
+            value={token}
+            placeholder={t("gh.tokenPlaceholder")}
+            aria-label={t("gh.token")}
+            autoComplete="off"
+            onChange={(event) => setToken(event.target.value)}
             onKeyDown={(event) => {
               if (event.key === "Enter") void handleConnect();
               if (event.key === "Escape") setExpanded(false);

@@ -105,6 +105,31 @@
   max-inline-size: 12rem;
 }
 
+/* Read-only professor view: plain non-clickable text, never a button. */
+.gh-status-text {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.78rem;
+  line-height: 1.2;
+  white-space: nowrap;
+  cursor: default;
+}
+
+.gh-status-linked {
+  color: var(--color-text-strong);
+  font-weight: 600;
+}
+
+.gh-status-linked .gh-connect-mark {
+  color: var(--color-muted);
+}
+
+.gh-status-unlinked {
+  color: var(--color-muted);
+  font-style: italic;
+}
+
 .gh-connect-form-mini {
   display: flex;
   flex-direction: column;
@@ -161,6 +186,10 @@
 .member-card .gh-connect {
   font-size: 0.7rem;
   padding: 0.4rem 0.7rem;
+}
+
+.member-card .gh-status-text {
+  font-size: 0.72rem;
 }
 
 .dashboard-profile .profile-name-block {

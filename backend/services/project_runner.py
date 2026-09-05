@@ -47,7 +47,10 @@ class ProjectManifestError(ProjectRunnerError):
 
 
 def runner_enabled() -> bool:
-    return os.getenv("PROJECT_RUNNER_ENABLED", "false").strip().lower() in {
+    # Execution is enabled by default for local development so the code-editor
+    # "Run" works out of the box. Set PROJECT_RUNNER_ENABLED=false to disable
+    # process execution (an explicit kill switch for locked-down deployments).
+    return os.getenv("PROJECT_RUNNER_ENABLED", "true").strip().lower() in {
         "1",
         "true",
         "yes",

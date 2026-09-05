@@ -8,7 +8,7 @@ Phase 5 connects each member's specialized project to the shared platform withou
 - keep project ownership tied to authoritative `data/projects/*.json`
 - validate Git-tracked project manifests before execution
 - support a deliberately narrow runner allowlist
-- make execution opt-in at runtime
+- make execution switchable off at runtime via a kill switch
 - return bounded, structured execution results to the UI
 
 ## Current runner allowlist
@@ -62,21 +62,23 @@ A run response contains:
 
 ## Runtime configuration
 
-Execution is disabled by default:
+Execution is **enabled by default** for local development so the code-editor
+**Run** works out of the box. `PROJECT_RUNNER_ENABLED=false` is the explicit
+kill switch and should be set for locked-down/containerized deployments:
 
 ```text
-PROJECT_RUNNER_ENABLED=false
+PROJECT_RUNNER_ENABLED=true
 PROJECT_RUNNER_TIMEOUT_SECONDS=5
 PROJECT_RUNNER_OUTPUT_LIMIT=16000
 ```
 
-After reviewing the code that has been merged into the repository, enable it for a local demo:
+Disable process execution for a hardened deployment:
 
 ```bash
-export PROJECT_RUNNER_ENABLED=true
+export PROJECT_RUNNER_ENABLED=false
 ```
 
-For Docker:
+For Docker, keep execution disarmed unless you explicitly opt in:
 
 ```bash
 PROJECT_RUNNER_ENABLED=true docker compose up -d --build
@@ -122,6 +124,6 @@ Therefore, only run code that has gone through the repository's normal PR, CI, a
 4. Make sure the manifest `id` equals the authoritative project id and `owner_id` matches the project owner.
 5. Submit the code through a feature branch and PR.
 6. Let CI/security checks pass and review the executable code.
-7. Enable the runner only on the local machine where the reviewed demo should execute.
+7. Execution is enabled by default locally so the demo can run; set `PROJECT_RUNNER_ENABLED=false` for a hardened deployment.
 
 The UI will show projects as `ready`, `not-integrated`, or `invalid`, making integration problems visible instead of silently guessing how to run a project.

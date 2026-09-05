@@ -48,7 +48,7 @@ def write_project(tmp_path: Path, **overrides) -> Path:
     return tmp_path / "projects"
 
 
-def test_ready_project_is_visible_but_not_runnable_by_default(tmp_path, monkeypatch):
+def test_ready_project_is_runnable_by_default(tmp_path, monkeypatch):
     root = write_project(tmp_path)
     monkeypatch.setenv("PROJECTS_ROOT", str(root))
     monkeypatch.delenv("PROJECT_RUNNER_ENABLED", raising=False)
@@ -57,9 +57,9 @@ def test_ready_project_is_visible_but_not_runnable_by_default(tmp_path, monkeypa
 
     assert integration.integrationStatus == "ready"
     assert integration.runner == "python-script-v1"
-    assert integration.runnerEnabled is False
-    assert integration.runnable is False
-    assert "disabled" in (integration.reason or "").lower()
+    assert integration.runnerEnabled is True
+    assert integration.runnable is True
+    assert integration.reason is None
 
 
 def test_allowlisted_python_project_runs_without_shell(tmp_path, monkeypatch):

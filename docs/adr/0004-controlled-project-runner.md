@@ -1,6 +1,6 @@
 # ADR 0004: Controlled project runner
 
-- Status: Accepted
+- Status: Accepted (amended 2026-09-06)
 - Date: 2026-09-02
 
 ## Context
@@ -28,6 +28,26 @@ For Phase 5:
 - execution is disabled by default with `PROJECT_RUNNER_ENABLED=false`
 - timeout/output limits and a minimal child environment are applied
 - Docker mounts the project source read-only
+
+## Amendment (2026-09-06): enabled by default locally
+
+To let the code-editor **Run** work out of the box during local development,
+`PROJECT_RUNNER_ENABLED` now defaults to enabled (**`true`**) when the variable
+is unset. This deliberately reverses the former disabled-by-default default for
+bare local `uvicorn` runs.
+
+The underlying security controls are unchanged, and execution is still not a
+sandbox. Mitigations that remain in force:
+
+- `PROJECT_RUNNER_ENABLED=false` is still a supported, explicit kill switch and
+  is the recommended value for any containerized/locked-down deployment
+  (`docker-compose.yml` keeps `:-false`).
+- Only reviewed repository code should ever be executed, and hostile/untrusted
+  submissions must use a dedicated isolation service instead of this runner.
+
+This amendment is a local-developer convenience. Production and CI
+configurations that need process execution disarmed must set
+`PROJECT_RUNNER_ENABLED=false` explicitly.
 
 ## Consequences
 
